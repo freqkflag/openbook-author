@@ -4,6 +4,9 @@ import { v4 as uuidv4 } from "uuid";
 import type { Book, Chapter } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS } from "@/types/book";
 
+const DOCUMENT_POSITION_PRECEDING = 2;
+const DOCUMENT_POSITION_FOLLOWING = 4;
+
 export interface IBAImportResult {
   book: Omit<Book, "id" | "createdAt" | "updatedAt">;
   warnings: string[];
@@ -54,7 +57,14 @@ function queryAll(root: ParentNode, selectors: string[]): Element[] {
     });
   }
 
-  return matches;
+  return matches.sort((a, b) => {
+    if (a === b) return 0;
+
+    const position = a.compareDocumentPosition(b);
+    if (position & DOCUMENT_POSITION_PRECEDING) return 1;
+    if (position & DOCUMENT_POSITION_FOLLOWING) return -1;
+    return 0;
+  });
 }
 
 function extractMetadata(doc: Document): Partial<Book["metadata"]> {

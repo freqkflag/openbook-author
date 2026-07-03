@@ -17,6 +17,8 @@ import {
 import type { Book } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS } from "@/types/book";
 
+const HERO_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
+
 function createGuidebookMockBook(): Book {
   return {
     id: "snapshot-guidebook",
@@ -111,23 +113,44 @@ describe("EPUB package export snapshots", () => {
         dropCaps: true,
         sceneBreakStyle: "ornament",
       },
+        assets: [
+          {
+            id: "asset-hero",
+            filename: "hero.jpg",
+            mimeType: "image/jpeg",
+            size: HERO_JPEG.byteLength,
+            alt: "Trail overlook",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
       chapters: [
         {
           id: "chapter-1",
           title: "Getting Started",
-          content: buildGettingStartedChapterContent(),
+            content: `${buildGettingStartedChapterContent()}\n<p><img src="assets/hero.jpg" alt="Trail overlook"/></p>`,
           order: 0,
           sectionType: "chapter",
         },
       ],
     };
 
-    const blob = await exportToEpub(book);
+    const blob = await exportToEpub(
+      book,
+      new Map([
+        [
+          "asset-hero",
+          new Blob([HERO_JPEG], { type: "image/jpeg" }),
+        ],
+      ])
+    );
     const zip = await JSZip.loadAsync(await blob.arrayBuffer());
     const files = Object.keys(zip.files)
       .filter((path) => !zip.files[path].dir)
       .sort();
 
+    expect(await zip.file("images/hero.jpg")!.async("uint8array")).toEqual(
+      HERO_JPEG
+    );
     expect(files).toMatchSnapshot();
     expect({
       "content.opf": await readZipText(zip, "content.opf"),
