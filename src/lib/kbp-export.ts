@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import type { Book } from "@/types/book";
 import { applyKbpToHtml, isKbpEnabled, kbpManifest, KBP_CSS } from "@/lib/kbp";
-import { exportToEpub } from "@/lib/epub";
+import { exportToEpub, hasTitlePage } from "@/lib/epub";
 import { getAssetByFilename } from "@/lib/asset-store";
 
 function escapeHtml(text: string): string {
@@ -69,6 +69,46 @@ function coverHtml(book: Book, coverFilename: string): string {
 </html>`;
 }
 
+function titleHtml(book: Book): string {
+  const { title, subtitle, author, publisher } = book.metadata;
+  return `<!DOCTYPE html>
+<html lang="${book.metadata.language || "en"}">
+<head>
+  <meta charset="UTF-8"/>
+  <title>${escapeHtml(title || "Title Page")}</title>
+  <link rel="stylesheet" href="../styles/kbp.css"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 3em 2em;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    .title-publisher {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #888;
+      margin-bottom: 2em;
+    }
+    h1 { font-size: 2em; margin: 0; }
+    .subtitle { font-size: 1.1em; color: #444; margin-top: 0.75em; font-style: italic; }
+    .author { font-size: 1em; color: #555; margin-top: 2em; font-style: italic; }
+  </style>
+</head>
+<body>
+  ${publisher ? `<p class="title-publisher">${escapeHtml(publisher)}</p>` : ""}
+  ${title ? `<h1>${escapeHtml(title)}</h1>` : ""}
+  ${subtitle ? `<p class="subtitle">${escapeHtml(subtitle)}</p>` : ""}
+  ${author ? `<p class="author">by ${escapeHtml(author)}</p>` : ""}
+</body>
+</html>`;
+}
+
 export async function exportToKBP(
   book: Book,
   assetBlobs?: Map<string, Blob>
@@ -90,6 +130,7 @@ This .kbp package is formatted for Kindle Direct Publishing (KDP).
 Contents:
 - export.epub     → Upload directly to KDP
 - cover.html      → Cover page (if set)
+- title.html      → Title page (if metadata set)
 - assets/         → Book images
 - chapters/       → Individual HTML chapter files
 - styles/kbp.css  → KDP-optimized stylesheet
@@ -111,6 +152,10 @@ KDP Upload: Use export.epub or import HTML chapters into Kindle Create.
     : null;
   if (coverFilename && getAssetByFilename(book, coverFilename)) {
     zip.file("cover.html", coverHtml(book, coverFilename));
+  }
+
+  if (hasTitlePage(book)) {
+    zip.file("title.html", titleHtml(book));
   }
 
   const chaptersFolder = zip.folder("chapters");

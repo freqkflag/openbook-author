@@ -181,6 +181,46 @@ body::before {
   font-style: italic;
 }
 
+.print-preview-title-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 500px;
+}
+
+.print-preview-title-publisher {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: #888;
+  margin-bottom: 2rem;
+}
+
+.print-preview-title-heading {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.25;
+  margin: 0;
+}
+
+.print-preview-title-subtitle {
+  font-size: 1rem;
+  color: #444;
+  margin-top: 0.75rem;
+  font-style: italic;
+}
+
+.print-preview-title-author {
+  font-size: 0.95rem;
+  color: #555;
+  margin-top: 2rem;
+  font-style: italic;
+}
+
 .print-preview-body {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 11pt;

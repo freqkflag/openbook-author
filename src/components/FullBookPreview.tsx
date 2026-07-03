@@ -20,6 +20,8 @@ export default function FullBookPreview({ book }: FullBookPreviewProps) {
     ? resolveAssetUrl(book, book.metadata.coverImage, blobs)
     : null;
 
+  const showTitlePage = Boolean(book.metadata.title || book.metadata.author);
+
   const sections = useMemo(
     () =>
       [...book.chapters]
@@ -63,22 +65,34 @@ export default function FullBookPreview({ book }: FullBookPreviewProps) {
           </article>
         )}
 
-        {sections.map((section, idx) => (
+        {showTitlePage && (
+          <article
+            className={`print-preview-page print-preview-title-page bg-white shadow-2xl ${
+              isLandscape ? "w-full max-w-4xl min-h-[480px]" : "w-full max-w-[32rem] min-h-[500px]"
+            }`}
+          >
+            {book.metadata.publisher && (
+              <p className="print-preview-title-publisher">{book.metadata.publisher}</p>
+            )}
+            {book.metadata.title && (
+              <h1 className="print-preview-title-heading">{book.metadata.title}</h1>
+            )}
+            {book.metadata.subtitle && (
+              <p className="print-preview-title-subtitle">{book.metadata.subtitle}</p>
+            )}
+            {book.metadata.author && (
+              <p className="print-preview-title-author">by {book.metadata.author}</p>
+            )}
+          </article>
+        )}
+
+        {sections.map((section) => (
           <article
             key={section.id}
             className={`print-preview-page bg-white shadow-2xl ${
               isLandscape ? "w-full max-w-4xl min-h-[480px]" : "w-full max-w-[32rem] min-h-[500px]"
             } ${mode === "kbp" ? "print-preview-kbp" : "print-preview-standard"}`}
           >
-            {!coverSrc && idx === 0 && (
-              <header className="print-preview-masthead">
-                <p className="print-preview-publisher">{book.metadata.publisher || "OpenBook Author"}</p>
-                <h2 className="print-preview-book-title">{book.metadata.title}</h2>
-                {book.metadata.author && (
-                  <p className="print-preview-author">by {book.metadata.author}</p>
-                )}
-              </header>
-            )}
             <div className="print-preview-body" dangerouslySetInnerHTML={{ __html: section.html }} />
           </article>
         ))}

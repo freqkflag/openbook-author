@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { Book, Chapter } from "@/types/book";
+import type { Book, Chapter, ChapterSectionType } from "@/types/book";
 import type {
   GuidebookBlockType,
   TrailStopPayload,
@@ -250,8 +250,82 @@ function coverXhtml(book: Book, coverImageId: string): string {
 </html>`;
 }
 
+export function hasTitlePage(book: Book): boolean {
+  return Boolean(book.metadata.title || book.metadata.author);
+}
+
+function titleXhtml(book: Book): string {
+  const { title, subtitle, author, publisher } = book.metadata;
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="${escapeXml(book.metadata.language || "en")}">
+<head>
+  <title>${escapeXml(title || "Title Page")}</title>
+  <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
+  <style>
+    body {
+      margin: 0;
+      padding: 3em 2em;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 80vh;
+    }
+    .title-publisher {
+      font-size: 0.75em;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: #888;
+      margin-bottom: 2em;
+    }
+    h1 { font-size: 2em; margin: 0; }
+    .subtitle { font-size: 1.1em; color: #444; margin-top: 0.75em; font-style: italic; }
+    .author { font-size: 1em; color: #555; margin-top: 2em; font-style: italic; }
+  </style>
+</head>
+<body epub:type="titlepage">
+  ${publisher ? `<p class="title-publisher">${escapeXml(publisher)}</p>` : ""}
+  ${title ? `<h1>${escapeXml(title)}</h1>` : ""}
+  ${subtitle ? `<p class="subtitle">${escapeXml(subtitle)}</p>` : ""}
+  ${author ? `<p class="author">by ${escapeXml(author)}</p>` : ""}
+</body>
+</html>`;
+}
+
+export function getSectionEpubType(sectionType?: ChapterSectionType): string {
+  switch (sectionType) {
+    case "copyright":
+      return "copyright-page";
+    case "dedication":
+      return "dedication";
+    case undefined:
+    case "chapter":
+    case "indented":
+    case "introduction":
+    case "appendix":
+    case "journal":
+    case "workbook":
+    case "checklist":
+    case "reflection":
+    case "quote":
+    case "photo-spread":
+    case "timeline":
+    case "glossary":
+    case "interview":
+    case "takeaways":
+      return "chapter";
+    default: {
+      const _exhaustive: never = sectionType;
+      return _exhaustive;
+    }
+  }
+}
+
 function chapterXhtml(book: Book, chapter: Chapter, index: number): string {
   const content = rewriteAssetPaths(prepareChapterContent(book, chapter.content));
+  const epubType = getSectionEpubType(chapter.sectionType);
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
@@ -260,7 +334,7 @@ function chapterXhtml(book: Book, chapter: Chapter, index: number): string {
   <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
 </head>
 <body>
-  <section epub:type="chapter" id="chapter-${index}">
+  <section epub:type="${epubType}" id="chapter-${index}">
     ${content}
   </section>
 </body>
@@ -397,6 +471,7 @@ export async function exportToEpub(
     ? book.metadata.coverImage.replace("assets/", "")
     : null;
   const hasCover = Boolean(coverFilename);
+  const includeTitlePage = hasTitlePage(book);
 
   const chapterHtmlParts = chapters.map((ch) => prepareChapterContent(book, ch.content));
   await embedAssets(zip, book, assetBlobs, chapterHtmlParts);
@@ -425,8 +500,13 @@ export async function exportToEpub(
     ? `<item id="cover" href="text/cover.xhtml" media-type="application/xhtml+xml"/>`
     : "";
 
+  const titleManifest = includeTitlePage
+    ? `<item id="titlepage" href="text/title.xhtml" media-type="application/xhtml+xml"/>`
+    : "";
+
   const spineItems = [
     hasCover ? `<itemref idref="cover" linear="no"/>` : "",
+    includeTitlePage ? `<itemref idref="titlepage"/>` : "",
     ...chapters.map((_, i) => `<itemref idref="chapter${i}"/>`),
   ]
     .filter(Boolean)
@@ -434,10 +514,19 @@ export async function exportToEpub(
 
   const navItems = [
     hasCover ? `<li><a href="text/cover.xhtml">Cover</a></li>` : "",
+    includeTitlePage ? `<li><a href="text/title.xhtml">Title Page</a></li>` : "",
     ...chapters.map(
       (ch, i) =>
         `<li><a href="text/chapter${i}.xhtml">${escapeXml(ch.title)}</a></li>`
     ),
+  ].join("\n        ");
+
+  const landmarkItems = [
+    hasCover ? `<li><a epub:type="cover" href="text/cover.xhtml">Cover</a></li>` : "",
+    includeTitlePage
+      ? `<li><a epub:type="titlepage" href="text/title.xhtml">Title Page</a></li>`
+      : "",
+    `<li><a epub:type="toc" href="nav.xhtml">Table of Contents</a></li>`,
   ].join("\n        ");
 
   const coverMeta = hasCover
@@ -461,6 +550,7 @@ export async function exportToEpub(
     <item id="ncx" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="style" href="styles/main.css" media-type="text/css"/>
     ${coverManifest}
+    ${titleManifest}
     ${imageManifest}
     ${chapterManifest}
   </manifest>
@@ -480,7 +570,9 @@ export async function exportToEpub(
         ${navItems}
     </ol>
   </nav>
-  ${hasCover ? `<nav epub:type="landmarks" hidden=""><ol><li><a epub:type="cover" href="text/cover.xhtml">Cover</a></li></ol></nav>` : ""}
+  <nav epub:type="landmarks" hidden=""><ol>
+        ${landmarkItems}
+    </ol></nav>
 </body>
 </html>`;
 
@@ -501,6 +593,9 @@ export async function exportToEpub(
   const textFolder = zip.folder("text");
   if (hasCover && coverFilename) {
     textFolder?.file("cover.xhtml", coverXhtml(book, coverFilename));
+  }
+  if (includeTitlePage) {
+    textFolder?.file("title.xhtml", titleXhtml(book));
   }
   chapters.forEach((chapter, i) => {
     textFolder?.file(`chapter${i}.xhtml`, chapterXhtml(book, chapter, i));

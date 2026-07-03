@@ -4,19 +4,44 @@ export interface SectionTemplate {
   id: ChapterSectionType;
   name: string;
   description: string;
-  category: "structure" | "activity" | "layout" | "reference";
+  category: "front-matter" | "structure" | "activity" | "layout" | "reference";
   defaultTitle: string;
   content: string;
 }
 
 export const SECTION_CATEGORIES = {
+  "front-matter": "Front Matter",
   structure: "Structure",
   activity: "Activities",
   layout: "Layout & Media",
   reference: "Reference",
 } as const;
 
+const COPYRIGHT_YEAR = new Date().getFullYear();
+
 export const SECTION_TEMPLATES: SectionTemplate[] = [
+  {
+    id: "copyright",
+    name: "Copyright",
+    description: "Copyright notice, rights reservation, and publisher imprint.",
+    category: "front-matter",
+    defaultTitle: "Copyright",
+    content: `<div class="section-copyright">
+<p class="no-indent">Copyright © ${COPYRIGHT_YEAR} [Publisher Name]. All rights reserved.</p>
+<p class="no-indent">No part of this publication may be reproduced, distributed, or transmitted in any form or by any means without the prior written permission of the publisher, except for brief quotations in reviews or scholarly citations.</p>
+<p class="no-indent">Published by [Publisher Name]</p>
+</div>`,
+  },
+  {
+    id: "dedication",
+    name: "Dedication",
+    description: "A dedication page — for someone who inspired this work.",
+    category: "front-matter",
+    defaultTitle: "Dedication",
+    content: `<div class="section-dedication">
+<p class="no-indent"><em>For [name or dedication text]</em></p>
+</div>`,
+  },
   {
     id: "chapter",
     name: "Chapter",

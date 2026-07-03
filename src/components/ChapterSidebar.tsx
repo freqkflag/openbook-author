@@ -15,6 +15,8 @@ import AddSectionPicker from "@/components/AddSectionPicker";
 
 const SECTION_SHORT_LABELS: Partial<Record<ChapterSectionType, string>> = {
   chapter: "Ch",
+  copyright: "©",
+  dedication: "Ded",
   indented: "In",
   introduction: "Intro",
   appendix: "App",

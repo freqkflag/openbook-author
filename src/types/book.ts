@@ -20,6 +20,8 @@ export const DEFAULT_KBP_SETTINGS: KBPSettings = {
 
 export type ChapterSectionType =
   | "chapter"
+  | "copyright"
+  | "dedication"
   | "indented"
   | "introduction"
   | "appendix"
