@@ -4,7 +4,7 @@ import {
   parseHandoff,
   validateHandoff,
 } from "./parse-handoff";
-import { classifyIssue, routeIssue, scoreConfidence } from "./route-issue";
+import { routeIssue, scoreConfidence } from "./route-issue";
 import { getNextStep } from "./workflow";
 import { buildGhIssueCreateArgs, parseMacosReport } from "./macos-report";
 import { resolveNotificationRoutes } from "./notification-routes";
