@@ -22,6 +22,8 @@ All studio agents communicate via **YAML handoff blocks** defined in `.cursor/ru
 | Execution Handoff | Execution agents | `@review-agent` |
 | Review Handoff | `@review-agent` | `@pr-creator-agent` |
 
+`@project-manager-agent` produces a separate approval-gated subtask plan for `estimated_scope: epic` issues. That plan is committed under `.openbook/project/` and applied by GitHub Actions, but it is not a fourth execution handoff: child issue creation requires `approve_subtasks: true`.
+
 GitHub intake is structured via:
 
 - Issue forms (`feature.yml`, `bug.yml`) with `router-ready` label
@@ -53,7 +55,9 @@ Workflow: **Issue Router → Execution Agent → Review Agent → PR Creator** (
 ## Related code
 
 - `.cursor/rules/handoff-contract.mdc`
+- `.cursor/rules/project-manager-agent.mdc`
 - `.cursor/rules/issue-router.mdc`
+- `.github/workflows/router-apply-project-pr.yml`
 - `.github/workflows/issue-labeler.yml`
 - `.github/workflows/issue-router.yml`
 - `.github/ISSUE_TEMPLATE/`

@@ -83,6 +83,27 @@ export type HandoffType = "router" | "execution" | "review";
 
 export type Handoff = RouterHandoff | ExecutionHandoff | ReviewHandoff;
 
+export interface ProjectSubtask {
+  issue_title: string;
+  agent: string;
+  priority: Priority;
+  depends_on: Array<number | string>;
+  deliverables: string[];
+  success_criteria: string[];
+}
+
+export interface ProjectPlan {
+  epic_issue: number;
+  approve_subtasks: boolean;
+  subtasks: ProjectSubtask[];
+  recommended_order: number[];
+}
+
+export interface ProjectPlanParseResult {
+  plan: ProjectPlan;
+  rawYaml: string;
+}
+
 export interface WorkflowResult {
   nextAgent: string | null;
   nextPrompt: string;

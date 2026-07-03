@@ -23,6 +23,7 @@ Router Handoff with `estimated_scope: epic` or human request to plan a milestone
 
 ```yaml
 epic_issue: <number>
+approve_subtasks: false  # true only when the webhook payload includes approve_subtasks: true
 subtasks:
   - issue_title: <string>
     agent: <agent-id>
@@ -33,4 +34,7 @@ subtasks:
 recommended_order: [1, 2, 3]
 ```
 
-Then: **Create GitHub sub-issues?** (requires explicit user approval)
+Then:
+
+- If `approve_subtasks: true`, create child GitHub issues from the subtasks.
+- Otherwise, comment the plan and wait. **Creating GitHub sub-issues requires explicit approval.**

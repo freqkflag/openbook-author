@@ -4,7 +4,12 @@ import {
   parseHandoff,
   validateHandoff,
 } from "./parse-handoff";
-import { classifyIssue, routeIssue, scoreConfidence } from "./route-issue";
+import {
+  buildProjectPlanComment,
+  parseProjectPlan,
+  validateProjectPlan,
+} from "./project-plan";
+import { routeIssue, scoreConfidence } from "./route-issue";
 import { getNextStep } from "./workflow";
 import type { RouterHandoff } from "./types";
 
@@ -47,6 +52,21 @@ architecture_change: false
 adr_proposal: null
 open_questions: []
 next_agent: review-agent
+`;
+
+const SAMPLE_PROJECT_PLAN_YAML = `
+epic_issue: 39
+approve_subtasks: false
+subtasks:
+  - issue_title: Verify epic label routes to project-manager automation
+    agent: test-agent
+    priority: low
+    depends_on: []
+    deliverables:
+      - routing evidence
+    success_criteria:
+      - epic label invokes the project manager automation
+recommended_order: [1]
 `;
 
 describe("parse-handoff", () => {
@@ -166,5 +186,40 @@ describe("validateHandoff", () => {
     const result = validateHandoff(handoff as unknown as Record<string, unknown>);
     expect(result.valid).toBe(true);
     expect(result.handoffType).toBe("router");
+  });
+});
+
+describe("project-plan", () => {
+  it("parses and validates project manager subtask YAML", () => {
+    const result = parseProjectPlan(SAMPLE_PROJECT_PLAN_YAML);
+
+    expect(result.plan.epic_issue).toBe(39);
+    expect(result.plan.approve_subtasks).toBe(false);
+    expect(result.plan.subtasks[0]?.agent).toBe("test-agent");
+    expect(validateProjectPlan(result.plan as unknown as Record<string, unknown>).valid).toBe(true);
+  });
+
+  it("rejects project plans without subtasks", () => {
+    const result = validateProjectPlan({
+      epic_issue: 39,
+      approve_subtasks: false,
+      subtasks: [],
+      recommended_order: [],
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual({
+      field: "subtasks",
+      message: "at least one subtask is required",
+    });
+  });
+
+  it("formats an approval-gated project plan comment", () => {
+    const { plan } = parseProjectPlan(SAMPLE_PROJECT_PLAN_YAML);
+    const comment = buildProjectPlanComment(plan);
+
+    expect(comment).toContain("<!-- openbook-author:project-manager issue-39 -->");
+    expect(comment).toContain("Create child issues: waiting for approval");
+    expect(comment).toContain("approve_subtasks: false");
   });
 });

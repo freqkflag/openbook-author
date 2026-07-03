@@ -7,6 +7,8 @@ The **Studio Orchestrator** is a CLI library that implements the agent handoff w
 ```mermaid
 flowchart LR
   GH[GitHub Issue] --> IR[Issue Router]
+  IR -->|epic scope| PM[Project Manager]
+  PM -->|approval-gated subtasks| GH
   IR --> EA[Execution Agent]
   EA --> RA[Review Agent]
   RA --> PR[PR Creator]
@@ -71,9 +73,10 @@ Exits `0` when valid, `1` with field errors when invalid.
 2. [`issue-labeler.yml`](../.github/workflows/issue-labeler.yml) applies keyword labels and the `router-ready` signal.
 3. [`issue-router.yml`](../.github/workflows/issue-router.yml) posts one deduped `@issue-router` comment with copy-paste instructions for Cursor.
 4. In Cursor, attach `@issue-router` (or run `npm run studio route`) to produce the Router Handoff.
-5. Attach the routed execution agent (`@debug-agent`, `@feature-agent`, etc.) with the handoff YAML.
-6. Execution agent completes work and emits an Execution Handoff → `@review-agent`.
-7. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
+5. If the handoff has `estimated_scope: epic`, attach `@project-manager-agent` and commit `.openbook/project/issue-<n>.yaml`. [`router-apply-project-pr.yml`](../.github/workflows/router-apply-project-pr.yml) comments the subtask plan, then creates child issues via `gh issue create` only when `approve_subtasks: true` is present.
+6. Attach the routed execution agent (`@debug-agent`, `@feature-agent`, etc.) with the handoff YAML.
+7. Execution agent completes work and emits an Execution Handoff → `@review-agent`.
+8. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
 
 ## Agent rules
 
@@ -95,6 +98,7 @@ Shared contracts: [handoff-contract.mdc](../.cursor/rules/handoff-contract.mdc),
 |--------|---------|
 | `src/studio/orchestrator/types.ts` | Handoff TypeScript types |
 | `src/studio/orchestrator/parse-handoff.ts` | Parse and validate YAML handoffs |
+| `src/studio/orchestrator/project-plan.ts` | Project Manager subtask plan validation and issue-comment formatting |
 | `src/studio/orchestrator/route-issue.ts` | Rule-based issue classification |
 | `src/studio/orchestrator/workflow.ts` | State machine for next-agent routing |
 | `src/studio/orchestrator/prompts.ts` | `NEXT:` / `WORKFLOW:` line generation |
