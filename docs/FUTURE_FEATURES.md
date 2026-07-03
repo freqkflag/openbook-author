@@ -69,7 +69,7 @@ Resources, Learning Objectives, Practice Quiz, and Bibliography section types wi
 
 ---
 
-## iBooks Author parity
+## iBooks Author parity *(next up)*
 
 **13. More interactive widgets** ⬜  
 You have popups and galleries. The biggest gaps vs iBooks Author:
