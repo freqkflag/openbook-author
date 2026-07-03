@@ -1,5 +1,106 @@
 // Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
 
+exports[`EPUB package export snapshots > snapshots KBP guidebook package files 1`] = `
+[
+  "META-INF/container.xml",
+  "content.opf",
+  "images/hero.jpg",
+  "mimetype",
+  "nav.xhtml",
+  "styles/main.css",
+  "text/chapter0.xhtml",
+]
+`;
+
+exports[`EPUB package export snapshots > snapshots KBP guidebook package files 2`] = `
+{
+  "content.opf": "<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="uid">urn:uuid:snapshot-epub-book</dc:identifier>
+    <dc:title>Snapshot Guidebook</dc:title>
+    <dc:creator>Test Author</dc:creator>
+    <dc:language>en</dc:language>
+    <dc:description></dc:description>
+    <dc:publisher>OpenBook Author</dc:publisher>
+    <meta property="dcterms:modified">TIMESTAMP</meta>
+
+    <meta property="rendition:layout">reflowable</meta>
+  </metadata>
+  <manifest>
+    <item id="ncx" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+    <item id="style" href="styles/main.css" media-type="text/css"/>
+
+    <item id="img-hero-jpg" href="images/hero.jpg" media-type="image/jpeg"/>
+    <item id="chapter0" href="text/chapter0.xhtml" media-type="application/xhtml+xml"/>
+  </manifest>
+  <spine>
+    <itemref idref="chapter0"/>
+  </spine>
+</package>",
+  "nav.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<head><title>Table of Contents</title></head>
+<body>
+  <nav epub:type="toc" id="toc">
+    <h1>Contents</h1>
+    <ol>
+
+        <li><a href="text/chapter0.xhtml">Getting Started</a></li>
+    </ol>
+  </nav>
+
+</body>
+</html>",
+  "text/chapter0.xhtml": "<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
+<head>
+  <title>Getting Started</title>
+  <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
+</head>
+<body>
+  <section epub:type="chapter" id="chapter-0">
+    <h1>Chapter 1: Getting Started</h1>
+<p class="kbp-body drop-cap">Begin your first topic here. Guidebook chapters work best with a short overview, then structured blocks that readers can scan at a glance.</p>
+<h2>Featured Trail Stop</h2>
+<p class="kbp-body">Use trail stop blocks to mark waypoints with mile markers, elevation, and amenities.</p>
+<aside class="guidebook-block guidebook-trail-stop">
+  <header class="guidebook-block-header">Trail Stop</header>
+  <div class="guidebook-block-body">
+    <h3>Summit Vista Overlook</h3>
+    <p class="trail-meta">Mile 4.2 · 3,840 ft</p>
+    <p class="kbp-body">Panoramic views of the valley below. Best visited at sunrise when the ridgeline catches golden light.</p>
+    <ul class="trail-amenities"><li>Seasonal stream (filter required)</li><li>360° observation deck</li><li>Stone windbreak</li></ul>
+  </div>
+</aside>
+<h2>Reflection Workshop</h2>
+<p class="kbp-body">Workshop blocks give readers space to reflect with guided prompts — great for field journals and training manuals.</p>
+<aside class="guidebook-block guidebook-workshop">
+  <header class="guidebook-block-header">Workshop</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Reflection Workshop</h3>
+    <div class="workshop-exercise"><strong>1.</strong> What surprised you most on the approach to this overlook?<span class="response-hint"> (long answer)</span></div><div class="workshop-exercise"><strong>2.</strong> List one skill you want to practice on your next hike.<span class="response-hint"> (short answer)</span></div>
+  </div>
+</aside>
+<h2>Quick Reference</h2>
+<p class="kbp-body">Cheat sheet blocks pack label/value pairs into a compact grid for at-a-glance facts.</p>
+<aside class="guidebook-block guidebook-cheat-sheet">
+  <header class="guidebook-block-header">Cheat Sheet</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Quick Reference</h3>
+    <div class="cheat-grid cols-2"><span class="cheat-label">Difficulty</span><span>Moderate (steep final 0.5 mi)</span><span class="cheat-label">Typical time</span><span>3–4 hours round trip</span><span class="cheat-label">Permit</span><span>Day-use pass required</span><span class="cheat-label">Best season</span><span>May–October</span></div>
+  </div>
+</aside>
+<div class="kbp-tip">Edit any block inline, or insert new ones from the Guidebook section of the toolbar.</div>
+<p class="kbp-body"><img src="../images/hero.jpg" alt="Trail overlook"/></p>
+  </section>
+</body>
+</html>",
+}
+`;
+
 exports[`guidebook block export snapshots > cheat_sheet seed block 1`] = `
 "<aside class="guidebook-block guidebook-cheat-sheet">
   <header class="guidebook-block-header">Cheat Sheet</header>

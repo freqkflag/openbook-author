@@ -1,5 +1,7 @@
+import JSZip from "jszip";
 import { describe, expect, it } from "vitest";
 import {
+  exportToEpub,
   prepareChapterContent,
   transformWidgetsForEpub,
   GUIDEBOOK_EXPORT_CSS,
@@ -14,6 +16,8 @@ import {
 } from "@/lib/guidebook-seed";
 import type { Book } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS } from "@/types/book";
+
+const HERO_JPEG = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
 
 function createGuidebookMockBook(): Book {
   return {
@@ -44,6 +48,15 @@ function normalizeExportHtml(html: string): string {
     .replace(/[ \t]+\n/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
+}
+
+async function readZipText(zip: JSZip, path: string): Promise<string> {
+  const file = zip.file(path);
+  expect(file).toBeDefined();
+  return normalizeExportHtml(await file!.async("string")).replace(
+    /<meta property="dcterms:modified">[^<]+<\/meta>/,
+    '<meta property="dcterms:modified">TIMESTAMP</meta>'
+  );
 }
 
 describe("guidebook block export snapshots", () => {
@@ -86,5 +99,63 @@ describe("guidebook chapter export snapshots", () => {
 describe("guidebook export CSS snapshot", () => {
   it("GUIDEBOOK_EXPORT_CSS", () => {
     expect(GUIDEBOOK_EXPORT_CSS.trim()).toMatchSnapshot();
+  });
+});
+
+describe("EPUB package export snapshots", () => {
+  it("snapshots KBP guidebook package files", async () => {
+    const book: Book = {
+      ...createGuidebookMockBook(),
+      id: "snapshot-epub-book",
+      kbpSettings: {
+        ...DEFAULT_KBP_SETTINGS,
+        enabled: true,
+        dropCaps: true,
+        sceneBreakStyle: "ornament",
+      },
+        assets: [
+          {
+            id: "asset-hero",
+            filename: "hero.jpg",
+            mimeType: "image/jpeg",
+            size: HERO_JPEG.byteLength,
+            alt: "Trail overlook",
+            createdAt: "2026-01-01T00:00:00.000Z",
+          },
+        ],
+      chapters: [
+        {
+          id: "chapter-1",
+          title: "Getting Started",
+            content: `${buildGettingStartedChapterContent()}\n<p><img src="assets/hero.jpg" alt="Trail overlook"/></p>`,
+          order: 0,
+          sectionType: "chapter",
+        },
+      ],
+    };
+
+    const blob = await exportToEpub(
+      book,
+      new Map([
+        [
+          "asset-hero",
+          new Blob([HERO_JPEG], { type: "image/jpeg" }),
+        ],
+      ])
+    );
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
+    const files = Object.keys(zip.files)
+      .filter((path) => !zip.files[path].dir)
+      .sort();
+
+    expect(await zip.file("images/hero.jpg")!.async("uint8array")).toEqual(
+      HERO_JPEG
+    );
+    expect(files).toMatchSnapshot();
+    expect({
+      "content.opf": await readZipText(zip, "content.opf"),
+      "nav.xhtml": await readZipText(zip, "nav.xhtml"),
+      "text/chapter0.xhtml": await readZipText(zip, "text/chapter0.xhtml"),
+    }).toMatchSnapshot();
   });
 });

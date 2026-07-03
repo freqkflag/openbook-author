@@ -124,6 +124,23 @@ export function isKbpEnabled(book: Book): boolean {
   return book.formatProfile === "kbp" || book.kbpSettings?.enabled === true;
 }
 
+function withClassAttribute(attrs: string, className: string): string {
+  const classMatch = attrs.match(/\sclass="([^"]*)"/);
+  if (!classMatch) {
+    return ` class="${className}"${attrs}`;
+  }
+
+  const classes = classMatch[1].split(/\s+/).filter(Boolean);
+  if (classes.includes(className)) {
+    return attrs;
+  }
+
+  return attrs.replace(
+    classMatch[0],
+    ` class="${[...classes, className].join(" ")}"`
+  );
+}
+
 export function applyKbpToHtml(html: string, settings: KBPSettings): string {
   let result = html;
 
@@ -133,8 +150,9 @@ export function applyKbpToHtml(html: string, settings: KBPSettings): string {
 
   if (settings.dropCaps) {
     result = result.replace(
-      /(<h1[^>]*>.*?<\/h1>\s*)<p([^>]*)>/i,
-      '$1<p class="drop-cap"$2>'
+      /(<h1[^>]*>.*?<\/h1>\s*)<p\b([^>]*)>/i,
+      (_, heading: string, attrs: string) =>
+        `${heading}<p${withClassAttribute(attrs, "drop-cap")}>`
     );
   }
 
