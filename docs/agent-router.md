@@ -74,6 +74,9 @@ Exits `0` when valid, `1` with field errors when invalid.
 5. Attach the routed execution agent (`@debug-agent`, `@feature-agent`, etc.) with the handoff YAML.
 6. Execution agent completes work and emits an Execution Handoff → `@review-agent`.
 7. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
+8. PR Creator opens the PR only for `verdict: approved`, using a conventional title/body with `Closes #<issue>` and a `## Test plan`, then posts the PR link on the issue.
+
+Non-approved review verdicts (`changes_requested` or `blocked`) route back to the execution agent and must not trigger PR creation.
 
 ## Agent rules
 

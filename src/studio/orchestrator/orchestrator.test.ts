@@ -49,6 +49,17 @@ open_questions: []
 next_agent: review-agent
 `;
 
+const SAMPLE_APPROVED_REVIEW_YAML = `
+issue: 42
+source_agent: review-agent
+verdict: approved
+findings: []
+security_flags: []
+a11y_flags: []
+adr_compliance: pass
+next_agent: pr-creator-agent
+`;
+
 describe("parse-handoff", () => {
   it("extracts YAML from fenced code blocks", () => {
     const input = "Some text\n```yaml\nissue: 1\ntitle: Test\n```\n";
@@ -73,6 +84,15 @@ describe("parse-handoff", () => {
     const result = parseHandoff(SAMPLE_EXECUTION_YAML);
     expect(result.handoffType).toBe("execution");
     expect(result.handoff).toMatchObject({ next_agent: "review-agent" });
+  });
+
+  it("parses an approved review handoff for PR creation", () => {
+    const result = parseHandoff(SAMPLE_APPROVED_REVIEW_YAML);
+    expect(result.handoffType).toBe("review");
+    expect(result.handoff).toMatchObject({
+      verdict: "approved",
+      next_agent: "pr-creator-agent",
+    });
   });
 });
 
@@ -114,6 +134,18 @@ describe("workflow", () => {
     const next = getNextStep(handoffType, handoff);
     expect(next.nextAgent).toBe("review-agent");
     expect(next.workflowStage).toBe("awaiting-review");
+  });
+
+  it("routes approved review handoffs to PR creation instructions", () => {
+    const { handoff, handoffType } = parseHandoff(SAMPLE_APPROVED_REVIEW_YAML);
+    const next = getNextStep(handoffType, handoff);
+
+    expect(next.nextAgent).toBe("pr-creator-agent");
+    expect(next.workflowStage).toBe("ready-for-pr");
+    expect(next.nextPrompt).toContain("gh pr create");
+    expect(next.nextPrompt).toContain("Closes #42");
+    expect(next.nextPrompt).toContain("## Test plan");
+    expect(next.nextPrompt).toContain("post the PR link on issue #42");
   });
 });
 
@@ -166,5 +198,24 @@ describe("validateHandoff", () => {
     const result = validateHandoff(handoff as unknown as Record<string, unknown>);
     expect(result.valid).toBe(true);
     expect(result.handoffType).toBe("router");
+  });
+
+  it("rejects PR creator routing unless the review verdict is approved", () => {
+    const result = validateHandoff({
+      issue: 42,
+      source_agent: "review-agent",
+      verdict: "changes_requested",
+      findings: ["Add regression coverage"],
+      security_flags: [],
+      a11y_flags: [],
+      adr_compliance: "pass",
+      next_agent: "pr-creator-agent",
+    });
+
+    expect(result.valid).toBe(false);
+    expect(result.errors).toContainEqual({
+      field: "next_agent",
+      message: "pr-creator-agent requires verdict approved",
+    });
   });
 });

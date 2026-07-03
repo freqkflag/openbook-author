@@ -6,7 +6,12 @@ import type {
   RouterHandoff,
   WorkflowResult,
 } from "./types";
-import { formatNextLine, formatWorkflowLine, formatEscalationMessage } from "./prompts";
+import {
+  formatEscalationMessage,
+  formatNextLine,
+  formatPrCreatorInstructions,
+  formatWorkflowLine,
+} from "./prompts";
 
 export function getWorkflowStage(handoffType: HandoffType, handoff: Handoff): string {
   switch (handoffType) {
@@ -76,6 +81,14 @@ export function getNextStep(handoffType: HandoffType, handoff: Handoff): Workflo
     case "review": {
       const review = handoff as ReviewHandoff;
       const nextAgent = review.next_agent;
+
+      if (review.verdict === "approved" && nextAgent === "pr-creator-agent") {
+        return {
+          nextAgent,
+          nextPrompt: formatPrCreatorInstructions(review.issue),
+          workflowStage,
+        };
+      }
 
       const workflow =
         nextAgent === "pr-creator-agent"

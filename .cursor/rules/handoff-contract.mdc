@@ -69,6 +69,7 @@ next_agent: <execution-agent-id> | pr-creator-agent
 - `needs_human` or empty `files_touched` (planning gate) → `next_agent` is the execution handoff `source_agent`
 - `changes_requested` or `blocked` → `next_agent` is the execution handoff `source_agent`
 - `status: complete`, tests pass, `verdict: approved` → `next_agent: pr-creator-agent`
+- `pr-creator-agent` is valid only when `verdict: approved`; non-approved review handoffs must not open a PR
 
 ### ADR compliance gate
 

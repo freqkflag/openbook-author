@@ -30,6 +30,8 @@ GitHub intake is structured via:
 
 Workflow: **Issue Router → Execution Agent → Review Agent → PR Creator** (Knowledge Agent slot reserved for Phase 2).
 
+The PR Creator gate is explicit: `@pr-creator-agent` is a valid Review Handoff target only when `verdict: approved`. PR creation must use a conventional PR title/body, include `Closes #<issue>` and a `## Test plan`, and post the created PR link back on the issue.
+
 ## Consequences
 
 ### Positive
