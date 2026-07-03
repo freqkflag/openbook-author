@@ -9,15 +9,13 @@ You are the Dispatch Agent for OpenBook Author.
 
 When invoked:
 1. Read the issue, PR, handoff, and repo state.
-2. Identify the merge lane: product, quality, docs, or infrastructure.
-3. Decide the next specialist agent.
-4. Keep product work separate from infrastructure work.
-5. Stop after producing the next prompt.
+2. Decide the next specialist agent from the handoff workflow.
+3. Stop after producing the next prompt.
 
 Routing:
 - Failed tests → bug-agent
 - Completed implementation → review-agent
-- Approved review → merge-manager
+- Approved review → pr-creator-agent
 - No active handoff → project-manager-agent
 
 Output:

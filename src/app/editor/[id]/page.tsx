@@ -12,7 +12,7 @@ import {
   Pencil,
   Eye,
   BookOpen,
-  Image,
+  Image as ImageIcon,
   FileDown,
   Keyboard,
 } from "lucide-react";
@@ -31,6 +31,10 @@ import { downloadPdf } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
 import { adjacentChapterId, isEditableTarget } from "@/lib/keyboard-shortcuts";
+import {
+  assessPublishReadiness,
+  formatReadinessExportWarning,
+} from "@/lib/publish-readiness";
 
 type ViewMode = "edit" | "preview" | "full";
 
@@ -59,7 +63,7 @@ export default function EditorPage() {
     getAssetBlobs,
   } = useBookStore();
 
-  const [activeChapterId, setActiveChapterId] = useState<string>("");
+  const [selectedChapterId, setSelectedChapterId] = useState<string>("");
   const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const [showAI, setShowAI] = useState(false);
   const [showProperties, setShowProperties] = useState(false);
@@ -75,13 +79,11 @@ export default function EditorPage() {
   }, [bookId, setCurrentBook]);
 
   const book = books.find((b) => b.id === bookId);
+  const activeChapterId =
+    selectedChapterId && book?.chapters.some((ch) => ch.id === selectedChapterId)
+      ? selectedChapterId
+      : (book?.chapters[0]?.id ?? "");
   const activeChapter = book?.chapters.find((ch) => ch.id === activeChapterId);
-
-  useEffect(() => {
-    if (book && book.chapters.length > 0 && !activeChapterId) {
-      setActiveChapterId(book.chapters[0].id);
-    }
-  }, [book, activeChapterId]);
 
   const handleSave = useCallback(
     (saveAs = false) => {
@@ -131,7 +133,7 @@ export default function EditorPage() {
           e.key === "ArrowUp" ? "prev" : "next"
         );
         if (nextId) {
-          setActiveChapterId(nextId);
+          setSelectedChapterId(nextId);
           setViewMode("edit");
         }
       }
@@ -169,6 +171,23 @@ export default function EditorPage() {
     const newContent = mode === "append" ? activeChapter.content + html : html;
     updateChapter(book.id, activeChapter.id, { content: newContent });
   };
+
+  const confirmExportIfNeeded = useCallback((targetBook: typeof book) => {
+    if (!targetBook) return false;
+    const report = assessPublishReadiness(targetBook);
+    if (report.errorCount === 0) return true;
+    return window.confirm(formatReadinessExportWarning(report));
+  }, []);
+
+  const handleExportEpub = useCallback(() => {
+    if (!book || !confirmExportIfNeeded(book)) return;
+    downloadEpub(book, getAssetBlobs(book.id));
+  }, [book, confirmExportIfNeeded, getAssetBlobs]);
+
+  const handleExportPdf = useCallback(() => {
+    if (!book || !confirmExportIfNeeded(book)) return;
+    downloadPdf(book, getAssetBlobs(book.id));
+  }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
   const kbpMode = book ? isKbpEnabled(book) || book.template === "guidebook" : false;
 
@@ -297,14 +316,14 @@ export default function EditorPage() {
             Save As
           </button>
           <button
-            onClick={() => downloadEpub(book, getAssetBlobs(book.id))}
+            onClick={handleExportEpub}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30"
           >
             <Download size={14} />
             EPUB
           </button>
           <button
-            onClick={() => downloadPdf(book, getAssetBlobs(book.id))}
+            onClick={handleExportPdf}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30"
             title="Export PDF via print dialog"
           >
@@ -340,7 +359,7 @@ export default function EditorPage() {
             }`}
             title="Asset manager"
           >
-            <Image size={18} />
+            <ImageIcon size={18} aria-hidden="true" />
           </button>
           <button
             onClick={() => setShowProperties(!showProperties)}
@@ -371,17 +390,17 @@ export default function EditorPage() {
           <ChapterSidebar
             chapters={book.chapters}
             activeChapterId={activeChapterId}
-            onSelect={setActiveChapterId}
+            onSelect={setSelectedChapterId}
             onAddSection={(type) => {
               const newId = addSection(book.id, type);
-              setActiveChapterId(newId);
+              setSelectedChapterId(newId);
               setViewMode("edit");
             }}
             onDelete={(id) => {
               deleteChapter(book.id, id);
               if (activeChapterId === id && book.chapters.length > 1) {
                 const remaining = book.chapters.filter((ch) => ch.id !== id);
-                setActiveChapterId(remaining[0]?.id || "");
+                setSelectedChapterId(remaining[0]?.id || "");
               }
             }}
             onRename={(id, title) => updateChapter(book.id, id, { title })}

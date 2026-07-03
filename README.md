@@ -166,6 +166,9 @@ my-book.openbook/   (zip archive)
 
 | Doc | Description |
 |-----|-------------|
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Dev setup, PR workflow, conventions |
+| [SECURITY.md](SECURITY.md) | Vulnerability reporting |
+| [docs/FUTURE_FEATURES.md](docs/FUTURE_FEATURES.md) | Roadmap and planned improvements |
 | [docs/guidebook-blocks.md](docs/guidebook-blocks.md) | Guidebook block types, HTML contract, seed helpers |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing release notes |

@@ -1,7 +1,7 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Image, Upload, X } from "lucide-react";
+import { useRef } from "react";
+import { Upload, X } from "lucide-react";
 import type { Book } from "@/types/book";
 import { resolveAssetUrl } from "@/lib/asset-store";
 import { useBookStore } from "@/store/book-store";

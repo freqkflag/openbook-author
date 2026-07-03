@@ -348,7 +348,7 @@ export const GUIDEBOOK_EXPORT_CSS = `
 .guidebook-block {
   margin: 1.5em 0;
   border: 1px solid #ccc;
-  border-radius: 8px;
+  border-radius: 6px;
   overflow: hidden;
   text-indent: 0;
 }
@@ -382,7 +382,7 @@ export const GUIDEBOOK_EXPORT_CSS = `
 .cheat-label { font-weight: 600; color: #0e7490; }
 .workshop-exercise { margin: 0.6em 0; padding: 0.5em 0.75em; background: #faf5ff; border-radius: 4px; }
 .response-hint { font-size: 0.85em; color: #888; font-style: italic; }
-.trail-meta { font-size: 0.9em; color: #666; margin: 0.25em 0 0.5em; }
+.trail-meta { font-size: 0.85em; color: #666; margin: 0.25em 0 0.5em; }
 .trail-amenities { margin: 0.5em 0 0; padding-left: 1.25em; font-size: 0.9em; }
 `;
 
