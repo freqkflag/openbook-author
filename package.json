@@ -1,26 +1,76 @@
 {
-  "name": "book_writer",
+  "name": "openbook-author",
   "version": "0.1.0",
+  "description": "A modern FOSS book authoring studio — alternative to iBooks Author",
+  "author": "OpenBook Author Contributors",
+  "license": "MIT",
   "private": true,
+  "main": "electron/main.cjs",
   "scripts": {
     "dev": "next dev",
+    "dev:web": "next dev -p 3847",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "start:electron": "next start -p 3847",
+    "lint": "eslint",
+    "electron:dev": "concurrently -k \"npm run dev:web\" \"wait-on http://localhost:3847 && OPENBOOK_PORT=3847 electron .\"",
+    "electron:build": "npm run build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.openbook.author",
+    "productName": "OpenBook Author",
+    "copyright": "Copyright © 2026 OpenBook Author Contributors",
+    "directories": {
+      "output": "dist"
+    },
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": ["dmg", "zip"],
+      "darkModeSupport": true
+    },
+    "files": [
+      "electron/**/*",
+      "package.json",
+      ".next/**/*",
+      "public/**/*",
+      "node_modules/**/*"
+    ],
+    "extraMetadata": {
+      "main": "electron/main.cjs"
+    }
   },
   "dependencies": {
+    "@tiptap/extension-highlight": "^3.27.1",
+    "@tiptap/extension-image": "^3.27.1",
+    "@tiptap/extension-link": "^3.27.1",
+    "@tiptap/extension-placeholder": "^3.27.1",
+    "@tiptap/extension-text-align": "^3.27.1",
+    "@tiptap/extension-underline": "^3.27.1",
+    "@tiptap/react": "^3.27.1",
+    "@tiptap/starter-kit": "^3.27.1",
+    "jszip": "^3.10.1",
+    "lucide-react": "^1.23.0",
     "next": "16.2.10",
+    "pako": "^3.0.0",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "uuid": "^14.0.1",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/pako": "^2.0.4",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "concurrently": "^10.0.3",
+    "electron": "^43.0.0",
+    "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wait-on": "^9.0.10"
   }
 }
