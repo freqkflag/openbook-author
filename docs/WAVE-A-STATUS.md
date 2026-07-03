@@ -26,7 +26,7 @@ The publish readiness panel uses two severities. Only **errors** block export; *
 | **Error** | Yes | Missing image alt text; heading hierarchy violations (skip levels, multiple H1) |
 | **Warning** | No | Duplicate TOC titles; KBP H1 checks; store metadata gaps (ISBN, BISAC); empty footnotes/endnotes; headerless tables |
 
-Wave A.2 adds EPUBCheck / Kindle Previewer hooks ([#56](https://github.com/freqkflag/openbook-author/issues/56)) — structural validation warnings today; full CLI integration will surface validator output as warnings or errors depending on severity.
+Wave A.2 adds EPUBCheck / Kindle Previewer hooks ([#56](https://github.com/freqkflag/openbook-author/issues/56)) — post-export structural validation with actionable messages; full Java EPUBCheck remains an optional local step documented in the panel.
 
 ---
 
@@ -44,7 +44,7 @@ Wave A.2 adds EPUBCheck / Kindle Previewer hooks ([#56](https://github.com/freqk
 | **EPUB export snapshots** | `src/lib/epub-export.snapshots.test.ts` | #24 (partial) |
 | **Store hydrate test** | `src/store/book-store.hydrate.test.ts` — AI settings merge on hydrate | #24 (partial) |
 | **IBA import fixture test** | `src/lib/iba-import.test.ts` | #24 (partial) |
-| **PDF export hardening** | `pdf-export.test.ts`, Electron `printToPDF` | #16 · issue [#7](https://github.com/freqkflag/openbook-author/issues/7) ✅ closed |
+| **PDF export hardening** | `pdf-export.test.ts`, `print-presets.ts`, Electron `printToPDF` presets | #16 · issue [#7](https://github.com/freqkflag/openbook-author/issues/7) ✅ closed |
 | **Docker deployment** | `Dockerfile`, `docker-compose.yml` | #26 |
 | **Agent orchestration** | Merge lanes, `docs/agent-router.md`, ADR-0004 | Issue [#37](https://github.com/freqkflag/openbook-author/issues/37) ✅ merged |
 
@@ -57,9 +57,9 @@ Also on `main` from prior releases: EPUB import, front matter, find/replace, cus
 | # | Item | Status | Tracking |
 |---|------|--------|----------|
 | 1 | Footnotes/endnotes + tables | ✅ Shipped | [#8](https://github.com/freqkflag/openbook-author/issues/8) — **close** |
-| 4 | Print PDF hardening (trim, margins, TOC leaders) | 🟡 Partial | Basic PDF + section print CSS ([#7](https://github.com/freqkflag/openbook-author/issues/7)); bleed/trim presets → Wave A.2 |
+| 4 | Print PDF hardening (trim, margins, TOC leaders) | ✅ Shipped | Trim presets (US Letter, 6×9, A5), margins, page numbers, TOC leaders; Electron `printToPDF` ([#7](https://github.com/freqkflag/openbook-author/issues/7)); bleed/CMYK out of scope |
 | 6 | axe-core in CI | ✅ Shipped | `src/lib/a11y-export.test.ts` — export HTML fixtures in Vitest/CI |
-| 7 | EPUBCheck / Kindle Previewer hooks | 🟡 Partial | Structural EPUB validation in readiness panel + `epub-validation.ts`; full EPUBCheck CLI → Wave A.2 ([#56](https://github.com/freqkflag/openbook-author/issues/56)) |
+| 7 | EPUBCheck / Kindle Previewer hooks | 🟡 Partial (A.1) | Structural EPUB validation in readiness panel + `epub-validation.ts`; full hooks → Wave A.2 ([#56](https://github.com/freqkflag/openbook-author/issues/56)) |
 
 ---
 
@@ -71,11 +71,11 @@ Parallel implementation tracks (July 2026):
 
 | Track | Competitive-audit # | Issue | Status |
 |-------|-------------------|-------|--------|
-| Export theme system (3–5 themes + CSS hook) | 2 | [#55](https://github.com/freqkflag/openbook-author/issues/55) | 🟡 In progress |
-| DOCX import | 3 | [#54](https://github.com/freqkflag/openbook-author/issues/54) | 🟡 In progress |
+| Export theme system (3–5 themes + CSS hook) | 2 | [#55](https://github.com/freqkflag/openbook-author/issues/55) | ✅ Shipped — `export-themes.ts`, Book Properties selector, EPUB/KBP/PDF |
+| DOCX import | 3 | [#54](https://github.com/freqkflag/openbook-author/issues/54) | ✅ Shipped — `docx-import.ts`, dashboard **Import DOCX**, mammoth HTML, asset extraction |
 | PWA offline shell | 5 | [#27](https://github.com/freqkflag/openbook-author/issues/27) | ✅ Shipped — `public/sw.js`, offline indicator, `src/lib/pwa.ts` |
-| EPUBCheck / Kindle Previewer integration | 7 | [#56](https://github.com/freqkflag/openbook-author/issues/56) | 🟡 In progress |
-| Print PDF presets (trim, margins, TOC leaders) | 4 | _(no dedicated issue)_ | 🟡 In progress |
+| EPUBCheck / Kindle Previewer integration | 7 | [#56](https://github.com/freqkflag/openbook-author/issues/56) | ✅ Shipped — `epub-validation.ts`, post-export validation, macOS/Electron CLI docs in readiness panel |
+| Print PDF presets (trim, margins, TOC leaders) | 4 | _(no dedicated issue)_ | ✅ Shipped — `print-presets.ts`, `PrintPdfModal`, Electron `printToPDF` presets |
 
 Related umbrella issues (keep open until A.2 lands): [#51](https://github.com/freqkflag/openbook-author/issues/51) (themes), [#52](https://github.com/freqkflag/openbook-author/issues/52) (DOCX), [#53](https://github.com/freqkflag/openbook-author/issues/53) (EPUBCheck).
 
@@ -104,13 +104,17 @@ These issues describe work that is on `main`. Close with a note pointing to `CHA
 | [#26](https://github.com/freqkflag/openbook-author/issues/26) | Auto-save indicator and crash recovery *(already closed)* |
 | [#37](https://github.com/freqkflag/openbook-author/issues/37) | Ownership-based agent orchestration and merge lanes *(merged)* |
 | [#27](https://github.com/freqkflag/openbook-author/issues/27) | PWA / offline mode — Wave A.2 competitive gap #5 |
+| [#55](https://github.com/freqkflag/openbook-author/issues/55) | Export theme system — Wave A.2 competitive gap #2 |
+| [#51](https://github.com/freqkflag/openbook-author/issues/51) | Export theme system umbrella — close with #55 |
+| [#54](https://github.com/freqkflag/openbook-author/issues/54) | DOCX import — Wave A.2 competitive gap #3 |
+| [#52](https://github.com/freqkflag/openbook-author/issues/52) | DOCX import umbrella — close with #54 |
 
 Optional close (core scope shipped; polish may continue):
 
 | Issue | Title | Note |
 |-------|-------|------|
-| [#10](https://github.com/freqkflag/openbook-author/issues/10) | Publish readiness validation panel | Panel + Wave A.1 checks shipped; EPUBCheck tracked separately in #53/#56 |
-| [#12](https://github.com/freqkflag/openbook-author/issues/12) | Spell check and AI clarity pass | Browser spellcheck + Clarity pass shipped |
+| [#56](https://github.com/freqkflag/openbook-author/issues/56) | EPUBCheck / Kindle Previewer hooks — Wave A.2 competitive gap #7 |
+| [#10](https://github.com/freqkflag/openbook-author/issues/10) | Publish readiness validation panel | Panel + Wave A checks shipped; EPUBCheck hooks in #56 |
 
 ---
 
@@ -120,9 +124,6 @@ Optional close (core scope shipped; polish may continue):
 |-------|-------|--------|
 | [#28](https://github.com/freqkflag/openbook-author/issues/28) | Export and import test suite | Snapshots/hydrate shipped; full matrix + axe fixtures remain |
 | [#29](https://github.com/freqkflag/openbook-author/issues/29) | Accessibility: WCAG preview, heading hierarchy, required alt text | Export gate shipped; WCAG preview remains |
-| [#51](https://github.com/freqkflag/openbook-author/issues/51) / [#55](https://github.com/freqkflag/openbook-author/issues/55) | Export theme system | Wave A.2 · competitive gap #2 |
-| [#52](https://github.com/freqkflag/openbook-author/issues/52) / [#54](https://github.com/freqkflag/openbook-author/issues/54) | DOCX import | Wave A.2 · competitive gap #3 |
-| [#53](https://github.com/freqkflag/openbook-author/issues/53) / [#56](https://github.com/freqkflag/openbook-author/issues/56) | EPUBCheck / Kindle Previewer | Wave A.2 · competitive gap #7 |
 
 iBooks parity and Wave B/C items ([#15](https://github.com/freqkflag/openbook-author/issues/15)–[#20](https://github.com/freqkflag/openbook-author/issues/20), [#49](https://github.com/freqkflag/openbook-author/issues/49), etc.) stay open — out of Wave A scope.
 
@@ -131,5 +132,5 @@ iBooks parity and Wave B/C items ([#15](https://github.com/freqkflag/openbook-au
 ## Next steps
 
 1. Close Wave A.1 shipped issues listed above (batch close PR or manual triage) — include [#8](https://github.com/freqkflag/openbook-author/issues/8).
-2. Land Wave A.2 parallel tracks ([#54](https://github.com/freqkflag/openbook-author/issues/54), [#55](https://github.com/freqkflag/openbook-author/issues/55), [#27](https://github.com/freqkflag/openbook-author/issues/27), [#56](https://github.com/freqkflag/openbook-author/issues/56), PDF presets).
+2. Land remaining Wave A.2 parallel tracks; close [#55](https://github.com/freqkflag/openbook-author/issues/55) / [#51](https://github.com/freqkflag/openbook-author/issues/51) and [#54](https://github.com/freqkflag/openbook-author/issues/54) / [#52](https://github.com/freqkflag/openbook-author/issues/52).
 3. Update [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §1 inventory when Wave A.2 items land.

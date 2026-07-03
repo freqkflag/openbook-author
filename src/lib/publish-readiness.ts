@@ -7,6 +7,7 @@ import {
 } from "@/types/guidebook";
 import { getAssetByFilename } from "@/lib/asset-store";
 import { isKbpEnabled } from "@/lib/kbp";
+import { getBrokenCustomCssAssetRefs } from "@/lib/export-themes";
 import {
   epubValidationToReadinessIssues,
   validateBookEpubExport,
@@ -32,6 +33,8 @@ export interface PublishReadinessReport {
   warningCount: number;
   /** True when no blocking errors remain */
   ready: boolean;
+  /** Post-export EPUB structural validation (when assessPublishReadinessWithEpub is used) */
+  epubValidation?: EpubValidationResult;
 }
 
 const GUIDEBOOK_BLOCK_RE =
@@ -429,6 +432,18 @@ function checkTables(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function checkCustomCssAssets(book: Book, issues: ReadinessIssue[]): void {
+  for (const path of getBrokenCustomCssAssetRefs(book)) {
+    issues.push(
+      issue(
+        `custom-css-asset-${path}`,
+        "warning",
+        `Custom export CSS references missing asset: ${path}`
+      )
+    );
+  }
+}
+
 function checkKbpStoreMetadata(book: Book, issues: ReadinessIssue[]): void {
   if (!isKbpEnabled(book)) return;
 
@@ -480,11 +495,8 @@ function mergeEpubValidationWarnings(
   epubResult: EpubValidationResult
 ): PublishReadinessReport {
   const epubIssues = epubValidationToReadinessIssues(epubResult);
-  if (epubIssues.length === 0) {
-    return report;
-  }
-
-  const issues = [...report.issues, ...epubIssues];
+  const issues =
+    epubIssues.length === 0 ? report.issues : [...report.issues, ...epubIssues];
   const warningCount = issues.filter((i) => i.severity === "warning").length;
 
   return {
@@ -492,6 +504,7 @@ function mergeEpubValidationWarnings(
     errorCount: report.errorCount,
     warningCount,
     ready: report.ready,
+    epubValidation: epubResult,
   };
 }
 
@@ -511,6 +524,7 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
   checkGuidebookBlocks(book, issues);
   checkNoteReferences(book, issues);
   checkTables(book, issues);
+  checkCustomCssAssets(book, issues);
   checkTocIssues(book, issues);
   checkKbpStructure(book, issues);
   checkKbpStoreMetadata(book, issues);

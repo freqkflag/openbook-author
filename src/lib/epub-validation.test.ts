@@ -5,7 +5,9 @@ import { DEFAULT_KBP_SETTINGS } from "@/types/book";
 import { exportToEpub } from "@/lib/epub";
 import {
   epubValidationToReadinessIssues,
+  formatPostExportValidationMessage,
   getEpubCheckCliInstructions,
+  getStoreValidatorInstructions,
   validateBookEpubExport,
   validateEpubBytes,
 } from "@/lib/epub-validation";
@@ -61,11 +63,51 @@ async function buildEpubMissingOpf(): Promise<ArrayBuffer> {
   return zip.generateAsync({ type: "arraybuffer" });
 }
 
+async function buildEpubWithBrokenManifestRef(): Promise<ArrayBuffer> {
+  const zip = new JSZip();
+  zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
+  zip.folder("META-INF")?.file(
+    "container.xml",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<container version="1.0" xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+  <rootfiles>
+    <rootfile full-path="content.opf" media-type="application/oebps-package+xml"/>
+  </rootfiles>
+</container>`
+  );
+  zip.file(
+    "content.opf",
+    `<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
+    <dc:identifier id="uid">urn:uuid:test</dc:identifier>
+    <dc:title>Test</dc:title>
+    <dc:language>en</dc:language>
+  </metadata>
+  <manifest>
+    <item id="ch1" href="text/missing.xhtml" media-type="application/xhtml+xml"/>
+    <item id="nav" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
+  </manifest>
+  <spine>
+    <itemref idref="ch1"/>
+    <itemref idref="orphan"/>
+  </spine>
+</package>`
+  );
+  zip.file(
+    "nav.xhtml",
+    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">
+<body><nav epub:type="toc"><ol></ol></nav></body></html>`
+  );
+  return zip.generateAsync({ type: "arraybuffer" });
+}
+
 describe("validateEpubBytes", () => {
   it("rejects non-zip data", async () => {
     const result = await validateEpubBytes(new TextEncoder().encode("not a zip"));
     expect(result.structurallyValid).toBe(false);
     expect(result.issues.some((i) => i.id === "epub-invalid-zip")).toBe(true);
+    expect(result.issues[0].action).toBeTruthy();
   });
 
   it("warns when mimetype, container.xml, or opf are missing", async () => {
@@ -81,6 +123,16 @@ describe("validateEpubBytes", () => {
 
     expect(result.issues.some((i) => i.id === "epub-missing-opf")).toBe(true);
     expect(result.opfPath).toBe("missing.opf");
+  });
+
+  it("warns on missing manifest files and orphan spine idrefs", async () => {
+    const buffer = await buildEpubWithBrokenManifestRef();
+    const result = await validateEpubBytes(buffer);
+
+    expect(result.issues.some((i) => i.id.startsWith("epub-missing-manifest-file"))).toBe(
+      true
+    );
+    expect(result.issues.some((i) => i.id.startsWith("epub-spine-orphan"))).toBe(true);
   });
 });
 
@@ -114,17 +166,19 @@ describe("validateBookEpubExport", () => {
     expect(zip.file("META-INF/container.xml")).toBeTruthy();
     expect(zip.file("content.opf")).toBeTruthy();
     expect(zip.file("nav.xhtml")).toBeTruthy();
+    expect(zip.file("styles/main.css")).toBeTruthy();
   });
 });
 
 describe("publish-readiness EPUB integration", () => {
-  it("maps structural findings to readiness warnings only", () => {
+  it("maps structural findings to readiness warnings with action hints", () => {
     const readinessIssues = epubValidationToReadinessIssues({
       issues: [
         {
           id: "epub-missing-mimetype",
           severity: "error",
           message: "EPUB is missing root mimetype file",
+          action: "Re-export the book",
         },
       ],
       errorCount: 1,
@@ -136,19 +190,73 @@ describe("publish-readiness EPUB integration", () => {
     expect(readinessIssues).toHaveLength(1);
     expect(readinessIssues[0].severity).toBe("warning");
     expect(readinessIssues[0].id).toBe("epub-missing-mimetype");
+    expect(readinessIssues[0].message).toContain("Re-export the book");
   });
 
   it("merges EPUB warnings into assessPublishReadinessWithEpub", async () => {
     const report = await assessPublishReadinessWithEpub(fixtureBook());
     expect(report.ready).toBe(true);
     expect(report.issues.every((i) => i.id.startsWith("epub-") === false)).toBe(true);
+    expect(report.epubValidation?.structurallyValid).toBe(true);
+    expect(report.epubValidation?.epubCheckRecommended).toBe(true);
   });
 });
 
-describe("EPUBCheck external step", () => {
-  it("documents optional CLI validation", () => {
+describe("post-export validation messages", () => {
+  it("formats success message with epubCheckRecommended hint", () => {
+    const message = formatPostExportValidationMessage(
+      {
+        issues: [],
+        errorCount: 0,
+        warningCount: 0,
+        structurallyValid: true,
+        epubCheckRecommended: true,
+      },
+      "My Book.epub"
+    );
+    expect(message).toContain("My Book.epub");
+    expect(message).toContain("Structural validation passed");
+    expect(message).toContain("EPUBCheck");
+  });
+
+  it("formats actionable warning messages", () => {
+    const message = formatPostExportValidationMessage(
+      {
+        issues: [
+          {
+            id: "epub-missing-nav",
+            severity: "warning",
+            message: "Nav document not found",
+            action: "Re-export the book",
+          },
+        ],
+        errorCount: 0,
+        warningCount: 1,
+        structurallyValid: true,
+        epubCheckRecommended: true,
+      },
+      "My Book.epub"
+    );
+    expect(message).toContain("Nav document not found");
+    expect(message).toContain("Re-export the book");
+  });
+});
+
+describe("store validator instructions", () => {
+  it("documents optional CLI validation via legacy helper", () => {
     const instructions = getEpubCheckCliInstructions();
     expect(instructions).toContain("EPUBCheck");
     expect(instructions).toContain("epubcheck");
+  });
+
+  it("includes macOS brew steps for EPUBCheck", () => {
+    const mac = getStoreValidatorInstructions("macos");
+    expect(mac.epubCheck.some((line) => line.includes("brew"))).toBe(true);
+    expect(mac.kindlePreviewer.some((line) => line.includes("Kindle Previewer"))).toBe(true);
+  });
+
+  it("includes Electron desktop note for Kindle Previewer", () => {
+    const electron = getStoreValidatorInstructions("electron");
+    expect(electron.kindlePreviewer.some((line) => line.includes("Electron"))).toBe(true);
   });
 });

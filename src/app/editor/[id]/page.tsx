@@ -27,8 +27,9 @@ import AssetPanel from "@/components/AssetPanel";
 import SaveStatusBadge from "@/components/SaveStatusBadge";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import BookSearchModal from "@/components/BookSearchModal";
+import PrintPdfModal from "@/components/PrintPdfModal";
 import { downloadEpub } from "@/lib/epub";
-import { downloadPdf } from "@/lib/pdf-export";
+import { downloadPdf, type PrintPdfOptions } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
 import { adjacentChapterId, isEditableTarget } from "@/lib/keyboard-shortcuts";
@@ -75,6 +76,7 @@ export default function EditorPage() {
   const [showAssets, setShowAssets] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
+  const [showPrintPdf, setShowPrintPdf] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -253,10 +255,18 @@ export default function EditorPage() {
     downloadEpub(book, getAssetBlobs(book.id));
   }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
-  const handleExportPdf = useCallback(async () => {
+  const handleExportPdf = useCallback(
+    async (options: PrintPdfOptions) => {
+      if (!book || !confirmExportIfNeeded(book)) return;
+      await downloadPdf(book, getAssetBlobs(book.id), options);
+    },
+    [book, confirmExportIfNeeded, getAssetBlobs]
+  );
+
+  const handleOpenPrintPdf = useCallback(() => {
     if (!book || !confirmExportIfNeeded(book)) return;
-    await downloadPdf(book, getAssetBlobs(book.id));
-  }, [book, confirmExportIfNeeded, getAssetBlobs]);
+    setShowPrintPdf(true);
+  }, [book, confirmExportIfNeeded]);
 
   const handleExportKBP = useCallback(() => {
     if (!book || !confirmExportIfNeeded(book)) return;
@@ -398,9 +408,9 @@ export default function EditorPage() {
             EPUB
           </button>
           <button
-            onClick={handleExportPdf}
+            onClick={handleOpenPrintPdf}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30"
-            title="Export PDF via print dialog"
+            title="Export PDF with trim size presets"
           >
             <FileDown size={14} />
             PDF
@@ -582,6 +592,11 @@ export default function EditorPage() {
           setViewMode("edit");
         }}
         onApplyReplacements={handleApplySearchReplacements}
+      />
+      <PrintPdfModal
+        open={showPrintPdf}
+        onClose={() => setShowPrintPdf(false)}
+        onExport={handleExportPdf}
       />
     </div>
   );
