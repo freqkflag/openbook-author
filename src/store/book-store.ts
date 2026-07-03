@@ -53,6 +53,10 @@ interface BookStore {
   reorderChapter: (bookId: string, chapterId: string, direction: "up" | "down") => void;
   reorderChapters: (bookId: string, fromIndex: number, toIndex: number) => void;
   importBook: (book: Book | Omit<Book, "id" | "createdAt" | "updatedAt">) => string;
+  importBookWithAssets: (
+    book: Omit<Book, "id" | "createdAt" | "updatedAt">,
+    assetBlobs: Map<string, Blob>
+  ) => string;
   updateAISettings: (settings: Partial<AISettings>) => void;
   addAsset: (bookId: string, file: File) => Promise<BookAsset>;
   removeAsset: (bookId: string, assetId: string) => boolean;
@@ -322,6 +326,26 @@ export const useBookStore = create<BookStore>((set, get) => {
         createdAt: "createdAt" in book && book.createdAt ? book.createdAt : now,
         updatedAt: now,
       } as Book);
+      const books = [...get().books, fullBook];
+      persistBooks(books);
+      set({ books, currentBookId: fullBook.id });
+      return fullBook.id;
+    },
+
+    importBookWithAssets: (book, assetBlobs) => {
+      const id = uuidv4();
+      const now = new Date().toISOString();
+      const fullBook = normalizeBook({
+        ...book,
+        id,
+        createdAt: now,
+        updatedAt: now,
+      });
+      setBookAssetBlobs(fullBook.id, assetBlobs);
+      for (const asset of fullBook.assets) {
+        const blob = assetBlobs.get(asset.id);
+        if (blob) cacheAssetBlob(asset.id, blob);
+      }
       const books = [...get().books, fullBook];
       persistBooks(books);
       set({ books, currentBookId: fullBook.id });

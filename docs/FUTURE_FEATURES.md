@@ -6,10 +6,10 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 
 | # | Item | Status |
 |---|------|--------|
-| 1 | Cover image & front matter | 🟡 Cover, title page, copyright/dedication sections shipped; ongoing polish |
+| 1 | Cover image & front matter | ✅ Cover upload, title page preview, copyright/dedication sections (v0.2+) |
 | 2 | Drag-and-drop assets | ✅ Asset panel + picker (v0.2) |
 | 3 | Full-book preview | ✅ Edit / Preview / Full toggle (v0.2) |
-| 4 | EPUB import | 🟡 MVP shipped; no widget reverse-transform yet |
+| 4 | EPUB import | ✅ Dashboard import with widget reverse-transform |
 | 5 | File-based projects | ✅ `.openbook` packages + Electron save/open (v0.2); localStorage remains library cache |
 | 7 | Keyboard shortcuts | 🟡 Cmd+S, Cmd+P, Cmd+/ cheat sheet; more shortcuts TBD |
 | 10 | Drag-and-drop chapter reorder | 🟡 Sidebar drag reorder exists |
@@ -23,13 +23,13 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 *Mostly shipped.* Cover upload via asset manager, title page in full preview and EPUB export, copyright and dedication section types. Further front-matter polish (dedication templates, store metadata fields) may follow.
 
 **2. Drag-and-drop assets (not URL prompts)** ✅  
-*Shipped in v0.2.* Asset panel with drag-and-drop upload, per-book image library, and Asset Picker in the editor (replacing `window.prompt` for images and galleries).
+*Shipped in v0.2+.* Asset panel with drag-and-drop upload, per-book image library, Asset Picker in the editor, and in-app modals for links and popups (replacing `window.prompt`).
 
 **3. Full-book preview** ✅  
 *Shipped in v0.2.* Full-book mode scrolls through cover, title page, and all sections in one continuous print/e-reader view (Edit / Preview / Full toolbar).
 
-**4. EPUB import** 🟡  
-*MVP shipped.* Import `.epub` from the dashboard; extracts chapters, images, and metadata. Widget and guidebook block reverse-transform not yet supported.
+**4. EPUB import** ✅  
+*Shipped.* Import `.epub` from the dashboard; extracts chapters, images, metadata, and reverse-transforms popup/gallery/guidebook widgets back into editor-compatible HTML.
 
 **5. File-based projects (especially in Electron)** ✅  
 *Shipped in v0.2.* `.openbook` zip packages with Electron save/open and web download/upload. Books are still indexed in localStorage as a library cache — save to disk for durability.

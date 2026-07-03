@@ -12,6 +12,8 @@ import { useEffect, useState, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import type { Book } from "@/types/book";
 import AssetPicker from "@/components/AssetPicker";
+import EditorLinkModal from "@/components/EditorLinkModal";
+import EditorPopupModal from "@/components/EditorPopupModal";
 import { EditorAssetContext } from "@/context/EditorAssetContext";
 import {
   Bold,
@@ -100,6 +102,11 @@ export default function RichEditor({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerTitle, setPickerTitle] = useState("Choose Image");
   const [pickerHandler, setPickerHandler] = useState<((src: string, alt?: string) => void) | null>(null);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
+  const [linkModalKey, setLinkModalKey] = useState(0);
+  const [linkModalInitial, setLinkModalInitial] = useState({ url: "", label: "" });
+  const [popupModalOpen, setPopupModalOpen] = useState(false);
+  const [popupModalKey, setPopupModalKey] = useState(0);
   const editorRef = useRef<Editor | null>(null);
 
   const openAssetPicker = (onSelect: (src: string, alt?: string) => void, title?: string) => {
@@ -251,18 +258,42 @@ export default function RichEditor({
     });
   };
 
-  const addLink = () => {
-    const url = window.prompt("Link URL:");
-    if (url) editor.chain().focus().setLink({ href: url }).run();
+  const openLinkModal = () => {
+    const { from, to } = editor.state.selection;
+    const selectedText = editor.state.doc.textBetween(from, to, "");
+    const previousUrl = editor.getAttributes("link").href as string | undefined;
+    setLinkModalInitial({
+      url: previousUrl || "",
+      label: selectedText,
+    });
+    setLinkModalKey((k) => k + 1);
+    setLinkModalOpen(true);
+  };
+
+  const applyLink = (url: string, label?: string) => {
+    const { empty } = editor.state.selection;
+    const chain = editor.chain().focus();
+    if (!empty) {
+      chain.extendMarkRange("link").setLink({ href: url }).run();
+      return;
+    }
+    if (label) {
+      chain.insertContent(`<a href="${url}">${label}</a>`).run();
+      return;
+    }
+    chain.insertContent(`<a href="${url}">${url}</a>`).run();
   };
 
   const addPopup = () => {
-    const title = window.prompt("Popup title:", "Tap to reveal") || "Tap to reveal";
-    const text = window.prompt("Popup content:", "Hidden content goes here.") || "";
+    setPopupModalKey((k) => k + 1);
+    setPopupModalOpen(true);
+  };
+
+  const applyPopup = (title: string, body: string) => {
     editor
       .chain()
       .focus()
-      .setPopupWidget({ title, content: `<p>${text}</p>` })
+      .setPopupWidget({ title, content: `<p>${body}</p>` })
       .run();
   };
 
@@ -406,7 +437,7 @@ export default function RichEditor({
           <AlignRight size={16} />
         </ToolbarButton>
         <div className="w-px h-5 bg-white/10 mx-1" />
-        <ToolbarButton onClick={addLink} title="Add link">
+        <ToolbarButton onClick={openLinkModal} title="Add link">
           <LinkIcon size={16} />
         </ToolbarButton>
         <ToolbarButton onClick={addImage} title="Add image">
@@ -498,6 +529,20 @@ export default function RichEditor({
           pickerHandler?.(src, alt);
           setPickerOpen(false);
         }}
+      />
+      <EditorLinkModal
+        key={linkModalKey}
+        open={linkModalOpen}
+        initialUrl={linkModalInitial.url}
+        initialLabel={linkModalInitial.label}
+        onClose={() => setLinkModalOpen(false)}
+        onSubmit={applyLink}
+      />
+      <EditorPopupModal
+        key={popupModalKey}
+        open={popupModalOpen}
+        onClose={() => setPopupModalOpen(false)}
+        onSubmit={applyPopup}
       />
     </div>
     </EditorAssetContext.Provider>

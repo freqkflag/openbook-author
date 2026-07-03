@@ -47,7 +47,8 @@ export async function buildPackageZip(
   for (const asset of book.assets) {
     const blob = assetBlobs.get(asset.id);
     if (blob) {
-      assetsFolder?.file(asset.filename, blob);
+      const data = await blob.arrayBuffer();
+      assetsFolder?.file(asset.filename, data);
     }
   }
 
@@ -55,7 +56,7 @@ export async function buildPackageZip(
 }
 
 export async function parsePackageFile(file: File | Blob): Promise<OpenPackageResult> {
-  const zip = await JSZip.loadAsync(file);
+  const zip = await JSZip.loadAsync(await file.arrayBuffer());
   const bookRaw = await zip.file("book.json")?.async("string");
   if (!bookRaw) throw new Error("Invalid .openbook package: missing book.json");
 

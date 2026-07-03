@@ -9,6 +9,9 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Copyright, dedication, and title page front matter sections with EPUB/KBP export support (#5)
+- EPUB import from dashboard (metadata, spine chapters, embedded images)
+- EPUB widget reverse-transform on import (popups, galleries, guidebook blocks)
+- Editor link and popup insert modals (replacing `window.prompt`)
 - Publish readiness checks before EPUB/KBP export (missing cover, empty chapters, metadata gaps)
 - `CONTRIBUTING.md`, `SECURITY.md`, `.env.example`, PR template, and GitHub Actions CI (lint, test, build)
 - `docs/FUTURE_FEATURES.md` roadmap
@@ -22,6 +25,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Guidebook template **Chapter 1: Getting Started** now includes structured guidebook blocks (trail stop, workshop, cheat sheet) and a tip callout instead of placeholder step callouts
 - **About This Guide** chapter lists trail stop, workshop, and cheat sheet blocks in its feature overview
 - Local dev workflow: `npm run validate` (lint + test), `npm run lint:fix`; ESLint config excludes Electron CommonJS entrypoints
+- Cover upload directly from Book Properties panel
 
 ## [0.2.0]
 

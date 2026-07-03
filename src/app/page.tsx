@@ -16,11 +16,12 @@ import {
 import { useBookStore } from "@/store/book-store";
 import { TEMPLATES } from "@/lib/templates";
 import { importIBAFile } from "@/lib/iba-import";
+import { importEpubFile } from "@/lib/epub-import";
 import type { Book, BookTemplate } from "@/types/book";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { books, hydrated, hydrate, createBook, deleteBook, importBook, openBookFromDisk } = useBookStore();
+  const { books, hydrated, hydrate, createBook, deleteBook, importBook, importBookWithAssets, openBookFromDisk } = useBookStore();
   const [showTemplates, setShowTemplates] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [importing, setImporting] = useState(false);
@@ -55,6 +56,28 @@ export default function Dashboard() {
         if (id) router.push(`/editor/${id}`);
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to open package");
+      }
+    };
+    input.click();
+  };
+
+  const handleImportEPUB = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".epub,application/epub+zip";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      setImporting(true);
+      try {
+        const { book, assetBlobs, warnings } = await importEpubFile(file);
+        const id = importBookWithAssets(book, assetBlobs);
+        setImportWarnings(warnings);
+        router.push(`/editor/${id}`);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to import EPUB");
+      } finally {
+        setImporting(false);
       }
     };
     input.click();
@@ -129,6 +152,14 @@ export default function Dashboard() {
               >
                 <FolderOpen size={16} />
                 Open Book
+              </button>
+              <button
+                onClick={handleImportEPUB}
+                disabled={importing}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-cyan-500/30 text-cyan-300 text-sm hover:bg-cyan-500/10 transition-colors disabled:opacity-50"
+              >
+                <BookOpen size={16} />
+                {importing ? "Importing..." : "Import EPUB"}
               </button>
               <button
                 onClick={handleImportIBA}
