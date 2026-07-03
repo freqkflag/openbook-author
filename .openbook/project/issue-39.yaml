@@ -6,22 +6,22 @@ subtasks:
     priority: low
     depends_on: []
     deliverables:
-      - Confirm the `epic` label forwards the issue payload to the Project Manager automation.
-      - Capture the resulting `.openbook/project/issue-39.yaml` plan artifact.
+      - "Confirm the `epic` label forwards the issue payload to the Project Manager automation."
+      - "Capture the resulting `.openbook/project/issue-39.yaml` plan artifact."
     success_criteria:
-      - Issue #39 receives a project-manager plan comment.
-      - No child issues are created without `approve_subtasks: true`.
+      - "Issue #39 receives a project-manager plan comment."
+      - "No child issues are created without `approve_subtasks: true`."
   - issue_title: Verify approval gate blocks smoke-test child issue creation
     agent: test-agent
     priority: low
     depends_on:
       - 1
     deliverables:
-      - Validate the Project Manager plan keeps `approve_subtasks` false for the smoke-test payload.
-      - Confirm the apply workflow reports that it is waiting for approval.
+      - "Validate the Project Manager plan keeps `approve_subtasks` false for the smoke-test payload."
+      - "Confirm the apply workflow reports that it is waiting for approval."
     success_criteria:
-      - The plan comment includes clear approval instructions.
-      - The workflow does not call `gh issue create` while approval is false.
+      - "The plan comment includes clear approval instructions."
+      - "The workflow does not call `gh issue create` while approval is false."
   - issue_title: Document epic subtask automation smoke-test result
     agent: docs-agent
     priority: low
@@ -29,9 +29,9 @@ subtasks:
       - 1
       - 2
     deliverables:
-      - Summarize the smoke-test routing result for maintainers.
-      - Note that issue #39 is temporary and safe to close after validation.
+      - "Summarize the smoke-test routing result for maintainers."
+      - "Note that issue #39 is temporary and safe to close after validation."
     success_criteria:
-      - Maintainers can see the generated subtask plan on issue #39.
-      - Follow-up cleanup is clear after the automation test completes.
+      - "Maintainers can see the generated subtask plan on issue #39."
+      - "Follow-up cleanup is clear after the automation test completes."
 recommended_order: [1, 2, 3]

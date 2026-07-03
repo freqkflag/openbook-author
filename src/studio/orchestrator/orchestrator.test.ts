@@ -9,7 +9,7 @@ import {
   parseProjectPlan,
   validateProjectPlan,
 } from "./project-plan";
-import { classifyIssue, routeIssue, scoreConfidence } from "./route-issue";
+import { routeIssue, scoreConfidence } from "./route-issue";
 import { getNextStep } from "./workflow";
 import type { RouterHandoff } from "./types";
 
