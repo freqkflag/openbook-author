@@ -13,13 +13,15 @@ jobs:
         with:
           script: |
             const issue = context.payload.issue;
-            const body = `@issue-router
-Route this issue using the OpenBook Author handoff contract.
-Issue #${issue.number}
-Title: ${issue.title}
-Labels: ${issue.labels.map(l => l.name).join(", ") || "none"}
-Body:
-${issue.body || "No body provided."}`;
+            const body = [
+              "@issue-router",
+              "Route this issue using the OpenBook Author handoff contract.",
+              `Issue #${issue.number}`,
+              `Title: ${issue.title}`,
+              `Labels: ${issue.labels.map(l => l.name).join(", ") || "none"}`,
+              "Body:",
+              issue.body || "No body provided."
+            ].join("\n");
             await github.rest.issues.createComment({
               ...context.repo,
               issue_number: issue.number,
