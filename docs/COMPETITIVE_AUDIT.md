@@ -234,7 +234,7 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 
 **Goal:** Features paid tools can't or won't ship.
 
-**Status (July 2026):** 🟡 **In progress** — kickoff tracking in [WAVE-B-STATUS.md](WAVE-B-STATUS.md); ADR-0005 (git-native project mode) and ADR-0006 (self-hosted backup/sync) drafted; implementation tracks not started.
+**Status (July 2026):** ✅ **Complete** — all 7/7 items shipped on `main` ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)). Track detail in [WAVE-B-STATUS.md](WAVE-B-STATUS.md).
 
 1. **Deepen IBA import** — hierarchy report, more `sl:tag` semantics, import diagnostics UI — [#19](https://github.com/freqkflag/openbook-author/issues/19)
 2. **Hierarchical TOC / parts** ([#49](https://github.com/freqkflag/openbook-author/issues/49)) — nested spine + nav
@@ -247,6 +247,8 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 ### Wave C — Experimental pilots (months 4–6)
 
 **Goal:** Validate before big architecture bets.
+
+**Status (July 2026):** ✅ **Complete** — all 7/7 MVP pilots shipped on `main` ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)). Track detail in [WAVE-C-STATUS.md](WAVE-C-STATUS.md).
 
 1. **Fixed-layout canvas MVP** — single-page spread editor for photo books (ADR)
 2. **Media + quiz widgets** — `<audio>`, `<video>`, interactive review (extend ADR-0002)

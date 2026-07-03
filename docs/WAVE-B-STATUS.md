@@ -65,6 +65,6 @@
 
 ## Exit criteria
 
-Wave B is **done** — all checklist rows ✅, ADRs accepted, issues #59 and #63 ready to close.
+Wave B is **done** — all checklist rows ✅, ADRs accepted, tracking issues closed with ship note ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)).
 
 Wave C tracking: [WAVE-C-STATUS.md](WAVE-C-STATUS.md)
