@@ -24,7 +24,8 @@ on:
   pull_request:
     types: [labeled]
 
-# Serialize webhook dispatches so labels don't fan out multiple cloud agents at once.
+# Serialize webhook dispatches. Max concurrent cloud agents: repo variable
+# OPENBOOK_MAX_CONCURRENT_AGENTS (default 1; Pro plan uses 8).
 concurrency:
   group: openbook-cloud-agent-pipeline
   cancel-in-progress: false

@@ -34,7 +34,7 @@ On each run, Cursor executes `.cursor/scripts/agent-bootstrap.sh`, which runs `n
 
 ## Pipeline concurrency
 
-Only **one cloud agent** runs at a time by default (configurable via repo variable `OPENBOOK_MAX_CONCURRENT_AGENTS`).
+Only **one cloud agent** runs at a time by default (override via repo variable `OPENBOOK_MAX_CONCURRENT_AGENTS`; set to **8** on Pro).
 
 - `agent-webhook.yml` queues dispatches and skips when `agent-running` is present
 - Apply workflows clear `agent-running` when a handoff completes
