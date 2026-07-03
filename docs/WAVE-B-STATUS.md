@@ -5,12 +5,13 @@
 
 **Goal:** Ship FOSS differentiation features paid tools can't or won't — IBA import depth, hierarchical TOC, git-native workflow, local AI (RAG + Ollama), EPUB 3.3 metadata, and optional self-hosted backup.
 
-**Status:** 🟡 **In progress** — ADRs drafted for architecture-gated items; implementation tracks not started.
+**Status:** 🟡 **In progress** — items 1–2, 4–5 shipped; items 3, 6–7 open.
 
 | Phase | Scope | Status |
 |-------|-------|--------|
 | **Wave B kickoff** | Tracking doc + ADR-0005 (git-native) + ADR-0006 (self-hosted sync) | ✅ July 2026 |
-| **Wave B build** | Seven competitive-audit items below | ⬜ Not started |
+| **Wave B.1** | IBA import depth ([#19](https://github.com/freqkflag/openbook-author/issues/19)) | ✅ Shipped July 2026 |
+| **Wave B build** | Remaining five competitive-audit items below | 🟡 In progress |
 
 Track architecture decisions in [docs/adr/](adr/README.md). Items marked **ADR** must have an **Accepted** ADR before feature code merges.
 
@@ -20,13 +21,40 @@ Track architecture decisions in [docs/adr/](adr/README.md). Items marked **ADR**
 
 | # | Item | ADR | Issue | Status | Notes |
 |---|------|-----|-------|--------|-------|
-| 1 | **Deepen IBA import** — hierarchy report, `sl:tag` semantics, import diagnostics UI | — | [#19](https://github.com/freqkflag/openbook-author/issues/19) | ⬜ Open | Extends `src/lib/iba-import.ts`; no storage contract change |
-| 2 | **Hierarchical TOC / parts** — nested spine + nav | — | [#49](https://github.com/freqkflag/openbook-author/issues/49) | ⬜ Open | Book model + EPUB nav changes; coordinate with #19 hierarchy work |
-| 3 | **Git-for-books workflow** — open folder, diff-friendly saves, Electron Git panel | [ADR-0005](adr/ADR-0005-git-native-project-mode.md) | _File before build_ — [audit §9 #16](COMPETITIVE_AUDIT.md#9-suggested-github-issue-titles) | 🟡 ADR proposed | Dual storage model vs `.openbook` zip; Electron-first |
-| 4 | **AI RAG + consistency agent** — local chapter embeddings; character/timeline/fact check | — | _File before build_ — [audit §9 #10](COMPETITIVE_AUDIT.md#9-suggested-github-issue-titles) | ⬜ Open | Electron pilot; chapter-scoped embeddings; Ollama-friendly |
-| 5 | **Expand Ollama** — structured JSON actions, model presets, offline badge | — | _File before build_ — [audit §3](COMPETITIVE_AUDIT.md#3-bleeding-edge-tech--fit-assessment) | ⬜ Open | Low risk; extends `src/app/api/ai/route.ts` + AI panel |
-| 6 | **EPUB 3.3 metadata upgrade** — package version + `schema.org` accessibility properties | — | _File before build_ — [audit §9 #18](COMPETITIVE_AUDIT.md#9-suggested-github-issue-titles) | ⬜ Open | Extends ADR-0003 pipeline; backward-compatible |
-| 7 | **Self-hosted sync (optional)** — WebDAV or S3-compatible backup of `.openbook` | [ADR-0006](adr/ADR-0006-self-hosted-sync.md) | _File before build_ — [audit §5 item 7](COMPETITIVE_AUDIT.md#wave-b--foss-differentiation-moat-months-2-4) | 🟡 ADR proposed | Opt-in; not realtime collab (Wave C) |
+| 1 | **Deepen IBA import** — hierarchy report, `sl:tag` semantics, import diagnostics UI | — | [#19](https://github.com/freqkflag/openbook-author/issues/19) | ✅ Shipped | `IBAImportDiagnostics`, nested hierarchy flattening, `ImportDiagnosticsModal` |
+| 2 | **Hierarchical TOC / parts** — nested spine + nav | — | [#49](https://github.com/freqkflag/openbook-author/issues/49) | ✅ Shipped | `BookPart` model, nested EPUB nav, KBP `toc.json`, editor parts UI |
+| 3 | **Git-for-books workflow** — open folder, diff-friendly saves, Electron Git panel | [ADR-0005](adr/ADR-0005-git-native-project-mode.md) | [#59](https://github.com/freqkflag/openbook-author/issues/59) | 🟡 ADR proposed | Dual storage model vs `.openbook` zip; Electron-first |
+| 4 | **AI RAG + consistency agent** — local chapter embeddings; character/timeline/fact check | — | [#60](https://github.com/freqkflag/openbook-author/issues/60) | ✅ Shipped | `8bdadf4` — chapter-scoped RAG, consistency check action, Ollama-friendly Electron path |
+| 5 | **Expand Ollama** — structured JSON actions, model presets, offline badge | — | [#61](https://github.com/freqkflag/openbook-author/issues/61) | ✅ Shipped | `94f6b29` — model presets, offline badge, structured JSON actions in AI panel |
+| 6 | **EPUB 3.3 metadata upgrade** — package version + `schema.org` accessibility properties | — | [#62](https://github.com/freqkflag/openbook-author/issues/62) | ⬜ Open | Extends ADR-0003 pipeline; backward-compatible |
+| 7 | **Self-hosted sync (optional)** — WebDAV or S3-compatible backup of `.openbook` | [ADR-0006](adr/ADR-0006-self-hosted-sync.md) | [#63](https://github.com/freqkflag/openbook-author/issues/63) | 🟡 ADR proposed | Opt-in; not realtime collab (Wave C) |
+
+---
+
+## Wave B.1 — IBA import depth (July 2026)
+
+| Deliverable | Evidence |
+|-------------|----------|
+| Nested hierarchy preservation | `flattenHierarchy()` depth-first ordering; parent › child title prefixes; `sectionType` from `node-type` |
+| Extended `sl:tag` mapping | h1–h3, blockquote/callout, figcaption, list items, pre/code in `paragraphsToHtml()` |
+| Structured diagnostics | `IBAImportDiagnostics` — imported/skipped/lost counts + hierarchy tree |
+| Post-import modal | `ImportDiagnosticsModal` on dashboard after IBA import |
+| Tests | `iba-import.test.ts` — nested hierarchy, tag semantics, widget diagnostics |
+
+**Not imported (by design):** layout positioning, review/quiz widgets, 3D, Keynote, video/audio widgets, interactive image hotspots.
+
+---
+
+## Wave B.2 — Hierarchical TOC / parts (July 2026)
+
+| Deliverable | Evidence |
+|-------------|----------|
+| `BookPart` model | `src/types/book.ts` — optional `parts[]` on `Book`; backward compatible with flat `.openbook` files |
+| Nested EPUB nav | `buildEpubNavListItems()` in `src/lib/book-structure.ts`; flat spine order preserved |
+| KBP nested TOC | `toc.json` + `manifest.toc` in KBP export |
+| Editor parts UI | `ChapterSidebar` — add/rename/delete parts, assign chapters |
+| Publish readiness | Empty-part errors in `assessPublishReadiness()` |
+| Tests | `epub-hierarchical-toc.test.ts`, `book-structure.test.ts` |
 
 ---
 
@@ -67,10 +95,9 @@ flowchart LR
 
 **Suggested build order:**
 
-1. **Parallel, low coupling:** #19 IBA import, #49 hierarchical TOC (coordinate book model), Ollama expand, EPUB 3.3 metadata.
-2. **After ADR-0005 accepted:** git-for-books (folder mode + diff-friendly saves + Electron Git panel).
-3. **After Ollama expand:** RAG consistency agent (Electron embeddings store).
-4. **After ADR-0006 accepted:** optional WebDAV/S3 backup (depends on stable `.openbook` path model from git or zip save).
+1. **Parallel, low coupling:** ~~#19 IBA import~~ ✅, ~~#49 hierarchical TOC~~ ✅, ~~#61 Ollama expand~~ ✅, ~~#60 RAG agent~~ ✅, EPUB 3.3 metadata ([#62](https://github.com/freqkflag/openbook-author/issues/62)).
+2. **After ADR-0005 accepted:** git-for-books ([#59](https://github.com/freqkflag/openbook-author/issues/59)) — folder mode + diff-friendly saves + Electron Git panel.
+3. **After ADR-0006 accepted:** optional WebDAV/S3 backup ([#63](https://github.com/freqkflag/openbook-author/issues/63)) — depends on stable `.openbook` path model from git or zip save.
 
 ---
 
@@ -79,18 +106,28 @@ flowchart LR
 Wave B is **done** when all seven checklist rows are ✅ and:
 
 - ADR-0005 and ADR-0006 are **Accepted** (or superseded by amended ADRs).
-- GitHub issues exist and are linked for items 3–7 (currently audit placeholders only).
+- GitHub issues are linked for items 3–7 ([#59](https://github.com/freqkflag/openbook-author/issues/59)–[#63](https://github.com/freqkflag/openbook-author/issues/63)).
 - [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §5 Wave B status reads **shipped**.
 - Relevant modules have Vitest coverage (import report, TOC nav export, git save round-trip, RAG fixture, EPUB 3.3 OPF snapshot).
 
 ---
 
+## Related issues — close as shipped
+
+| Issue | Title | Note |
+|-------|-------|------|
+| [#19](https://github.com/freqkflag/openbook-author/issues/19) | Improved IBA import | Wave B.1 — diagnostics + hierarchy |
+| [#49](https://github.com/freqkflag/openbook-author/issues/49) | Hierarchical TOC structure mode | Wave B.2 — nested parts + EPUB nav |
+| [#60](https://github.com/freqkflag/openbook-author/issues/60) | AI RAG consistency pass | Wave B item 4 — `8bdadf4` |
+| [#61](https://github.com/freqkflag/openbook-author/issues/61) | Expand Ollama | Wave B item 5 — `94f6b29` |
+
 ## Related issues — keep open (Wave B scope)
 
 | Issue | Title | Wave B track |
 |-------|-------|--------------|
-| [#19](https://github.com/freqkflag/openbook-author/issues/19) | Improved IBA import | Item 1 |
-| [#49](https://github.com/freqkflag/openbook-author/issues/49) | Hierarchical TOC structure mode | Item 2 |
+| [#59](https://github.com/freqkflag/openbook-author/issues/59) | Git-friendly project folder mode | Item 3 |
+| [#62](https://github.com/freqkflag/openbook-author/issues/62) | EPUB 3.3 metadata upgrade | Item 6 |
+| [#63](https://github.com/freqkflag/openbook-author/issues/63) | Self-hosted sync | Item 7 |
 
 Wave C items ([#15](https://github.com/freqkflag/openbook-author/issues/15)–[#20](https://github.com/freqkflag/openbook-author/issues/20), realtime collab [#22](https://github.com/freqkflag/openbook-author/issues/22)) remain out of Wave B scope.
 
@@ -99,5 +136,4 @@ Wave C items ([#15](https://github.com/freqkflag/openbook-author/issues/15)–[#
 ## Next steps
 
 1. **Review ADR-0005 and ADR-0006** — accept or amend before git/sync implementation.
-2. **File GitHub issues** for items 3–7 using [COMPETITIVE_AUDIT.md §9](COMPETITIVE_AUDIT.md#9-suggested-github-issue-titles) titles; update the checklist Issue column.
-3. **Start implementation tracks** — recommend #19 and EPUB 3.3 first (smallest architecture surface).
+2. **Continue Wave B build** — [#59](https://github.com/freqkflag/openbook-author/issues/59) git-for-books, [#62](https://github.com/freqkflag/openbook-author/issues/62) EPUB 3.3 metadata, [#63](https://github.com/freqkflag/openbook-author/issues/63) self-hosted sync.
