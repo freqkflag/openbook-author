@@ -1,0 +1,41 @@
+---
+description: Runtime constraints for Cursor cloud automations on OpenBook Author
+alwaysApply: false
+---
+
+# Automation Runtime
+
+Cloud agent containers for this repo are configured via `.cursor/environment.json`.
+
+## Boot sequence
+
+On each run, Cursor executes `.cursor/scripts/agent-bootstrap.sh`, which runs `npm ci` and verifies tooling.
+
+## Available tools
+
+- **Node / npm** — project dependencies and `npm test`
+- **python** and **python3** — `python-is-python3` in the cloud Dockerfile
+- **gh** — read-only GitHub issue/PR queries when authenticated
+- **open_git_pr** MCP — only writable GitHub path in automations
+
+## Do not assume
+
+- `gh issue comment` / `gh issue edit` (write-disabled in automations)
+- Bare `python` without checking PATH — prefer `python3`, `node`, `npm`, or webhook payload JSON
+
+## Handoff patterns
+
+| Agent type | Apply results via |
+|------------|-------------------|
+| DISPATCH | `.openbook/dispatch/issue-<n>.yaml` + `open_git_pr` → `router-apply-dispatch-pr.yml` |
+| RESEARCH | `.openbook/research/issue-<n>.yaml` + PR → `router-apply-research-pr.yml` |
+| Execution agents | `.openbook/execution/issue-<n>.yaml` + PR → `router-apply-execution-pr.yml` |
+| REVIEW | PR comment with `<!-- openbook-author:review -->` → `router-apply-review.yml` |
+
+## Issue context
+
+Prefer parsing the webhook payload first. Fallback read-only:
+
+```bash
+gh issue view <number> --json number,title,body,labels,comments
+```
