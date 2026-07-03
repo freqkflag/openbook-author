@@ -166,6 +166,7 @@ my-book.openbook/   (zip archive)
 
 | Doc | Description |
 |-----|-------------|
+| [docs/agent-router.md](docs/agent-router.md) | Issue router, handoff YAML contract, lane orchestration |
 | [docs/guidebook-blocks.md](docs/guidebook-blocks.md) | Guidebook block types, HTML contract, seed helpers |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing release notes |
