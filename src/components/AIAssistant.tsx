@@ -12,14 +12,18 @@ import {
   Loader2,
   X,
   Settings,
+  FilePlus2,
 } from "lucide-react";
-import type { AIAction } from "@/types/book";
+import type { AIAction, Book } from "@/types/book";
+import { buildBookAIContext, parseGeneratedSectionHtml } from "@/lib/ai-context";
 import { useBookStore } from "@/store/book-store";
 
 interface AIAssistantProps {
   chapterContent: string;
-  bookTitle: string;
+  book: Pick<Book, "metadata" | "chapters">;
+  currentChapterId: string;
   onApply: (html: string, mode: "replace" | "append") => void;
+  onGenerateSection?: (title: string, content: string) => void;
   onClose: () => void;
 }
 
@@ -30,9 +34,22 @@ const ACTIONS: { id: AIAction; label: string; icon: React.ReactNode; description
   { id: "rewrite", label: "Rewrite", icon: <RefreshCw size={14} />, description: "Fresh take, same meaning" },
   { id: "summarize", label: "Summarize", icon: <FileText size={14} />, description: "Condense content" },
   { id: "outline", label: "Outline", icon: <ListTree size={14} />, description: "Generate chapter structure" },
+  {
+    id: "generate-section",
+    label: "Generate section",
+    icon: <FilePlus2 size={14} />,
+    description: "Create a new section from a prompt",
+  },
 ];
 
-export default function AIAssistant({ chapterContent, bookTitle, onApply, onClose }: AIAssistantProps) {
+export default function AIAssistant({
+  chapterContent,
+  book,
+  currentChapterId,
+  onApply,
+  onGenerateSection,
+  onClose,
+}: AIAssistantProps) {
   const { aiSettings } = useBookStore();
   const [action, setAction] = useState<AIAction>("continue");
   const [customPrompt, setCustomPrompt] = useState("");
@@ -42,6 +59,8 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
   const [showSettings, setShowSettings] = useState(false);
   const [localSettings, setLocalSettings] = useState(aiSettings);
   const updateAISettings = useBookStore((s) => s.updateAISettings);
+
+  const bookContext = buildBookAIContext(book, currentChapterId);
 
   const runAI = async () => {
     setLoading(true);
@@ -54,8 +73,11 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
         body: JSON.stringify({
           action,
           content: chapterContent,
-          context: `Book title: ${bookTitle}`,
-          customPrompt: action === "custom" ? customPrompt : undefined,
+          context: bookContext,
+          customPrompt:
+            action === "custom" || action === "generate-section" ? customPrompt : undefined,
+          voiceProfile: aiSettings.voiceProfile,
+          styleGuide: aiSettings.styleGuide,
           ...aiSettings,
         }),
       });
@@ -73,6 +95,8 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
     updateAISettings(localSettings);
     setShowSettings(false);
   };
+
+  const isGenerateSection = action === "generate-section";
 
   return (
     <div className="flex flex-col h-full bg-[#121A2B]/90 backdrop-blur-xl border-l border-fuchsia-500/20">
@@ -162,6 +186,26 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
               />
             </label>
           )}
+          <label className="block text-xs text-slate-400">
+            Voice profile
+            <input
+              type="text"
+              value={localSettings.voiceProfile || ""}
+              onChange={(e) => setLocalSettings({ ...localSettings, voiceProfile: e.target.value })}
+              placeholder="e.g. conversational travel guide"
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+            />
+          </label>
+          <label className="block text-xs text-slate-400">
+            Style guide
+            <textarea
+              value={localSettings.styleGuide || ""}
+              onChange={(e) => setLocalSettings({ ...localSettings, styleGuide: e.target.value })}
+              placeholder="Tone rules, audience, words to avoid…"
+              rows={4}
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-none"
+            />
+          </label>
           <button
             onClick={saveSettings}
             className="w-full py-2 rounded-lg bg-gradient-to-r from-cyan-500/20 to-fuchsia-500/20 border border-cyan-500/30 text-cyan-300 text-sm font-medium hover:from-cyan-500/30 hover:to-fuchsia-500/30 transition-all"
@@ -169,7 +213,7 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
             Save Settings
           </button>
           <p className="text-xs text-slate-500">
-            Keys are stored locally in your browser. For Ollama, no API key is needed.
+            Keys and voice settings are stored locally in your browser. For Ollama, no API key is needed.
           </p>
         </div>
       ) : (
@@ -197,9 +241,13 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
               value={customPrompt}
               onChange={(e) => {
                 setCustomPrompt(e.target.value);
-                if (e.target.value) setAction("custom");
+                if (e.target.value && action !== "generate-section") setAction("custom");
               }}
-              placeholder="Or type a custom instruction..."
+              placeholder={
+                isGenerateSection
+                  ? "Describe the new section to generate…"
+                  : "Or type a custom instruction…"
+              }
               rows={2}
               className="w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 resize-none"
             />
@@ -208,11 +256,11 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
           <div className="px-3">
             <button
               onClick={runAI}
-              disabled={loading}
+              disabled={loading || (isGenerateSection && !customPrompt.trim())}
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-sm font-medium hover:from-fuchsia-500 hover:to-purple-500 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)]"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {loading ? "Thinking..." : "Generate"}
+              {loading ? "Thinking..." : isGenerateSection ? "Generate section" : "Generate"}
             </button>
           </div>
 
@@ -228,20 +276,32 @@ export default function AIAssistant({ chapterContent, bookTitle, onApply, onClos
                 className="flex-1 overflow-y-auto p-3 rounded-lg bg-[#0B1020] border border-white/10 text-sm text-slate-300 prose prose-invert prose-sm max-w-none"
                 dangerouslySetInnerHTML={{ __html: result }}
               />
-              <div className="flex gap-2 mt-2">
+              {isGenerateSection && onGenerateSection ? (
                 <button
-                  onClick={() => onApply(result, "append")}
-                  className="flex-1 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-medium hover:bg-cyan-500/30"
+                  onClick={() => {
+                    const { title, content } = parseGeneratedSectionHtml(result);
+                    onGenerateSection(title, content);
+                  }}
+                  className="mt-2 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-medium hover:bg-cyan-500/30"
                 >
-                  Append
+                  Add as new section
                 </button>
-                <button
-                  onClick={() => onApply(result, "replace")}
-                  className="flex-1 py-2 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 text-xs font-medium hover:bg-fuchsia-500/30"
-                >
-                  Replace
-                </button>
-              </div>
+              ) : (
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => onApply(result, "append")}
+                    className="flex-1 py-2 rounded-lg bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-medium hover:bg-cyan-500/30"
+                  >
+                    Append
+                  </button>
+                  <button
+                    onClick={() => onApply(result, "replace")}
+                    className="flex-1 py-2 rounded-lg bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 text-xs font-medium hover:bg-fuchsia-500/30"
+                  >
+                    Replace
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>

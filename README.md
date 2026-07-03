@@ -52,7 +52,9 @@ The Guidebook template includes four sample chapters. **Chapter 1: Getting Start
 - **Improve & rewrite** — Polish prose and refresh voice
 - **Expand & summarize** — Add depth or condense content
 - **Generate outlines** — Structure new chapters
+- **Generate section** — Create a new section from a prompt (book-aware context)
 - **Custom prompts** — Ask anything about your content
+- **Voice profile & style guide** — Consistent tone across AI actions
 - **Multi-provider** — OpenAI, Anthropic Claude, or local Ollama
 
 ### iBooks Author Import
@@ -117,12 +119,29 @@ npm run electron:build
 
 Output: `dist/OpenBook Author.dmg`
 
+## Docker
+
+Run the production web app in a container (Next.js standalone build):
+
+```bash
+docker compose up --build
+```
+
+Open [http://localhost:3000](http://localhost:3000).
+
+Build or run the image directly:
+
+```bash
+docker build -t openbook-author .
+docker run --rm -p 3000:3000 openbook-author
+```
+
 ## AI Setup
 
 1. Open any book in the editor
 2. Click the **AI** button in the toolbar
 3. Click the gear icon to open **AI Settings**
-4. Choose your provider and enter your API key (or use Ollama locally)
+4. Choose your provider, enter your API key (or use Ollama locally), and optionally set **Voice profile** and **Style guide**
 
 ### Ollama (free, local)
 ```bash

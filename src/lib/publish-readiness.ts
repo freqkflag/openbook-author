@@ -9,6 +9,7 @@ import { getAssetByFilename } from "@/lib/asset-store";
 import { isKbpEnabled } from "@/lib/kbp";
 
 const H1_RE = /<h1[\s>]/i;
+const HEADING_RE = /<h([1-6])[\s>]/gi;
 
 export type ReadinessSeverity = "error" | "warning";
 
@@ -149,7 +150,7 @@ function checkMissingAltText(book: Book, issues: ReadinessIssue[]): void {
         issues.push(
           issue(
             `missing-alt-${chapter.id}-${tag.slice(0, 24)}`,
-            "warning",
+            "error",
             `Image missing alt text in “${chapter.title}”`,
             chapter
           )
@@ -323,6 +324,45 @@ function checkTocIssues(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function checkHeadingHierarchy(book: Book, issues: ReadinessIssue[]): void {
+  for (const chapter of book.chapters) {
+    const levels: number[] = [];
+    let match: RegExpExecArray | null;
+    const re = new RegExp(HEADING_RE.source, "gi");
+    while ((match = re.exec(chapter.content)) !== null) {
+      levels.push(Number.parseInt(match[1], 10));
+    }
+
+    if (levels.length === 0) continue;
+
+    const h1Count = levels.filter((level) => level === 1).length;
+    if (h1Count > 1) {
+      issues.push(
+        issue(
+          `multiple-h1-${chapter.id}`,
+          "warning",
+          `“${chapter.title}” has ${h1Count} H1 headings — use one H1 per section`,
+          chapter
+        )
+      );
+    }
+
+    for (let i = 1; i < levels.length; i += 1) {
+      if (levels[i] - levels[i - 1] > 1) {
+        issues.push(
+          issue(
+            `heading-skip-${chapter.id}-${i}`,
+            "warning",
+            `Heading level skip (H${levels[i - 1]} → H${levels[i]}) in “${chapter.title}”`,
+            chapter
+          )
+        );
+        break;
+      }
+    }
+  }
+}
+
 function checkKbpStructure(book: Book, issues: ReadinessIssue[]): void {
   if (!isKbpEnabled(book)) return;
 
@@ -399,6 +439,7 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
   checkEmptyChapters(book, issues);
   checkAssetRefs(book, issues);
   checkMissingAltText(book, issues);
+  checkHeadingHierarchy(book, issues);
   checkGuidebookBlocks(book, issues);
   checkTocIssues(book, issues);
   checkKbpStructure(book, issues);

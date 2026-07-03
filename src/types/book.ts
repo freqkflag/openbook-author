@@ -117,6 +117,7 @@ export type AIAction =
   | "summarize"
   | "expand"
   | "rewrite"
+  | "generate-section"
   | "custom";
 
 export interface AISettings {
@@ -124,4 +125,8 @@ export interface AISettings {
   apiKey: string;
   model: string;
   baseUrl?: string;
+  /** Short tone label, e.g. "conversational travel guide" */
+  voiceProfile?: string;
+  /** Longer style rules the AI should follow */
+  styleGuide?: string;
 }

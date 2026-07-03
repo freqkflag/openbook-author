@@ -22,9 +22,16 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 14 | Fixed-layout (landscape) editor | ⬜ Next (iBooks Author parity) |
 | 15 | Better IBA import | ⬜ Next (iBooks Author parity) |
 | 16 | PDF export | ✅ Print dialog (web) + native save (Electron); print-ready presets pending |
-| 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate; platform-specific rules pending |
+| 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate; heading hierarchy + alt text errors (#25) |
 | 18 | Metadata for stores | ✅ ISBN, BISAC, keywords, age rating, series fields |
-| 24 | Tests | 🟡 Vitest + EPUB snapshot tests; expand coverage |
+| 19 | Book-aware AI context | ✅ TOC + prior chapter excerpts in `/api/ai` (#18) |
+| 20 | AI section generation | ✅ Generate section action in AI panel (#19) |
+| 21 | Style guide / voice profile | ✅ Voice profile + style guide in AI settings (#20) |
+| 22 | Auto-save indicator + recovery | ✅ Relative last-saved badge; sessionStorage crash buffer (#22) |
+| 23 | PWA / offline mode | ⬜ Planned |
+| 24 | Tests | 🟡 Vitest + EPUB snapshots + IBA import fixture (#23) |
+| 25 | Accessibility | 🟡 Heading hierarchy warnings; missing alt blocks export (#25) |
+| 26 | Docker deployment | ✅ Multi-stage Dockerfile + docker-compose (#26) |
 
 ---
 
@@ -104,30 +111,33 @@ ISBN, BISAC categories, keywords, age rating, and series fields in Book Properti
 
 ## AI — go deeper
 
-**19. Book-aware AI context** ⬜  
-Right now AI sees one chapter. Passing the full outline + prior chapter summaries would make “continue writing” and “generate outline” much smarter.
+**19. Book-aware AI context** ✅  
+Passes full outline and prior chapter excerpts to the AI assistant so continue, outline, and generate-section actions understand the whole book.
 
-**20. AI section generation** ⬜  
-“Add a workbook page for Chapter 3” or “Generate 5 quiz questions from this section” tied directly to the section picker.
+**20. AI section generation** ✅  
+**Generate section** in the AI panel creates a new chapter/section from a prompt and adds it via the store.
 
-**21. Style guide / voice profile** ⬜  
-Let authors define tone (“conversational travel guide”, “academic textbook”) and have AI follow it consistently.
+**21. Style guide / voice profile** ✅  
+Voice profile and style guide fields in AI Settings; injected into the `/api/ai` system prompt and persisted in localStorage.
 
 ---
 
 ## Platform & reliability
 
-**22. Auto-save indicator + recovery** ⬜  
-Show last-saved time; recover from a crash buffer if localStorage write fails mid-edit.
+**22. Auto-save indicator + recovery** ✅  
+Save badge shows relative last-saved time; `sessionStorage` crash buffer when `localStorage.setItem` fails.
 
 **23. PWA / offline mode** ⬜  
 Service worker + cached app shell so the web version works on a plane.
 
 **24. Tests** 🟡  
-At minimum: EPUB export snapshot tests, IBA import fixtures, KBP transform unit tests. Without these, export regressions will creep in.
+EPUB export snapshot tests, IBA import fixture test, KBP transform unit tests. Expand coverage over time.
 
-**25. Accessibility** ⬜  
-WCAG contrast in preview, heading hierarchy warnings, required alt text on images before export.
+**25. Accessibility** 🟡  
+Heading hierarchy warnings (skip levels, multiple H1); missing image alt text blocks export.
+
+**26. Docker deployment** ✅  
+Production multi-stage `Dockerfile` and `docker-compose.yml` for the standalone Next.js app.
 
 ---
 

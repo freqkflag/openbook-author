@@ -64,6 +64,7 @@ export default function EditorPage() {
     openBookFromDisk,
     saveStatus,
     saveError,
+    lastSavedAt,
     getAssetBlobs,
   } = useBookStore();
 
@@ -229,6 +230,17 @@ export default function EditorPage() {
     updateChapter(book.id, activeChapter.id, { content: newContent });
   };
 
+  const handleAIGenerateSection = useCallback(
+    (title: string, content: string) => {
+      if (!book) return;
+      const newId = addSectionFromTemplate(book.id, title, content);
+      setSelectedChapterId(newId);
+      setViewMode("edit");
+      setShowAI(false);
+    },
+    [book, addSectionFromTemplate]
+  );
+
   const confirmExportIfNeeded = useCallback((targetBook: typeof book) => {
     if (!targetBook) return false;
     const report = assessPublishReadiness(targetBook);
@@ -292,6 +304,7 @@ export default function EditorPage() {
                 status={saveStatus}
                 error={saveError}
                 hasPackagePath={Boolean(book.packagePath)}
+                lastSavedAt={lastSavedAt}
               />
             </div>
             <p className="text-xs text-slate-500">
@@ -549,8 +562,10 @@ export default function EditorPage() {
           <div className="w-80 shrink-0">
             <AIAssistant
               chapterContent={activeChapter.content}
-              bookTitle={book.metadata.title}
+              book={book}
+              currentChapterId={activeChapter.id}
               onApply={handleAIApply}
+              onGenerateSection={handleAIGenerateSection}
               onClose={() => setShowAI(false)}
             />
           </div>

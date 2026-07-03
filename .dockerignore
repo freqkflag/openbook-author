@@ -1,0 +1,9 @@
+node_modules
+.next
+.git
+dist
+coverage
+*.md
+!README.md
+.env*
+.DS_Store

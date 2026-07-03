@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **AI + Platform Wave 1:** voice profile and style guide in AI settings (injected into `/api/ai` system prompt); book-aware AI context (TOC + prior chapter excerpts); **Generate section** AI action; relative last-saved badge with sessionStorage crash buffer on localStorage failure; heading hierarchy warnings and missing alt text as export-blocking errors; IBA import fixture test; production Docker + docker-compose (#18–#26)
 - PDF export hardening: unit tests for print HTML, section print CSS (workbook/journal/checklist/reflection/practice-quiz), Electron native print-to-PDF with web print fallback (#7)
 - Store metadata fields: ISBN, BISAC, keywords, age rating, series — in Book Properties, EPUB OPF, and KBP manifest (#18)
 - Extended publish readiness: duplicate TOC titles, empty TOC, KBP H1 checks, KBP store metadata warnings (#17)

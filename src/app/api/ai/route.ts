@@ -14,6 +14,8 @@ const PROMPTS: Record<AIAction, string> = {
     "Expand this content with more detail, examples, and depth. Return as HTML paragraphs.",
   rewrite:
     "Rewrite this content in a fresh voice while keeping the same meaning. Return as HTML.",
+  "generate-section":
+    "Generate a complete new book section based on the author's instruction and book context. Start with a single h1 for the section title, then body content as HTML (p, h2, ul, blockquote as needed). Return only the section HTML.",
   custom: "",
 };
 
@@ -22,10 +24,27 @@ interface AIRequestBody {
   content: string;
   context?: string;
   customPrompt?: string;
+  voiceProfile?: string;
+  styleGuide?: string;
   provider: "openai" | "anthropic" | "ollama";
   apiKey: string;
   model: string;
   baseUrl?: string;
+}
+
+function buildSystemPrompt(voiceProfile?: string, styleGuide?: string): string {
+  let system = `You are a professional book writing assistant for OpenBook Author, a FOSS iBooks Author alternative. 
+Always respond with clean HTML suitable for a rich text editor (p, h1-h3, ul, ol, li, blockquote, strong, em).
+Do not wrap in markdown code blocks. Do not include explanatory preamble.`;
+
+  if (voiceProfile?.trim()) {
+    system += `\n\nVoice profile: ${voiceProfile.trim()}`;
+  }
+  if (styleGuide?.trim()) {
+    system += `\n\nStyle guide:\n${styleGuide.trim()}`;
+  }
+
+  return system;
 }
 
 async function callOpenAI(
@@ -117,7 +136,18 @@ async function callOllama(
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as AIRequestBody;
-    const { action, content, context, customPrompt, provider, apiKey, model, baseUrl } = body;
+    const {
+      action,
+      content,
+      context,
+      customPrompt,
+      voiceProfile,
+      styleGuide,
+      provider,
+      apiKey,
+      model,
+      baseUrl,
+    } = body;
 
     if (provider !== "ollama" && !apiKey) {
       return NextResponse.json(
@@ -126,14 +156,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const instruction = action === "custom" ? customPrompt : PROMPTS[action];
+    const instruction =
+      action === "custom"
+        ? customPrompt
+        : action === "generate-section" && customPrompt?.trim()
+          ? `${PROMPTS["generate-section"]}\n\nAuthor request: ${customPrompt.trim()}`
+          : PROMPTS[action];
     if (!instruction) {
       return NextResponse.json({ error: "Missing prompt" }, { status: 400 });
     }
 
-    const system = `You are a professional book writing assistant for OpenBook Author, a FOSS iBooks Author alternative. 
-Always respond with clean HTML suitable for a rich text editor (p, h1-h3, ul, ol, li, blockquote, strong, em).
-Do not wrap in markdown code blocks. Do not include explanatory preamble.`;
+    const system = buildSystemPrompt(voiceProfile, styleGuide);
 
     const user = context
       ? `Book context: ${context}\n\nContent:\n${content}\n\nTask: ${instruction}`

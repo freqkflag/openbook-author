@@ -130,7 +130,7 @@ describe("assessPublishReadiness", () => {
     );
   });
 
-  it("warns on images missing alt text", () => {
+  it("flags images missing alt text as export errors", () => {
     const report = assessPublishReadiness(
       baseBook({
         chapters: [
@@ -143,7 +143,41 @@ describe("assessPublishReadiness", () => {
         ],
       })
     );
-    expect(report.issues.some((i) => i.id.startsWith("missing-alt"))).toBe(true);
+    expect(report.ready).toBe(false);
+    const altIssue = report.issues.find((i) => i.id.startsWith("missing-alt"));
+    expect(altIssue?.severity).toBe("error");
+  });
+
+  it("warns on skipped heading levels", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        chapters: [
+          {
+            id: "ch-1",
+            title: "Chapter 1",
+            content: "<h1>Title</h1><h3>Skipped H2</h3>",
+            order: 0,
+          },
+        ],
+      })
+    );
+    expect(report.issues.some((i) => i.id.startsWith("heading-skip"))).toBe(true);
+  });
+
+  it("warns on multiple H1 headings in one section", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        chapters: [
+          {
+            id: "ch-1",
+            title: "Chapter 1",
+            content: "<h1>One</h1><h1>Two</h1>",
+            order: 0,
+          },
+        ],
+      })
+    );
+    expect(report.issues.some((i) => i.id.startsWith("multiple-h1"))).toBe(true);
   });
 
   it("warns on duplicate chapter titles", () => {

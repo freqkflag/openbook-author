@@ -36,6 +36,7 @@ interface BookStore {
   hydrated: boolean;
   saveStatus: "idle" | "saving" | "saved" | "error";
   saveError: string | null;
+  lastSavedAt: string | null;
 
   hydrate: () => void;
   createBook: (template: BookTemplate, title?: string) => string;
@@ -78,6 +79,8 @@ const defaultAISettings: AISettings = {
   apiKey: "",
   model: "gpt-4o-mini",
   baseUrl: "",
+  voiceProfile: "",
+  styleGuide: "",
 };
 
 const autoSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
@@ -124,7 +127,7 @@ async function writeBookPackage(
 export const useBookStore = create<BookStore>((set, get) => {
   const persistBooks = (books: Book[]) => {
     saveBooks(books);
-    set({ books });
+    set({ books, lastSavedAt: new Date().toISOString() });
   };
 
   const touchBook = (bookId: string, updater: (book: Book) => Book) => {
@@ -141,6 +144,7 @@ export const useBookStore = create<BookStore>((set, get) => {
     hydrated: false,
     saveStatus: "idle",
     saveError: null,
+    lastSavedAt: null,
 
     hydrate: () => {
       if (get().hydrated) return;
@@ -465,9 +469,9 @@ export const useBookStore = create<BookStore>((set, get) => {
             b.id === bookId ? { ...b, packagePath: filePath, updatedAt: new Date().toISOString() } : b
           );
           saveBooks(books);
-          set({ books, saveStatus: "saved" });
+          set({ books, saveStatus: "saved", lastSavedAt: new Date().toISOString() });
         } else {
-          set({ saveStatus: "saved" });
+          set({ saveStatus: "saved", lastSavedAt: new Date().toISOString() });
         }
         setTimeout(() => set({ saveStatus: "idle" }), 2000);
         return filePath;
