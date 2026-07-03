@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { buildBookAIContext, parseGeneratedSectionHtml } from "@/lib/ai-context";
+import {
+  buildBookAIContext,
+  buildConsistencyCheckContext,
+  parseGeneratedSectionHtml,
+} from "@/lib/ai-context";
 import type { Book } from "@/types/book";
 
 function miniBook(overrides: Partial<Book> = {}): Pick<Book, "metadata" | "chapters"> {
@@ -50,5 +54,36 @@ describe("buildBookAIContext", () => {
     );
     expect(parsed.title).toBe("Workbook Page");
     expect(parsed.content).toBe("<p>Reflect on your goals.</p>");
+  });
+});
+
+describe("buildConsistencyCheckContext", () => {
+  it("assembles book-wide manuscript excerpts with keyword RAG", async () => {
+    const result = await buildConsistencyCheckContext(miniBook(), { useEmbeddings: false });
+    expect(result.context).toContain("Book title: Trail Guide");
+    expect(result.context).toContain("Table of contents:");
+    expect(result.manuscript).toContain("Retrieved passages");
+    expect(result.manuscript).toContain("Per-chapter snippets");
+    expect(result.ragMode).toBe("keyword");
+    expect(result.chaptersScanned).toBe(3);
+    expect(result.chunksUsed).toBeGreaterThan(0);
+    expect(result.scopeNote).toContain("keyword retrieval");
+  });
+
+  it("truncates oversized manuscript payloads", async () => {
+    const big = miniBook({
+      chapters: Array.from({ length: 40 }, (_, i) => ({
+        id: `ch-${i}`,
+        title: `Chapter ${i + 1}`,
+        content: `<p>${"Lorem ipsum dolor sit amet. ".repeat(80)}</p>`,
+        order: i,
+      })),
+    });
+    const result = await buildConsistencyCheckContext(big, {
+      useEmbeddings: false,
+      maxManuscriptChars: 2000,
+    });
+    expect(result.manuscript.length).toBeLessThanOrEqual(2100);
+    expect(result.manuscript).toContain("[Manuscript truncated");
   });
 });

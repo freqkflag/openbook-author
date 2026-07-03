@@ -1,3 +1,11 @@
+import {
+  buildBookChunkIndex,
+  buildPerChapterSnippets,
+  formatChunksForPrompt,
+  retrieveRelevantChunks,
+  retrieveRelevantChunksWithEmbeddings,
+  type OllamaEmbedConfig,
+} from "@/lib/ai-rag";
 import type { Book, Chapter } from "@/types/book";
 
 const EXCERPT_MAX_CHARS = 400;
@@ -71,6 +79,94 @@ export function buildBookAIContext(
   }
 
   return parts.join("\n\n");
+}
+
+export interface ConsistencyContextOptions {
+  /** When true and ollama config is set, try local Ollama embeddings (Electron-friendly) */
+  useEmbeddings?: boolean;
+  ollama?: OllamaEmbedConfig;
+  maxManuscriptChars?: number;
+}
+
+export interface ConsistencyContextResult {
+  context: string;
+  manuscript: string;
+  scopeNote: string;
+  ragMode: "keyword" | "embedding";
+  chaptersScanned: number;
+  chunksUsed: number;
+}
+
+const DEFAULT_MAX_MANUSCRIPT_CHARS = 10_000;
+
+/** Assemble book-wide context for the consistency-check AI action */
+export async function buildConsistencyCheckContext(
+  book: Pick<Book, "metadata" | "chapters">,
+  options: ConsistencyContextOptions = {}
+): Promise<ConsistencyContextResult> {
+  const maxChars = options.maxManuscriptChars ?? DEFAULT_MAX_MANUSCRIPT_CHARS;
+  const chaptersWithContent = book.chapters.filter((ch) => stripHtml(ch.content).length > 0);
+  const chunks = buildBookChunkIndex(book.chapters);
+
+  let ragMode: "keyword" | "embedding" = "keyword";
+  let retrieved = retrieveRelevantChunks(chunks, { topK: 14 });
+
+  if (options.useEmbeddings && options.ollama?.baseUrl) {
+    const embedded = await retrieveRelevantChunksWithEmbeddings(chunks, {
+      topK: 14,
+      ollama: options.ollama,
+    });
+    if (embedded.chunks.length > 0) {
+      retrieved = embedded.chunks;
+      ragMode = embedded.mode;
+    }
+  }
+
+  const ragBlock = formatChunksForPrompt(retrieved);
+  const snippets = buildPerChapterSnippets(book.chapters, 160);
+
+  let manuscript = [
+    "Retrieved passages (highest relevance for names, timeline, facts):",
+    ragBlock,
+    "",
+    "Per-chapter snippets (full book overview):",
+    snippets,
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+
+  if (manuscript.length > maxChars) {
+    manuscript = `${manuscript.slice(0, maxChars).trim()}…\n\n[Manuscript truncated for model context limits.]`;
+  }
+
+  const contextParts = [
+    `Book title: ${book.metadata.title}`,
+    `Author: ${book.metadata.author || "Unknown"}`,
+    `Sections with content: ${chaptersWithContent.length} of ${book.chapters.length}`,
+  ];
+
+  const toc = buildBookToc(book.chapters);
+  if (toc) {
+    contextParts.push(`Table of contents:\n${toc}`);
+  }
+
+  if (book.metadata.description.trim()) {
+    contextParts.push(`Description: ${book.metadata.description.trim()}`);
+  }
+
+  const scopeNote =
+    ragMode === "embedding"
+      ? "Using local Ollama embeddings for semantic retrieval. Scans sampled excerpts — not every sentence."
+      : "Using keyword retrieval (no embeddings). Scans sampled excerpts — not every sentence.";
+
+  return {
+    context: contextParts.join("\n\n"),
+    manuscript,
+    scopeNote,
+    ragMode,
+    chaptersScanned: chaptersWithContent.length,
+    chunksUsed: retrieved.length,
+  };
 }
 
 /** Parse AI-generated section HTML into title + body */

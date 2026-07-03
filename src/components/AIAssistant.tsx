@@ -19,7 +19,11 @@ import {
   HardDrive,
 } from "lucide-react";
 import type { AIAction, Book } from "@/types/book";
-import { buildBookAIContext, parseGeneratedSectionHtml } from "@/lib/ai-context";
+import {
+  buildBookAIContext,
+  buildConsistencyCheckContext,
+  parseGeneratedSectionHtml,
+} from "@/lib/ai-context";
 import {
   DEFAULT_OLLAMA_BASE_URL,
   OLLAMA_MODEL_PRESETS,
@@ -118,6 +122,10 @@ export default function AIAssistant({
   const [ollamaModelCount, setOllamaModelCount] = useState<number | undefined>();
   const updateAISettings = useBookStore((s) => s.updateAISettings);
 
+  const isElectron = typeof window !== "undefined" && !!window.openBook?.isElectron;
+  const isConsistencyCheck = action === "consistency-check";
+  const isGenerateSection = action === "generate-section";
+
   const bookContext = buildBookAIContext(book, currentChapterId);
 
   const checkOllama = useCallback(async (baseUrl?: string) => {
@@ -158,13 +166,31 @@ export default function AIAssistant({
     setError("");
     setResult("");
     try {
+      let context = bookContext;
+      let content = chapterContent;
+
+      if (isConsistencyCheck) {
+        const assembled = await buildConsistencyCheckContext(book, {
+          useEmbeddings: isElectron && aiSettings.provider === "ollama",
+          ollama:
+            aiSettings.provider === "ollama"
+              ? {
+                  baseUrl: aiSettings.baseUrl || DEFAULT_OLLAMA_BASE_URL,
+                  model: "nomic-embed-text",
+                }
+              : undefined,
+        });
+        context = `${assembled.context}\n\nRetrieval: ${assembled.scopeNote} (${assembled.chunksUsed} chunks from ${assembled.chaptersScanned} sections)`;
+        content = assembled.manuscript;
+      }
+
       const res = await fetch("/api/ai", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           action,
-          content: chapterContent,
-          context: bookContext,
+          content,
+          context,
           customPrompt:
             action === "custom" || action === "generate-section" ? customPrompt : undefined,
           voiceProfile: aiSettings.voiceProfile,
@@ -201,7 +227,6 @@ export default function AIAssistant({
     }
   };
 
-  const isGenerateSection = action === "generate-section";
   const isOllama = localSettings.provider === "ollama";
   const showOllamaBadge = isOllama || (aiSettings.provider === "ollama" && !showSettings);
 
@@ -397,21 +422,34 @@ export default function AIAssistant({
             ))}
           </div>
 
+          {isConsistencyCheck && (
+            <div className="mx-3 mb-2 p-2.5 rounded-lg bg-cyan-500/5 border border-cyan-500/20 text-[11px] text-slate-400 leading-relaxed">
+              <p className="text-cyan-300/90 font-medium mb-1">Scope limits</p>
+              <p>
+                Scans sampled excerpts across all sections — not every sentence. Browser mode uses
+                keyword retrieval; Electron + Ollama can use local embeddings. Ollama keeps analysis
+                fully private. Not a substitute for human proofreading.
+              </p>
+            </div>
+          )}
+
           <div className="px-3 pb-2">
-            <textarea
-              value={customPrompt}
-              onChange={(e) => {
-                setCustomPrompt(e.target.value);
-                if (e.target.value && action !== "generate-section") setAction("custom");
-              }}
-              placeholder={
-                isGenerateSection
-                  ? "Describe the new section to generate…"
-                  : "Or type a custom instruction…"
-              }
-              rows={2}
-              className="w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 resize-none"
-            />
+            {!isConsistencyCheck && (
+              <textarea
+                value={customPrompt}
+                onChange={(e) => {
+                  setCustomPrompt(e.target.value);
+                  if (e.target.value && action !== "generate-section") setAction("custom");
+                }}
+                placeholder={
+                  isGenerateSection
+                    ? "Describe the new section to generate…"
+                    : "Or type a custom instruction…"
+                }
+                rows={2}
+                className="w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-xs text-slate-300 placeholder:text-slate-600 resize-none"
+              />
+            )}
           </div>
 
           <div className="px-3">
@@ -421,7 +459,15 @@ export default function AIAssistant({
               className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg bg-gradient-to-r from-fuchsia-600 to-purple-600 text-white text-sm font-medium hover:from-fuchsia-500 hover:to-purple-500 disabled:opacity-50 transition-all shadow-[0_0_20px_rgba(217,70,239,0.3)]"
             >
               {loading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
-              {loading ? "Thinking..." : isGenerateSection ? "Generate section" : "Generate"}
+              {loading
+                ? isConsistencyCheck
+                  ? "Scanning book…"
+                  : "Thinking..."
+                : isConsistencyCheck
+                  ? "Run consistency check"
+                  : isGenerateSection
+                    ? "Generate section"
+                    : "Generate"}
             </button>
           </div>
 
@@ -447,6 +493,10 @@ export default function AIAssistant({
                 >
                   Add as new section
                 </button>
+              ) : isConsistencyCheck ? (
+                <p className="mt-2 text-[11px] text-slate-500 text-center">
+                  Review findings and edit sections manually as needed.
+                </p>
               ) : (
                 <div className="flex gap-2 mt-2">
                   <button

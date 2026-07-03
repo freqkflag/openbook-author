@@ -67,6 +67,8 @@ Do not wrap in markdown code blocks. Do not include explanatory preamble.`;
   }
   if (action === "consistency-check") {
     system += `\n\nJSON schema:\n${JSON.stringify(CONSISTENCY_CHECK_JSON_SCHEMA, null, 2)}`;
+    system +=
+      "\n\nWork only from the provided manuscript excerpts. Do not invent plot details. Cite section titles in issue descriptions.";
   }
 
   return system;
@@ -206,9 +208,14 @@ export async function POST(req: NextRequest) {
     const structured = isStructuredJsonAction(action);
     const system = buildSystemPrompt(voiceProfile, styleGuide, action);
 
-    const user = context
-      ? `Book context: ${context}\n\nContent:\n${content}\n\nTask: ${instruction}`
-      : `Content:\n${content}\n\nTask: ${instruction}`;
+    const user =
+      action === "consistency-check"
+        ? context
+          ? `Book context:\n${context}\n\nManuscript excerpts:\n${content}\n\nTask: ${instruction}`
+          : `Manuscript excerpts:\n${content}\n\nTask: ${instruction}`
+        : context
+          ? `Book context: ${context}\n\nContent:\n${content}\n\nTask: ${instruction}`
+          : `Content:\n${content}\n\nTask: ${instruction}`;
 
     let result: string;
     switch (provider) {
