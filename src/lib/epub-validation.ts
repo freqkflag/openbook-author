@@ -67,7 +67,10 @@ export async function validateEpubBytes(
   if (bytes instanceof Blob) {
     buffer = await bytes.arrayBuffer();
   } else if (bytes instanceof Uint8Array) {
-    buffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+    buffer = bytes.buffer.slice(
+      bytes.byteOffset,
+      bytes.byteOffset + bytes.byteLength
+    ) as ArrayBuffer;
   } else {
     buffer = bytes;
   }
