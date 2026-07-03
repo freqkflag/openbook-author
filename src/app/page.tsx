@@ -15,9 +15,10 @@ import {
 } from "lucide-react";
 import { useBookStore } from "@/store/book-store";
 import { TEMPLATES } from "@/lib/templates";
-import { importIBAFile } from "@/lib/iba-import";
+import { importIBAFile, type IBAImportDiagnostics } from "@/lib/iba-import";
 import { importEpubFile } from "@/lib/epub-import";
 import { importDocxFile } from "@/lib/docx-import";
+import ImportDiagnosticsModal from "@/components/ImportDiagnosticsModal";
 import type { Book, BookTemplate } from "@/types/book";
 
 export default function Dashboard() {
@@ -27,6 +28,9 @@ export default function Dashboard() {
   const [newTitle, setNewTitle] = useState("");
   const [importing, setImporting] = useState(false);
   const [importWarnings, setImportWarnings] = useState<string[]>([]);
+  const [ibaDiagnostics, setIbaDiagnostics] = useState<IBAImportDiagnostics | null>(null);
+  const [ibaImportBookId, setIbaImportBookId] = useState<string | null>(null);
+  const [ibaImportTitle, setIbaImportTitle] = useState("");
 
   useEffect(() => {
     hydrate();
@@ -115,10 +119,12 @@ export default function Dashboard() {
       if (!file) return;
       setImporting(true);
       try {
-        const { book, warnings } = await importIBAFile(file);
+        const { book, warnings, diagnostics } = await importIBAFile(file);
         const id = importBook(book);
         setImportWarnings(warnings);
-        router.push(`/editor/${id}`);
+        setIbaDiagnostics(diagnostics);
+        setIbaImportBookId(id);
+        setIbaImportTitle(book.metadata.title);
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to import IBA file");
       } finally {
@@ -324,6 +330,22 @@ export default function Dashboard() {
           </div>
         )}
       </main>
+
+      <ImportDiagnosticsModal
+        open={ibaDiagnostics !== null && ibaImportBookId !== null}
+        sourceLabel="IBA"
+        bookTitle={ibaImportTitle}
+        diagnostics={ibaDiagnostics}
+        onClose={() => {
+          setIbaDiagnostics(null);
+          setIbaImportBookId(null);
+        }}
+        onContinue={() => {
+          if (ibaImportBookId) router.push(`/editor/${ibaImportBookId}`);
+          setIbaDiagnostics(null);
+          setIbaImportBookId(null);
+        }}
+      />
 
       {showTemplates && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
