@@ -5,6 +5,7 @@ import type {
   TrailStopPayload,
   WorkshopPayload,
   CheatSheetPayload,
+  TrailStopAmenity,
 } from "@/types/guidebook";
 import { applyKbpToHtml, isKbpEnabled, KBP_CSS } from "@/lib/kbp";
 import { getAssetByFilename } from "@/lib/asset-store";
@@ -40,6 +41,7 @@ function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: stri
   if (blockType === "trail_stop") {
     const d = (data || {}) as Partial<TrailStopPayload>;
     const amenities = (d.amenities || [])
+      .map((entry) => (typeof entry === "string" ? entry : (entry as TrailStopAmenity).value))
       .filter(Boolean)
       .map((a) => `<li>${escapeHtml(a)}</li>`)
       .join("");

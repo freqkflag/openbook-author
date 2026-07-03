@@ -12,7 +12,7 @@ import type {
   WorkshopExercise,
   CheatSheetItem,
 } from "@/types/guidebook";
-import { defaultGuidebookPayload } from "@/types/guidebook";
+import { defaultGuidebookPayload, createListId, normalizeTrailStopPayload, normalizeWorkshopPayload, normalizeCheatSheetPayload } from "@/types/guidebook";
 
 export interface GuidebookBlockOptions {
   HTMLAttributes: Record<string, unknown>;
@@ -29,8 +29,15 @@ declare module "@tiptap/core" {
 function parsePayload(blockType: GuidebookBlockType, raw: string | null): GuidebookBlockPayload {
   if (raw) {
     try {
-      const parsed = JSON.parse(raw) as GuidebookBlockPayload["data"];
-      return { blockType, data: parsed } as GuidebookBlockPayload;
+      const parsed = JSON.parse(raw);
+      switch (blockType) {
+        case "trail_stop":
+          return { blockType, data: normalizeTrailStopPayload(parsed) };
+        case "workshop":
+          return { blockType, data: normalizeWorkshopPayload(parsed) };
+        case "cheat_sheet":
+          return { blockType, data: normalizeCheatSheetPayload(parsed) };
+      }
     } catch {
       /* fall through */
     }
@@ -76,10 +83,13 @@ function TrailStopEditor({
   data: TrailStopPayload;
   onChange: (data: TrailStopPayload) => void;
 }) {
-  const updateAmenity = (index: number, value: string) => {
-    const amenities = [...data.amenities];
-    amenities[index] = value;
-    onChange({ ...data, amenities });
+  const updateAmenity = (id: string, value: string) => {
+    onChange({
+      ...data,
+      amenities: data.amenities.map((amenity) =>
+        amenity.id === id ? { ...amenity, value } : amenity
+      ),
+    });
   };
 
   return (
@@ -132,7 +142,12 @@ function TrailStopEditor({
           <label className={labelClass}>Amenities</label>
           <button
             type="button"
-            onClick={() => onChange({ ...data, amenities: [...data.amenities, ""] })}
+            onClick={() =>
+              onChange({
+                ...data,
+                amenities: [...data.amenities, { id: createListId(), value: "" }],
+              })
+            }
             className="text-[10px] text-[#00FF88] hover:text-[#00FF88]/80 flex items-center gap-0.5"
           >
             <Plus size={12} /> Add
@@ -142,23 +157,26 @@ function TrailStopEditor({
           <p className="text-xs text-slate-600 italic">No amenities listed.</p>
         ) : (
           <ul className="space-y-1">
-            {data.amenities.map((item, i) => (
-              <li key={i} className="flex gap-1">
+            {data.amenities.map((amenity) => (
+              <li key={amenity.id} className="flex gap-1">
                 <input
                   type="text"
-                  value={item}
-                  onChange={(e) => updateAmenity(i, e.target.value)}
+                  value={amenity.value}
+                  onChange={(e) => updateAmenity(amenity.id, e.target.value)}
                   placeholder="Water, shelter, viewpoint…"
                   className={`${inputClass} flex-1`}
-                  aria-label={`Amenity ${i + 1}`}
+                  aria-label="Amenity"
                 />
                 <button
                   type="button"
                   onClick={() =>
-                    onChange({ ...data, amenities: data.amenities.filter((_, j) => j !== i) })
+                    onChange({
+                      ...data,
+                      amenities: data.amenities.filter((a) => a.id !== amenity.id),
+                    })
                   }
                   className="p-1 text-slate-500 hover:text-red-400"
-                  aria-label={`Remove amenity ${i + 1}`}
+                  aria-label="Remove amenity"
                 >
                   <Trash2 size={12} />
                 </button>
@@ -178,9 +196,13 @@ function WorkshopEditor({
   data: WorkshopPayload;
   onChange: (data: WorkshopPayload) => void;
 }) {
-  const updateExercise = (index: number, patch: Partial<WorkshopExercise>) => {
-    const exercises = data.exercises.map((ex, i) => (i === index ? { ...ex, ...patch } : ex));
-    onChange({ ...data, exercises });
+  const updateExercise = (id: string, patch: Partial<WorkshopExercise>) => {
+    onChange({
+      ...data,
+      exercises: data.exercises.map((exercise) =>
+        exercise.id === id ? { ...exercise, ...patch } : exercise
+      ),
+    });
   };
 
   return (
@@ -205,7 +227,7 @@ function WorkshopEditor({
                 ...data,
                 exercises: [
                   ...data.exercises,
-                  { prompt: "New exercise prompt.", responseType: "short" },
+                  { id: createListId(), prompt: "New exercise prompt.", responseType: "short" },
                 ],
               })
             }
@@ -215,22 +237,24 @@ function WorkshopEditor({
           </button>
         </div>
         <ol className="space-y-2">
-          {data.exercises.map((ex, i) => (
-            <li key={i} className="rounded-lg border border-white/10 p-2 bg-[#0B1020]/60">
+          {data.exercises.map((exercise, i) => (
+            <li key={exercise.id} className="rounded-lg border border-white/10 p-2 bg-[#0B1020]/60">
               <div className="flex items-start gap-2">
                 <span className="text-fuchsia-400 font-bold text-xs w-4 shrink-0 pt-1">{i + 1}.</span>
                 <div className="flex-1 space-y-1">
                   <textarea
-                    value={ex.prompt}
-                    onChange={(e) => updateExercise(i, { prompt: e.target.value })}
+                    value={exercise.prompt}
+                    onChange={(e) => updateExercise(exercise.id, { prompt: e.target.value })}
                     rows={2}
                     className={`${inputClass} resize-none`}
                     aria-label={`Exercise ${i + 1} prompt`}
                   />
                   <select
-                    value={ex.responseType}
+                    value={exercise.responseType}
                     onChange={(e) =>
-                      updateExercise(i, { responseType: e.target.value as "short" | "long" })
+                      updateExercise(exercise.id, {
+                        responseType: e.target.value as "short" | "long",
+                      })
                     }
                     className={inputClass}
                     aria-label={`Exercise ${i + 1} response type`}
@@ -245,7 +269,7 @@ function WorkshopEditor({
                     onClick={() =>
                       onChange({
                         ...data,
-                        exercises: data.exercises.filter((_, j) => j !== i),
+                        exercises: data.exercises.filter((ex) => ex.id !== exercise.id),
                       })
                     }
                     className="p-1 text-slate-500 hover:text-red-400 shrink-0"
@@ -270,9 +294,11 @@ function CheatSheetEditor({
   data: CheatSheetPayload;
   onChange: (data: CheatSheetPayload) => void;
 }) {
-  const updateItem = (index: number, patch: Partial<CheatSheetItem>) => {
-    const items = data.items.map((item, i) => (i === index ? { ...item, ...patch } : item));
-    onChange({ ...data, items });
+  const updateItem = (id: string, patch: Partial<CheatSheetItem>) => {
+    onChange({
+      ...data,
+      items: data.items.map((item) => (item.id === id ? { ...item, ...patch } : item)),
+    });
   };
 
   return (
@@ -305,7 +331,7 @@ function CheatSheetEditor({
           <button
             type="button"
             onClick={() =>
-              onChange({ ...data, items: [...data.items, { label: "", value: "" }] })
+              onChange({ ...data, items: [...data.items, { id: createListId(), label: "", value: "" }] })
             }
             className="text-[10px] text-cyan-400 hover:text-cyan-300 flex items-center gap-0.5"
           >
@@ -314,11 +340,11 @@ function CheatSheetEditor({
         </div>
         <ul className="space-y-1">
           {data.items.map((item, i) => (
-            <li key={i} className="flex gap-1">
+            <li key={item.id} className="flex gap-1">
               <input
                 type="text"
                 value={item.label}
-                onChange={(e) => updateItem(i, { label: e.target.value })}
+                onChange={(e) => updateItem(item.id, { label: e.target.value })}
                 placeholder="Label"
                 className={`${inputClass} flex-1`}
                 aria-label={`Row ${i + 1} label`}
@@ -326,7 +352,7 @@ function CheatSheetEditor({
               <input
                 type="text"
                 value={item.value}
-                onChange={(e) => updateItem(i, { value: e.target.value })}
+                onChange={(e) => updateItem(item.id, { value: e.target.value })}
                 placeholder="Value"
                 className={`${inputClass} flex-1`}
                 aria-label={`Row ${i + 1} value`}
@@ -335,7 +361,10 @@ function CheatSheetEditor({
                 <button
                   type="button"
                   onClick={() =>
-                    onChange({ ...data, items: data.items.filter((_, j) => j !== i) })
+                    onChange({
+                      ...data,
+                      items: data.items.filter((row) => row.id !== item.id),
+                    })
                   }
                   className="p-1 text-slate-500 hover:text-red-400"
                   aria-label={`Remove row ${i + 1}`}
@@ -360,11 +389,13 @@ function TrailStopPreview({ data }: { data: TrailStopPayload }) {
         {data.elevation ? ` · ${data.elevation}` : ""}
       </p>
       {data.notes && <p className="text-xs">{data.notes}</p>}
-      {data.amenities.filter(Boolean).length > 0 && (
+      {data.amenities.filter((a) => a.value.trim()).length > 0 && (
         <ul className="text-xs text-slate-400 list-disc pl-4">
-          {data.amenities.filter(Boolean).map((a, i) => (
-            <li key={i}>{a}</li>
-          ))}
+          {data.amenities
+            .filter((a) => a.value.trim())
+            .map((amenity) => (
+              <li key={amenity.id}>{amenity.value}</li>
+            ))}
         </ul>
       )}
     </div>
@@ -376,12 +407,12 @@ function WorkshopPreview({ data }: { data: WorkshopPayload }) {
     <div className="text-sm space-y-2">
       <p className="font-semibold text-fuchsia-300">{data.title}</p>
       <ol className="space-y-2">
-        {data.exercises.map((ex, i) => (
-          <li key={i} className="text-xs">
+        {data.exercises.map((exercise, i) => (
+          <li key={exercise.id} className="text-xs">
             <span className="text-fuchsia-400 font-bold">{i + 1}. </span>
-            <span className="text-slate-300">{ex.prompt}</span>
+            <span className="text-slate-300">{exercise.prompt}</span>
             <span className="ml-2 text-slate-500 italic">
-              ({ex.responseType === "long" ? "long answer" : "short answer"})
+              ({exercise.responseType === "long" ? "long answer" : "short answer"})
             </span>
           </li>
         ))}
@@ -399,8 +430,8 @@ function CheatSheetPreview({ data }: { data: CheatSheetPayload }) {
           data.columns === 3 ? "grid-cols-3" : "grid-cols-2"
         }`}
       >
-        {data.items.map((item, i) => (
-          <div key={i} className="contents">
+        {data.items.map((item) => (
+          <div key={item.id} className="contents">
             <dt className="text-cyan-400/80 font-medium">{item.label || "—"}</dt>
             <dd className="text-slate-300 col-span-1">{item.value || "—"}</dd>
           </div>
