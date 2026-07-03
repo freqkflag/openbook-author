@@ -1,0 +1,66 @@
+name: Feature Request
+description: Propose a new feature for OpenBook Author with routing-ready context
+title: "[Feature] "
+labels:
+  - enhancement
+  - router-ready
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Structured feature requests route faster through the OpenBook Author agent studio.
+        Fill in each section below — the issue router uses this data for handoff.
+
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What problem does this solve? What outcome do we want?
+      placeholder: "Authors need to reorder chapters without breaking EPUB export structure."
+    validations:
+      required: true
+
+  - type: textarea
+    id: user-story
+    attributes:
+      label: User story
+      description: Who benefits and how?
+      placeholder: "As an author, I want … so that …"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: Primary part of the app this touches
+      options:
+        - Editor
+        - Export / EPUB
+        - AI
+        - Platform / .openbook I/O
+        - Widgets / rich content
+        - Guidebook blocks
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: success-criteria
+    attributes:
+      label: Success criteria
+      description: How will we know this is done? One criterion per line.
+      placeholder: |
+        - Existing tests pass
+        - Feature works in editor and print/EPUB export
+        - Documentation updated
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes
+      description: Optional context, links, mockups, dependencies, or edge cases
+      placeholder: "Related issues, screenshots, constraints, out-of-scope items…"

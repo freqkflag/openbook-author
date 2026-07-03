@@ -1,0 +1,95 @@
+name: Issue Labeler
+on:
+  issues:
+    types: [opened]
+permissions:
+  issues: write
+jobs:
+  label:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Apply keyword labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issue = context.payload.issue;
+            const text = `${issue.title}\n${issue.body || ""}`.toLowerCase();
+
+            const rules = [
+              { labels: ["bug"], keywords: ["bug", "error", "crash"] },
+              { labels: ["enhancement"], keywords: ["feature"] },
+              { labels: ["documentation"], keywords: ["docs"] },
+              { labels: ["design"], keywords: ["ui"] },
+              { labels: ["test"], keywords: ["test"] },
+              { labels: ["refactor"], keywords: ["refactor"] },
+            ];
+
+            const ensureLabel = async (name, color = "ededed") => {
+              try {
+                await github.rest.issues.getLabel({ ...context.repo, name });
+              } catch (error) {
+                if (error.status === 404) {
+                  await github.rest.issues.createLabel({
+                    ...context.repo,
+                    name,
+                    color,
+                    description: "Auto-applied by Issue Labeler",
+                  });
+                } else {
+                  throw error;
+                }
+              }
+            };
+
+            const matched = new Set();
+            for (const rule of rules) {
+              if (rule.keywords.some((keyword) => text.includes(keyword))) {
+                for (const label of rule.labels) {
+                  matched.add(label);
+                }
+              }
+            }
+
+            const existing = new Set(issue.labels.map((label) => label.name));
+            const toAdd = [...matched].filter((label) => !existing.has(label));
+
+            for (const label of toAdd) {
+              await ensureLabel(
+                label,
+                label === "bug"
+                  ? "d73a4a"
+                  : label === "enhancement"
+                    ? "a2eeef"
+                    : label === "documentation"
+                      ? "0075ca"
+                      : label === "design"
+                        ? "d946ef"
+                        : label === "test"
+                          ? "0e8a16"
+                          : label === "refactor"
+                            ? "fbca04"
+                            : "ededed"
+              );
+            }
+
+            if (toAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: issue.number,
+                labels: toAdd,
+              });
+              core.info(`Applied labels: ${toAdd.join(", ")}`);
+            } else {
+              core.info("No new keyword labels matched.");
+            }
+
+            // Signal router after labels are applied (added last, once).
+            const ROUTER_READY = "router-ready";
+            await ensureLabel(ROUTER_READY, "1d76db");
+            if (!existing.has(ROUTER_READY) && !toAdd.includes(ROUTER_READY)) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: issue.number,
+                labels: [ROUTER_READY],
+              });
+            }

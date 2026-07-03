@@ -1,0 +1,90 @@
+name: Bug Report
+description: Report a bug in OpenBook Author with routing-ready reproduction details
+title: "[Bug] "
+labels:
+  - bug
+  - router-ready
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Structured bug reports route faster to the debug agent.
+        Fill in each section below — the issue router uses this data for handoff.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: Short description of the bug in one or two sentences
+      placeholder: "EPUB export drops guidebook block styling for trail stops."
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps that consistently trigger the bug
+      placeholder: |
+        1. Open a guidebook project
+        2. Insert a trail stop block
+        3. Export to EPUB
+        4. Open the EPUB in Books
+      render: markdown
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should have happened?
+      placeholder: "Trail stop blocks render with green border and amenities list in the EPUB."
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+      placeholder: "Trail stop renders as plain text with no block styling."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: affected-area
+    attributes:
+      label: Affected area
+      description: Primary part of the app where the bug occurs
+      options:
+        - Editor
+        - Export / EPUB
+        - AI
+        - Platform / .openbook I/O
+        - Widgets / rich content
+        - Guidebook blocks
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Console errors, stack traces, or links to screenshots
+      placeholder: |
+        ```
+        Paste errors or attach screenshot links
+        ```
+      render: markdown
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, browser or Electron version, OpenBook Author version
+      placeholder: |
+        - macOS 15.x
+        - Chrome 136 / Electron dev build
+        - OpenBook Author v0.2.0
