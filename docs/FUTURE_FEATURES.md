@@ -1,6 +1,6 @@
 # Future Features
 
-Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues).
+Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md).
 
 **Status key:** ✅ Shipped · 🟡 Partial · ⬜ Planned
 
