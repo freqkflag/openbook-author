@@ -1,6 +1,8 @@
 const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require("electron");
 const path = require("path");
+const os = require("os");
 const fs = require("fs").promises;
+const { unlink } = require("fs/promises");
 const { spawn } = require("child_process");
 const http = require("http");
 
@@ -85,6 +87,42 @@ function setupIpc() {
   ipcMain.handle("openbook:read-package", async (_event, filePath) => {
     const data = await fs.readFile(filePath);
     return { buffer: data.buffer, filePath };
+  });
+
+  ipcMain.handle("openbook:print-to-pdf", async (_event, { html, defaultName }) => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: "Save PDF",
+      defaultPath: defaultName || "book.pdf",
+      filters: [{ name: "PDF Document", extensions: ["pdf"] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+
+    let filePath = result.filePath;
+    if (!filePath.toLowerCase().endsWith(".pdf")) filePath += ".pdf";
+
+    const tempPath = path.join(os.tmpdir(), `openbook-print-${Date.now()}.html`);
+    await fs.writeFile(tempPath, html, "utf8");
+
+    const printWin = new BrowserWindow({
+      show: false,
+      webPreferences: {
+        contextIsolation: true,
+        nodeIntegration: false,
+      },
+    });
+
+    try {
+      await printWin.loadFile(tempPath);
+      const pdfBuffer = await printWin.webContents.printToPDF({
+        printBackground: true,
+        marginsType: 0,
+      });
+      await fs.writeFile(filePath, pdfBuffer);
+      return filePath;
+    } finally {
+      printWin.destroy();
+      await unlink(tempPath).catch(() => {});
+    }
   });
 }
 

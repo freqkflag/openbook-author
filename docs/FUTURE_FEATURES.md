@@ -21,7 +21,7 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 13 | More interactive widgets | ⬜ Next (iBooks Author parity) |
 | 14 | Fixed-layout (landscape) editor | ⬜ Next (iBooks Author parity) |
 | 15 | Better IBA import | ⬜ Next (iBooks Author parity) |
-| 16 | PDF export | 🟡 Print dialog export shipped; print-ready presets pending |
+| 16 | PDF export | ✅ Print dialog (web) + native save (Electron); print-ready presets pending |
 | 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate; platform-specific rules pending |
 | 18 | Metadata for stores | ✅ ISBN, BISAC, keywords, age rating, series fields |
 | 24 | Tests | 🟡 Vitest + EPUB snapshot tests; expand coverage |
@@ -91,8 +91,8 @@ Current import gets text + images only. Next step: preserve nested chapter hiera
 
 ## Publishing & distribution
 
-**16. PDF export** 🟡  
-Print dialog PDF export is available from the editor. Print-ready presets (bleed, trim, CMYK) remain planned.
+**16. PDF export** ✅  
+Print-ready HTML export from the editor. **Web:** browser print dialog (Save as PDF). **Electron:** native save dialog with `printToPDF` — no pop-up required. Workbook, journal, checklist, reflection, and practice-quiz sections include print CSS aligned with preview. Unit tests cover document structure, cover/masthead, asset resolution, and section styles. Print-ready presets (bleed, trim, CMYK) remain planned.
 
 **17. Apple Books / KDP validation** 🟡  
 Publish readiness panel checks empty chapters, broken assets, TOC issues, and KBP-specific warnings before export. Platform-specific validators (Apple Transporter, KDP previewer integration) remain planned.

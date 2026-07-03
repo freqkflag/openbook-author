@@ -241,9 +241,9 @@ export default function EditorPage() {
     downloadEpub(book, getAssetBlobs(book.id));
   }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
-  const handleExportPdf = useCallback(() => {
+  const handleExportPdf = useCallback(async () => {
     if (!book || !confirmExportIfNeeded(book)) return;
-    downloadPdf(book, getAssetBlobs(book.id));
+    await downloadPdf(book, getAssetBlobs(book.id));
   }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
   const handleExportKBP = useCallback(() => {

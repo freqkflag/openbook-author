@@ -3,6 +3,165 @@ import { getPreviewHtml, getPreviewMode } from "@/lib/preview";
 import { resolveAssetUrl, resolveHtmlAssets } from "@/lib/asset-store";
 import { GUIDEBOOK_EXPORT_CSS } from "@/lib/epub";
 
+/** Section page print styles aligned with globals.css print-preview section rules */
+const SECTION_PRINT_CSS = `
+.print-body .section-copyright {
+  padding: 2em 1.5em;
+  font-size: 0.9em;
+  color: #444;
+  text-align: center;
+}
+.print-body .section-copyright p { margin: 0.75em 0; }
+.print-body .section-dedication {
+  text-align: center;
+  padding: 4em 2em;
+  font-style: italic;
+}
+.print-body .section-dedication p { margin: 0; font-size: 1.1em; }
+.print-body .section-indented {
+  margin: 1.25em 2em;
+  padding: 1em 1.25em;
+  border-left: 3px solid #888;
+  background: #f8f8f8;
+  font-style: italic;
+}
+.print-body .section-journal {
+  padding: 1em;
+  border: 1px dashed #aaa;
+  background: #fafafa;
+}
+.print-body .journal-date { margin-bottom: 1em; }
+.print-body .journal-prompt {
+  background: #f0f0f0;
+  padding: 0.75em;
+  border-radius: 4px;
+  margin: 1em 0;
+}
+.print-body .journal-lines {
+  border-bottom: 1px solid #ccc;
+  min-height: 1.5em;
+  margin: 0.75em 0;
+}
+.print-body .section-workbook {
+  padding: 1em;
+  border: 2px solid #333;
+  background: #fff;
+}
+.print-body .workbook-instructions {
+  background: #eee;
+  padding: 0.75em;
+  margin-bottom: 1em;
+}
+.print-body .workbook-blank {
+  border-bottom: 1px solid #999;
+  min-height: 1.4em;
+  margin: 0.5em 0;
+  color: #666;
+}
+.print-body .section-checklist .checklist-items {
+  list-style: none;
+  padding-left: 0;
+}
+.print-body .section-checklist li {
+  padding: 0.4em 0;
+  border-bottom: 1px dotted #ddd;
+}
+.print-body .section-reflection ol { margin: 1em 0; }
+.print-body .section-quote {
+  text-align: center;
+  padding: 2em 1.5em;
+}
+.print-body .section-quote blockquote {
+  font-size: 1.25em;
+  border: none;
+  margin: 0;
+  padding: 0;
+}
+.print-body .quote-attribution {
+  margin-top: 1em;
+  font-size: 0.9em;
+  color: #555;
+}
+.print-body .section-photo-spread figure {
+  margin: 1.5em 0;
+  text-align: center;
+}
+.print-body .photo-placeholder {
+  background: #f0f0f0;
+  border: 2px dashed #ccc;
+  padding: 2em;
+  color: #888;
+}
+.print-body .section-timeline .timeline-entry {
+  border-left: 3px solid #333;
+  padding-left: 1.25em;
+  margin: 1.25em 0;
+}
+.print-body .timeline-date { margin-bottom: 0.25em; }
+.print-body .section-glossary dt {
+  margin-top: 0.75em;
+  font-weight: bold;
+}
+.print-body .section-glossary dd {
+  margin-left: 1em;
+  margin-bottom: 0.5em;
+  color: #444;
+}
+.print-body .section-interview .qa-block {
+  margin: 1.25em 0;
+  padding-bottom: 1em;
+  border-bottom: 1px solid #eee;
+}
+.print-body .qa-question { margin-bottom: 0.5em; color: #333; }
+.print-body .qa-answer { color: #555; }
+.print-body .section-takeaways {
+  background: #f9f9f9;
+  padding: 1.25em;
+  border: 1px solid #ddd;
+}
+.print-body .section-resources {
+  padding: 1.25em;
+  border: 1px solid #ddd;
+  background: #fafafa;
+}
+.print-body .section-resources ul { margin: 0.75em 0; }
+.print-body .section-learning-objectives {
+  padding: 1.25em;
+  border-left: 4px solid #4d7dff;
+  background: #f8faff;
+}
+.print-body .section-learning-objectives ol { margin: 0.75em 0; }
+.print-body .section-practice-quiz {
+  padding: 1.25em;
+  border: 2px solid #333;
+  background: #fff;
+}
+.print-body .section-practice-quiz .quiz-question {
+  margin: 1.25em 0;
+  padding-bottom: 1em;
+  border-bottom: 1px dotted #ccc;
+}
+.print-body .quiz-answer-line {
+  border-bottom: 1px solid #999;
+  min-height: 1.4em;
+  margin-top: 0.5em;
+  color: #666;
+}
+.print-body .section-bibliography {
+  padding: 1.25em;
+  font-size: 0.95em;
+}
+.print-body .bibliography-entries {
+  list-style: none;
+  padding-left: 0;
+}
+.print-body .bibliography-entries li {
+  margin-bottom: 0.75em;
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+`;
+
 /** Print-oriented CSS aligned with globals.css print-preview rules */
 const PRINT_BASE_CSS = `
 @page { margin: 0.75in; }
@@ -108,6 +267,7 @@ body {
   object-fit: contain;
 }
 ${GUIDEBOOK_EXPORT_CSS.replace(/\.guidebook/g, ".print-body .guidebook")}
+${SECTION_PRINT_CSS}
 `;
 
 function escapeHtml(text: string): string {
@@ -118,7 +278,8 @@ function escapeHtml(text: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function buildPrintDocument(book: Book, assetBlobs?: Map<string, Blob>): string {
+/** Builds a complete print-ready HTML document for PDF export. */
+export function buildPrintDocument(book: Book, assetBlobs?: Map<string, Blob>): string {
   const mode = getPreviewMode(book);
   const kbpClass = mode === "kbp" ? "print-kbp" : "";
   const coverSrc = book.metadata.coverImage
@@ -167,9 +328,7 @@ function buildPrintDocument(book: Book, assetBlobs?: Map<string, Blob>): string 
 </html>`;
 }
 
-/** Opens the browser print dialog for a PDF-friendly export of the full book. */
-export function downloadPdf(book: Book, assetBlobs?: Map<string, Blob>): void {
-  const html = buildPrintDocument(book, assetBlobs);
+function openBrowserPrintDialog(html: string): void {
   const printWindow = window.open("", "_blank");
   if (!printWindow) {
     alert("Pop-up blocked. Allow pop-ups to export PDF.");
@@ -181,8 +340,31 @@ export function downloadPdf(book: Book, assetBlobs?: Map<string, Blob>): void {
   printWindow.onload = () => {
     printWindow.print();
   };
-  // Fallback if onload already fired
   setTimeout(() => {
     if (!printWindow.closed) printWindow.print();
   }, 500);
+}
+
+function defaultPdfFilename(book: Book): string {
+  const slug =
+    book.metadata.title
+      .replace(/[^a-z0-9]+/gi, "-")
+      .replace(/^-|-$/g, "")
+      .toLowerCase() || "book";
+  return `${slug}.pdf`;
+}
+
+/**
+ * Exports the book as PDF.
+ * Electron: native save dialog + printToPDF. Web: browser print dialog.
+ */
+export async function downloadPdf(book: Book, assetBlobs?: Map<string, Blob>): Promise<void> {
+  const html = buildPrintDocument(book, assetBlobs);
+
+  if (typeof window !== "undefined" && window.openBook?.printToPdf) {
+    await window.openBook.printToPdf(html, defaultPdfFilename(book));
+    return;
+  }
+
+  openBrowserPrintDialog(html);
 }

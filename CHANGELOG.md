@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- PDF export hardening: unit tests for print HTML, section print CSS (workbook/journal/checklist/reflection/practice-quiz), Electron native print-to-PDF with web print fallback (#7)
 - Store metadata fields: ISBN, BISAC, keywords, age rating, series — in Book Properties, EPUB OPF, and KBP manifest (#18)
 - Extended publish readiness: duplicate TOC titles, empty TOC, KBP H1 checks, KBP store metadata warnings (#17)
 - KBP export now runs through the same readiness gate as EPUB/PDF (#17)
