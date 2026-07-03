@@ -12,7 +12,7 @@
 #   OPENBOOK_WEBHOOK_UI             + OPENBOOK_WEBHOOK_UI_AUTH             — ready-for-execution + agent:design
 #   OPENBOOK_WEBHOOK_REVIEW         + OPENBOOK_WEBHOOK_REVIEW_AUTH         — ready-for-review
 #   OPENBOOK_WEBHOOK_MERGE          + OPENBOOK_WEBHOOK_MERGE_AUTH          — approved-for-merge
-#   OPENBOOK_WEBHOOK_AUTHOR         + OPENBOOK_WEBHOOK_AUTHOR_AUTH         — needs-human
+#   OPENBOOK_WEBHOOK_AUTHOR         + OPENBOOK_WEBHOOK_AUTHOR_AUTH         — needs-human, epic, approved-for-merge
 #
 # AUTH values are the crsr_… token from Cursor (no "Bearer" prefix in the secret).
 
@@ -69,62 +69,82 @@ jobs:
             const pr = context.payload.pull_request ?? null;
             const entityLabels = (issue?.labels ?? pr?.labels ?? []).map((l) => l.name);
 
-            const routes = {
-              "router-ready": {
+            const routeDefinitions = {
+              dispatch: {
+                name: "DISPATCH",
                 url: process.env.WEBHOOK_DISPATCH,
                 auth: process.env.WEBHOOK_DISPATCH_AUTH,
               },
-              "needs-research": {
+              research: {
+                name: "Research",
                 url: process.env.WEBHOOK_RESEARCH,
                 auth: process.env.WEBHOOK_RESEARCH_AUTH,
               },
-              epic: {
+              project: {
+                name: "Project",
                 url: process.env.WEBHOOK_PROJECT,
                 auth: process.env.WEBHOOK_PROJECT_AUTH,
               },
-              "ready-for-review": {
+              review: {
+                name: "Review",
                 url: process.env.WEBHOOK_REVIEW,
                 auth: process.env.WEBHOOK_REVIEW_AUTH,
               },
-              "approved-for-merge": {
+              merge: {
+                name: "Merge",
                 url: process.env.WEBHOOK_MERGE,
                 auth: process.env.WEBHOOK_MERGE_AUTH,
               },
-              "needs-human": {
+              author: {
+                name: "Author",
                 url: process.env.WEBHOOK_AUTHOR,
                 auth: process.env.WEBHOOK_AUTHOR_AUTH,
               },
             };
 
+            const routesByLabel = {
+              "router-ready": [routeDefinitions.dispatch],
+              "needs-research": [routeDefinitions.research],
+              epic: [routeDefinitions.project, routeDefinitions.author],
+              "ready-for-review": [routeDefinitions.review],
+              "approved-for-merge": [routeDefinitions.merge, routeDefinitions.author],
+              "needs-human": [routeDefinitions.author],
+            };
+
             const agentRoutes = {
               "agent:feature": {
+                name: "Feature",
                 url: process.env.WEBHOOK_FEATURE,
                 auth: process.env.WEBHOOK_FEATURE_AUTH,
               },
               "agent:bug": {
+                name: "Bug",
                 url: process.env.WEBHOOK_BUG,
                 auth: process.env.WEBHOOK_BUG_AUTH,
               },
               "agent:docs": {
+                name: "Docs",
                 url: process.env.WEBHOOK_DOCS,
                 auth: process.env.WEBHOOK_DOCS_AUTH,
               },
               "agent:test": {
+                name: "Test",
                 url: process.env.WEBHOOK_TEST,
                 auth: process.env.WEBHOOK_TEST_AUTH,
               },
               "agent:design": {
+                name: "UI/UX",
                 url: process.env.WEBHOOK_UI,
                 auth: process.env.WEBHOOK_UI_AUTH,
               },
             };
 
-            let route = routes[label];
+            let routes = routesByLabel[label] ?? [];
 
             if (label === "ready-for-execution") {
               const agentLabel = entityLabels.find((name) => name.startsWith("agent:"));
               if (agentLabel && agentRoutes[agentLabel]) {
-                route = agentRoutes[agentLabel];
+                routes = [agentRoutes[agentLabel]];
               } else {
                 core.info(
                   `ready-for-execution without a matching agent:* label (${entityLabels.join(", ")}) — skipping.`
@@ -133,15 +153,15 @@ jobs:
               }
             }
 
-            if (!route?.url) {
-              core.info(`No webhook secret configured for label "${label}" — skipping.`);
+            if (routes.length === 0) {
+              core.info(`No webhook route configured for label "${label}" — skipping.`);
               return;
             }
 
-            if (!route.auth) {
-              core.warning(
-                `Webhook URL set for "${label}" but OPENBOOK_WEBHOOK_*_AUTH secret is missing — Cursor will reject the request.`
-              );
+            const configuredRoutes = routes.filter((route) => route?.url);
+            if (configuredRoutes.length === 0) {
+              core.info(`No webhook secret configured for label "${label}" — skipping.`);
+              return;
             }
 
             const payload = {
@@ -156,20 +176,30 @@ jobs:
               sender: context.payload.sender,
             };
 
-            const headers = { "Content-Type": "application/json" };
-            if (route.auth) {
-              headers.Authorization = `Bearer ${route.auth}`;
+            for (const route of configuredRoutes) {
+              if (!route.auth) {
+                core.warning(
+                  `Webhook URL set for "${label}" → ${route.name} but OPENBOOK_WEBHOOK_*_AUTH secret is missing — Cursor will reject the request.`
+                );
+              }
+
+              const headers = { "Content-Type": "application/json" };
+              if (route.auth) {
+                headers.Authorization = `Bearer ${route.auth}`;
+              }
+
+              const response = await fetch(route.url, {
+                method: "POST",
+                headers,
+                body: JSON.stringify(payload),
+              });
+
+              if (!response.ok) {
+                const body = await response.text();
+                throw new Error(
+                  `Webhook ${label} → ${route.name} failed: ${response.status} ${body}`
+                );
+              }
+
+              core.info(`Dispatched label "${label}" to OpenBook ${route.name} automation webhook.`);
             }
-
-            const response = await fetch(route.url, {
-              method: "POST",
-              headers,
-              body: JSON.stringify(payload),
-            });
-
-            if (!response.ok) {
-              const body = await response.text();
-              throw new Error(`Webhook ${label} failed: ${response.status} ${body}`);
-            }
-
-            core.info(`Dispatched label "${label}" to OpenBook automation webhook.`);

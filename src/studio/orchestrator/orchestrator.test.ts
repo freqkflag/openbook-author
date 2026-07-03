@@ -4,8 +4,10 @@ import {
   parseHandoff,
   validateHandoff,
 } from "./parse-handoff";
-import { classifyIssue, routeIssue, scoreConfidence } from "./route-issue";
+import { routeIssue, scoreConfidence } from "./route-issue";
 import { getNextStep } from "./workflow";
+import { buildGhIssueCreateArgs, parseMacosReport } from "./macos-report";
+import { resolveNotificationRoutes } from "./notification-routes";
 import type { RouterHandoff } from "./types";
 
 const SAMPLE_ROUTER_YAML = `
@@ -166,5 +168,94 @@ describe("validateHandoff", () => {
     const result = validateHandoff(handoff as unknown as Record<string, unknown>);
     expect(result.valid).toBe(true);
     expect(result.handoffType).toBe("router");
+  });
+});
+
+describe("notification routes", () => {
+  it("notifies Joey for human gates, epic sign-off, and release approval while preserving specialized routes", () => {
+    expect(resolveNotificationRoutes({ label: "needs-human", labels: ["needs-human"] })).toEqual([
+      "author",
+    ]);
+
+    expect(resolveNotificationRoutes({ label: "epic", labels: ["epic"] })).toEqual([
+      "project",
+      "author",
+    ]);
+
+    expect(
+      resolveNotificationRoutes({
+        label: "approved-for-merge",
+        labels: ["approved-for-merge"],
+      })
+    ).toEqual(["merge", "author"]);
+  });
+
+  it("keeps ready-for-execution routed to the matching execution agent only", () => {
+    expect(
+      resolveNotificationRoutes({
+        label: "ready-for-execution",
+        labels: ["ready-for-execution", "agent:bug"],
+      })
+    ).toEqual(["bug"]);
+  });
+});
+
+describe("macOS report intake", () => {
+  it("parses a bug report into template sections and router-ready labels", () => {
+    const report = parseMacosReport(`Bug: Export crash on macOS
+
+Summary: EPUB export crashes after selecting a guidebook project.
+Steps:
+1. Open a guidebook project
+2. Choose Export EPUB
+Expected: EPUB file is written.
+Actual: The app crashes before writing the file.
+Area: Export / EPUB
+Environment: macOS 15.5, OpenBook Author v0.2.0`);
+
+    expect(report.kind).toBe("bug");
+    expect(report.title).toBe("[Bug] Export crash on macOS");
+    expect(report.labels).toEqual(["bug", "router-ready"]);
+    expect(report.body).toContain("## Summary\nEPUB export crashes");
+    expect(report.body).toContain("## Steps to reproduce\n1. Open a guidebook project");
+    expect(report.body).toContain("## Affected area\nExport / EPUB");
+  });
+
+  it("parses a feature report and builds a safe gh issue create argv", () => {
+    const report = parseMacosReport(`Feature: Add chapter templates
+
+Goal: Authors can start chapters from reusable structures.
+User story: As an author, I want reusable chapter templates so that setup is faster.
+Area: Editor
+Success criteria:
+- Existing tests pass
+- New chapter template picker is available
+Notes: Should route through DISPATCH.`);
+
+    expect(report.kind).toBe("feature");
+    expect(report.labels).toEqual(["enhancement", "router-ready"]);
+    expect(report.body).toContain("## Goal\nAuthors can start chapters");
+
+    expect(
+      buildGhIssueCreateArgs(report, {
+        repo: "freqkflag/openbook-author",
+        bodyFile: "/tmp/openbook-report.md",
+      })
+    ).toEqual([
+      "issue",
+      "create",
+      "--repo",
+      "freqkflag/openbook-author",
+      "--template",
+      "Feature Request",
+      "--title",
+      "[Feature] Add chapter templates",
+      "--body-file",
+      "/tmp/openbook-report.md",
+      "--label",
+      "enhancement",
+      "--label",
+      "router-ready",
+    ]);
   });
 });
