@@ -227,7 +227,7 @@ async function embedAssets(
     if (!asset) continue;
     const blob = assetBlobs?.get(asset.id);
     if (blob) {
-      imagesFolder?.file(filename, blob);
+      imagesFolder?.file(filename, await blob.arrayBuffer());
     }
   }
 }
