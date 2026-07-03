@@ -1,4 +1,5 @@
 import type { Book, KBPSettings } from "@/types/book";
+import { buildKbpTocEntries, hasHierarchicalToc } from "@/lib/book-structure";
 
 export const KBP_CSS = `/* KBP — Kindle Book Publishing profile */
 body {
@@ -177,6 +178,9 @@ export function kbpManifest(book: Book) {
     language: metadata.language,
     description: metadata.description,
     chapterCount: book.chapters.length,
+    partCount: book.parts?.length ?? 0,
+    hierarchicalToc: hasHierarchicalToc(book),
+    toc: buildKbpTocEntries(book),
     settings: book.kbpSettings,
     store: {
       isbn: metadata.isbn || undefined,

@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { Book } from "@/types/book";
+import { buildKbpTocEntries } from "@/lib/book-structure";
 import { kbpManifest } from "@/lib/kbp";
 import { buildExportCss, exportToEpub, hasTitlePage, prepareChapterContent } from "@/lib/epub";
 import { getAssetByFilename } from "@/lib/asset-store";
@@ -113,6 +114,7 @@ export async function exportToKBP(
   const zip = new JSZip();
 
   zip.file("manifest.json", JSON.stringify(kbpManifest(book), null, 2));
+  zip.file("toc.json", JSON.stringify(buildKbpTocEntries(book), null, 2));
   zip.file("metadata.json", JSON.stringify(book.metadata, null, 2));
   zip.file("kbp-settings.json", JSON.stringify(book.kbpSettings, null, 2));
   zip.file("README.txt", `OpenBook Author — KBP Export

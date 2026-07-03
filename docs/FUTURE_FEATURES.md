@@ -147,7 +147,7 @@ See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue c
 
 | Topic | Issue | Wave A status |
 |-------|-------|---------------|
-| Hierarchical TOC structure mode | [#49](https://github.com/freqkflag/openbook-author/issues/49) | Wave B — open |
+| Hierarchical TOC structure mode | [#49](https://github.com/freqkflag/openbook-author/issues/49) | ✅ Shipped Wave B — close |
 | EPUB import | [#6](https://github.com/freqkflag/openbook-author/issues/6) | ✅ Shipped — close |
 | Front matter (copyright & dedication) | [#5](https://github.com/freqkflag/openbook-author/issues/5) | ✅ Shipped — close |
 | PDF export | [#7](https://github.com/freqkflag/openbook-author/issues/7) | ✅ Shipped — closed |

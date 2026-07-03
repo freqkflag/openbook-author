@@ -83,7 +83,7 @@
 
 ### Explicitly not shipped
 
-Do not re-list these as gaps without noting status: PWA/offline, fixed-layout canvas, media widgets, quiz widgets, hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49)), platform validators (EPUBCheck CLI), print bleed/CMYK, DOCX/MOBI, collaboration, cloud sync, markdown mode, plugin marketplace, audiobook export, git-for-books, multi-step AI agents/RAG.
+Do not re-list these as gaps without noting status: PWA/offline, fixed-layout canvas, media widgets, quiz widgets, hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49) — ✅ shipped Wave B), platform validators (EPUBCheck CLI), print bleed/CMYK, DOCX/MOBI, collaboration, cloud sync, markdown mode, plugin marketplace, audiobook export, git-for-books, multi-step AI agents/RAG.
 
 ---
 
@@ -194,7 +194,7 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | Cloud sync | Atticus, Ulysses | ❌ | **P2** | XL | Medium — **ADR** |
 | Writing goals / stats | Atticus, Ulysses | ❌ | **P2** | S | Medium |
 | Binder/corkboard | Scrivener | ❌ | **P2** | L | Low |
-| Hierarchical TOC | Scrivener, textbooks | ❌ ([#49](https://github.com/freqkflag/openbook-author/issues/49)) | **P1** | M | High |
+| Hierarchical TOC | Scrivener, textbooks | ✅ Parts + nested EPUB/KBP nav ([#49](https://github.com/freqkflag/openbook-author/issues/49)) | — | — | High |
 | AI writing assist | Few | ✅ Multi-action + context | — | — | **Differentiator** |
 | Local LLM (Ollama) | None mainstream | ✅ | — | — | **Differentiator** |
 | IBA import | None | ✅ Partial | — | — | **Differentiator** |

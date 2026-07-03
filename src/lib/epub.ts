@@ -16,6 +16,7 @@ import {
 import type { ExportThemeSettings } from "@/types/book";
 import { getAssetByFilename } from "@/lib/asset-store";
 import { transformNotesForEpub, TABLE_EXPORT_CSS } from "@/lib/note-export";
+import { buildEpubNavListItems } from "@/lib/book-structure";
 
 function escapeXml(text: string): string {
   return text
@@ -48,6 +49,123 @@ function decodePayload(raw: string): unknown {
   } catch {
     return null;
   }
+}
+
+/** Derived schema.org accessibility metadata for EPUB 3.3 package documents */
+export interface EpubAccessibilityMetadata {
+  accessModes: Array<"textual" | "visual">;
+  accessModeSufficient: Array<"textual">;
+  features: string[];
+  hazards: string[];
+  summary: string;
+}
+
+const DEFAULT_ACCESSIBILITY_SUMMARY =
+  "This reflowable EPUB includes structural navigation, a table of contents, and reading-order markers. Text content is available to assistive technology.";
+
+const VISUAL_ACCESSIBILITY_SUMMARY_SUFFIX =
+  " Images include alternative text where provided by the author.";
+
+function chapterHtmlHasImages(html: string): boolean {
+  return /<img\b/i.test(html) || /data-widget="gallery"/i.test(html);
+}
+
+function imageTagHasAlt(tag: string): boolean {
+  const altMatch = tag.match(/\balt="([^"]*)"/i);
+  return Boolean(altMatch?.[1]?.trim());
+}
+
+/** True when the book includes cover or inline images in chapter content. */
+export function bookHasVisualContent(book: Book): boolean {
+  if (book.metadata.coverImage?.trim()) return true;
+  return book.chapters.some((ch) => chapterHtmlHasImages(ch.content));
+}
+
+/** True when every inline image in chapters has non-empty alt text. */
+export function bookImagesHaveAltText(book: Book): boolean {
+  for (const chapter of book.chapters) {
+    const tags = chapter.content.match(/<img\b[^>]*>/gi) ?? [];
+    for (const tag of tags) {
+      if (!imageTagHasAlt(tag)) return false;
+    }
+  }
+  return true;
+}
+
+/** Derive schema.org accessibility metadata from book structure and content. */
+export function deriveEpubAccessibilityMetadata(book: Book): EpubAccessibilityMetadata {
+  const hasVisual = bookHasVisualContent(book);
+  const imagesHaveAlt = !hasVisual || bookImagesHaveAltText(book);
+
+  const features = [
+    "structuralNavigation",
+    "tableOfContents",
+    "readingOrder",
+    "displayTransformability",
+  ];
+  if (hasVisual && imagesHaveAlt) {
+    features.push("alternativeText");
+  }
+
+  let summary = DEFAULT_ACCESSIBILITY_SUMMARY;
+  if (hasVisual) {
+    summary += VISUAL_ACCESSIBILITY_SUMMARY_SUFFIX;
+  }
+
+  return {
+    accessModes: hasVisual ? ["textual", "visual"] : ["textual"],
+    accessModeSufficient: ["textual"],
+    features,
+    hazards: ["noFlashingHazard", "noMotionSimulationHazard", "noSoundHazard"],
+    summary,
+  };
+}
+
+function buildAccessibilityMetadataOpf(
+  metadata: BookMetadata,
+  derived: EpubAccessibilityMetadata
+): string {
+  const lines: string[] = [];
+
+  for (const mode of derived.accessModes) {
+    lines.push(`<meta property="schema:accessMode">${escapeXml(mode)}</meta>`);
+  }
+  for (const sufficient of derived.accessModeSufficient) {
+    lines.push(
+      `<meta property="schema:accessModeSufficient">${escapeXml(sufficient)}</meta>`
+    );
+  }
+  for (const feature of derived.features) {
+    lines.push(
+      `<meta property="schema:accessibilityFeature">${escapeXml(feature)}</meta>`
+    );
+  }
+  for (const hazard of derived.hazards) {
+    lines.push(
+      `<meta property="schema:accessibilityHazard">${escapeXml(hazard)}</meta>`
+    );
+  }
+
+  const summary = metadata.accessibilitySummary?.trim() || derived.summary;
+  if (summary) {
+    lines.push(
+      `<meta property="schema:accessibilitySummary">${escapeXml(summary)}</meta>`
+    );
+  }
+
+  const certifier = metadata.accessibilityCertifier?.trim();
+  if (certifier) {
+    lines.push(`<meta property="schema:certifier">${escapeXml(certifier)}</meta>`);
+  }
+
+  const claim = metadata.accessibilityClaim?.trim();
+  if (claim) {
+    lines.push(
+      `<meta property="schema:certifierCredential">${escapeXml(claim)}</meta>`
+    );
+  }
+
+  return lines.length ? `${lines.join("\n    ")}\n    ` : "";
 }
 
 function buildStoreMetadataOpf(metadata: BookMetadata): string {
@@ -553,11 +671,10 @@ export async function exportToEpub(
   const navItems = [
     hasCover ? `<li><a href="text/cover.xhtml">Cover</a></li>` : "",
     includeTitlePage ? `<li><a href="text/title.xhtml">Title Page</a></li>` : "",
-    ...chapters.map(
-      (ch, i) =>
-        `<li><a href="text/chapter${i}.xhtml">${escapeXml(ch.title)}</a></li>`
-    ),
-  ].join("\n        ");
+    buildEpubNavListItems(book, escapeXml),
+  ]
+    .filter(Boolean)
+    .join("\n        ");
 
   const landmarkItems = [
     hasCover ? `<li><a epub:type="cover" href="text/cover.xhtml">Cover</a></li>` : "",
@@ -572,9 +689,13 @@ export async function exportToEpub(
     : "";
 
   const storeMetadata = buildStoreMetadataOpf(metadata);
+  const accessibilityMetadata = buildAccessibilityMetadataOpf(
+    metadata,
+    deriveEpubAccessibilityMetadata(book)
+  );
 
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" xmlns:opf="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+<package xmlns="http://www.idpf.org/2007/opf" xmlns:opf="http://www.idpf.org/2007/opf" version="3.3" unique-identifier="uid">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:identifier id="uid">urn:uuid:${book.id}</dc:identifier>
     <dc:title>${escapeXml(metadata.title)}</dc:title>
@@ -582,8 +703,7 @@ export async function exportToEpub(
     <dc:language>${escapeXml(metadata.language || "en")}</dc:language>
     <dc:description>${escapeXml(metadata.description)}</dc:description>
     <dc:publisher>${escapeXml(metadata.publisher || "OpenBook Author")}</dc:publisher>
-    ${storeMetadata}
-    <meta property="dcterms:modified">${new Date().toISOString().split(".")[0]}Z</meta>
+    ${storeMetadata}${accessibilityMetadata}<meta property="dcterms:modified">${new Date().toISOString().split(".")[0]}Z</meta>
     ${coverMeta}
     ${isFixed ? '<meta property="rendition:layout">pre-paginated</meta>' : '<meta property="rendition:layout">reflowable</meta>'}
   </metadata>

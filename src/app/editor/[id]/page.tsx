@@ -65,6 +65,11 @@ export default function EditorPage() {
     deleteChapter,
     reorderChapter,
     reorderChapters,
+    addPart,
+    updatePart,
+    deletePart,
+    assignChapterToPart,
+    reorderPart,
     saveBookToDisk,
     openBookFromDisk,
     saveStatus,
@@ -487,6 +492,7 @@ export default function EditorPage() {
         <div className="w-56 shrink-0">
           <ChapterSidebar
             chapters={book.chapters}
+            parts={book.parts}
             activeChapterId={activeChapterId}
             onSelect={setSelectedChapterId}
             onAddSection={(type) => {
@@ -506,6 +512,13 @@ export default function EditorPage() {
             onRename={(id, title) => updateChapter(book.id, id, { title })}
             onReorder={(id, dir) => reorderChapter(book.id, id, dir)}
             onReorderChapters={(from, to) => reorderChapters(book.id, from, to)}
+            onAddPart={() => addPart(book.id)}
+            onRenamePart={(partId, title) => updatePart(book.id, partId, { title })}
+            onDeletePart={(partId) => deletePart(book.id, partId)}
+            onReorderPart={(partId, dir) => reorderPart(book.id, partId, dir)}
+            onAssignChapterToPart={(chapterId, partId) =>
+              assignChapterToPart(book.id, chapterId, partId)
+            }
           />
         </div>
 

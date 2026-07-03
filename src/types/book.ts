@@ -100,6 +100,12 @@ export interface BookMetadata {
   ageRating?: string;
   series?: string;
   seriesIndex?: number;
+  /** EPUB schema:accessibilitySummary — human-readable a11y description */
+  accessibilitySummary?: string;
+  /** EPUB schema:certifierCredential — certification standard or claim */
+  accessibilityClaim?: string;
+  /** EPUB schema:certifier — organization that certified accessibility */
+  accessibilityCertifier?: string;
 }
 
 /** Backward-compatible defaults for books saved before store metadata shipped */
@@ -118,6 +124,9 @@ export function normalizeBookMetadata(metadata: Partial<BookMetadata> = {}): Boo
     ageRating: metadata.ageRating ?? "",
     series: metadata.series ?? "",
     seriesIndex: metadata.seriesIndex,
+    accessibilitySummary: metadata.accessibilitySummary ?? "",
+    accessibilityClaim: metadata.accessibilityClaim ?? "",
+    accessibilityCertifier: metadata.accessibilityCertifier ?? "",
   };
 }
 

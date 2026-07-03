@@ -6,12 +6,14 @@ import type {
   AISettings,
   Book,
   BookAsset,
+  BookPart,
   BookTemplate,
   Chapter,
   ChapterSectionType,
   KBPSettings,
 } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS, normalizeBookMetadata } from "@/types/book";
+import { normalizeBookParts } from "@/lib/book-structure";
 import type { ExportThemeSettings } from "@/types/book";
 import { normalizeExportTheme } from "@/lib/export-themes";
 import { getTemplate, getDefaultKbpForTemplate } from "@/lib/templates";
@@ -62,6 +64,11 @@ interface BookStore {
   deleteChapter: (bookId: string, chapterId: string) => void;
   reorderChapter: (bookId: string, chapterId: string, direction: "up" | "down") => void;
   reorderChapters: (bookId: string, fromIndex: number, toIndex: number) => void;
+  addPart: (bookId: string, title?: string) => string;
+  updatePart: (bookId: string, partId: string, updates: Partial<Pick<BookPart, "title" | "chapterIds">>) => void;
+  deletePart: (bookId: string, partId: string) => void;
+  assignChapterToPart: (bookId: string, chapterId: string, partId: string | null) => void;
+  reorderPart: (bookId: string, partId: string, direction: "up" | "down") => void;
   importBook: (book: Book | Omit<Book, "id" | "createdAt" | "updatedAt">) => string;
   importBookWithAssets: (
     book: Omit<Book, "id" | "createdAt" | "updatedAt">,
@@ -101,6 +108,7 @@ function normalizeBook(b: Book): Book {
       ...ch,
       sectionType: ch.sectionType ?? "chapter",
     })),
+    parts: normalizeBookParts(b.parts, b.chapters),
   };
 }
 
@@ -321,13 +329,20 @@ export const useBookStore = create<BookStore>((set, get) => {
     },
 
     deleteChapter: (bookId, chapterId) => {
-      touchBook(bookId, (b) => ({
-        ...b,
-        chapters: b.chapters
-          .filter((ch) => ch.id !== chapterId)
-          .map((ch, i) => ({ ...ch, order: i })),
-        updatedAt: new Date().toISOString(),
-      }));
+      touchBook(bookId, (b) => {
+        const parts = b.parts?.map((part) => ({
+          ...part,
+          chapterIds: part.chapterIds.filter((id) => id !== chapterId),
+        }));
+        return {
+          ...b,
+          chapters: b.chapters
+            .filter((ch) => ch.id !== chapterId)
+            .map((ch, i) => ({ ...ch, order: i })),
+          parts: normalizeBookParts(parts, b.chapters.filter((ch) => ch.id !== chapterId)),
+          updatedAt: new Date().toISOString(),
+        };
+      });
     },
 
     reorderChapter: (bookId, chapterId, direction) => {
@@ -357,6 +372,93 @@ export const useBookStore = create<BookStore>((set, get) => {
         return {
           ...b,
           chapters: chapters.map((ch, i) => ({ ...ch, order: i })),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+
+    addPart: (bookId, title = "New Part") => {
+      const newId = uuidv4();
+      touchBook(bookId, (b) => {
+        const parts = b.parts ?? [];
+        return {
+          ...b,
+          parts: [
+            ...parts,
+            { id: newId, title, order: parts.length, chapterIds: [] },
+          ],
+          updatedAt: new Date().toISOString(),
+        };
+      });
+      return newId;
+    },
+
+    updatePart: (bookId, partId, updates) => {
+      touchBook(bookId, (b) => {
+        if (!b.parts?.length) return b;
+        const parts = b.parts.map((part) =>
+          part.id === partId ? { ...part, ...updates } : part
+        );
+        return {
+          ...b,
+          parts: normalizeBookParts(parts, b.chapters),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+
+    deletePart: (bookId, partId) => {
+      touchBook(bookId, (b) => ({
+        ...b,
+        parts: normalizeBookParts(
+          b.parts?.filter((part) => part.id !== partId),
+          b.chapters
+        ),
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+
+    assignChapterToPart: (bookId, chapterId, partId) => {
+      touchBook(bookId, (b) => {
+        const stripped = (b.parts ?? []).map((part) => ({
+          ...part,
+          chapterIds: part.chapterIds.filter((id) => id !== chapterId),
+        }));
+
+        if (!partId) {
+          return {
+            ...b,
+            parts: normalizeBookParts(stripped, b.chapters),
+            updatedAt: new Date().toISOString(),
+          };
+        }
+
+        const parts = stripped.map((part) =>
+          part.id === partId
+            ? { ...part, chapterIds: [...part.chapterIds, chapterId] }
+            : part
+        );
+
+        return {
+          ...b,
+          parts: normalizeBookParts(parts, b.chapters),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+
+    reorderPart: (bookId, partId, direction) => {
+      touchBook(bookId, (b) => {
+        if (!b.parts?.length) return b;
+        const idx = b.parts.findIndex((part) => part.id === partId);
+        if (idx < 0) return b;
+        const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+        if (swapIdx < 0 || swapIdx >= b.parts.length) return b;
+        const parts = [...b.parts];
+        [parts[idx], parts[swapIdx]] = [parts[swapIdx], parts[idx]];
+        return {
+          ...b,
+          parts: parts.map((part, i) => ({ ...part, order: i })),
           updatedAt: new Date().toISOString(),
         };
       });

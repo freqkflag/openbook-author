@@ -7,6 +7,7 @@ import {
 } from "@/types/guidebook";
 import { getAssetByFilename } from "@/lib/asset-store";
 import { isKbpEnabled } from "@/lib/kbp";
+import { hasHierarchicalToc } from "@/lib/book-structure";
 import { getBrokenCustomCssAssetRefs } from "@/lib/export-themes";
 import {
   epubValidationToReadinessIssues,
@@ -290,6 +291,31 @@ function checkGuidebookBlocks(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function checkEmptyParts(book: Book, issues: ReadinessIssue[]): void {
+  if (!hasHierarchicalToc(book)) return;
+
+  for (const part of book.parts ?? []) {
+    if (!part.title.trim()) {
+      issues.push(
+        issue(
+          `empty-part-title-${part.id}`,
+          "warning",
+          "A part has no title — it will not appear clearly in the table of contents"
+        )
+      );
+    }
+    if (part.chapterIds.length === 0) {
+      issues.push(
+        issue(
+          `empty-part-${part.id}`,
+          "error",
+          `Part “${part.title.trim() || "Untitled"}” has no chapters`
+        )
+      );
+    }
+  }
+}
+
 function checkTocIssues(book: Book, issues: ReadinessIssue[]): void {
   const titleGroups = new Map<string, Chapter[]>();
 
@@ -526,6 +552,7 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
   checkTables(book, issues);
   checkCustomCssAssets(book, issues);
   checkTocIssues(book, issues);
+  checkEmptyParts(book, issues);
   checkKbpStructure(book, issues);
   checkKbpStoreMetadata(book, issues);
 
