@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Register and optionally install Forgejo act_runner for Docker CI.
+# Register and optionally install Forgejo runner for Docker CI.
 # No secrets in repo — pass tokens via environment variables only.
 #
 # Required:
@@ -9,7 +9,7 @@
 # Optional:
 #   RUNNER_NAME          default: $(hostname)-docker
 #   RUNNER_LABELS        default: docker
-#   ACT_RUNNER_VERSION   default: 0.2.11
+#   FORGEJO_RUNNER_VERSION default: 12.12.0
 #   INSTALL_DIR          default: /opt/forgejo-act-runner
 #   RUNNER_USER          default: current user (systemd install only)
 #   INSTALL_SYSTEMD      set to 1 to copy unit template (requires sudo)
@@ -20,7 +20,7 @@ FORGEJO_URL="${FORGEJO_URL:-http://192.168.12.115:3000}"
 FORGEJO_RUNNER_TOKEN="${FORGEJO_RUNNER_TOKEN:-}"
 RUNNER_NAME="${RUNNER_NAME:-$(hostname -s 2>/dev/null || hostname)-docker}"
 RUNNER_LABELS="${RUNNER_LABELS:-docker}"
-ACT_RUNNER_VERSION="${ACT_RUNNER_VERSION:-0.2.11}"
+FORGEJO_RUNNER_VERSION="${FORGEJO_RUNNER_VERSION:-${ACT_RUNNER_VERSION:-12.12.0}}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/forgejo-act-runner}"
 
 if [[ -z "${FORGEJO_RUNNER_TOKEN}" ]]; then
@@ -39,11 +39,10 @@ case "$(uname -m)" in
     ;;
 esac
 
-RUNNER_OS="$(uname -s | tr '[:upper:]' '[:lower:]')"
-TARBALL="act_runner-${ACT_RUNNER_VERSION}-${RUNNER_OS}-${RUNNER_ARCH}"
-DOWNLOAD_URL="https://code.forgejo.org/forgejo/runner/releases/download/v${ACT_RUNNER_VERSION}/${TARBALL}.tar.gz"
+BINARY_NAME="forgejo-runner-${FORGEJO_RUNNER_VERSION}-linux-${RUNNER_ARCH}"
+DOWNLOAD_URL="https://code.forgejo.org/forgejo/runner/releases/download/v${FORGEJO_RUNNER_VERSION}/${BINARY_NAME}"
 
-echo "Installing act_runner v${ACT_RUNNER_VERSION} (${RUNNER_OS}/${RUNNER_ARCH}) to ${INSTALL_DIR}"
+echo "Installing forgejo-runner v${FORGEJO_RUNNER_VERSION} (${RUNNER_ARCH}) to ${INSTALL_DIR}"
 
 if [[ "$(id -u)" -eq 0 ]]; then
   mkdir -p "${INSTALL_DIR}"
@@ -52,18 +51,14 @@ else
   sudo chown "$(id -u):$(id -g)" "${INSTALL_DIR}"
 fi
 
-tmpdir="$(mktemp -d)"
-trap 'rm -rf "${tmpdir}"' EXIT
-
-curl -fsSL "${DOWNLOAD_URL}" -o "${tmpdir}/act_runner.tar.gz"
-tar -xzf "${tmpdir}/act_runner.tar.gz" -C "${tmpdir}"
-install -m 755 "${tmpdir}/act_runner" "${INSTALL_DIR}/act_runner"
+curl -fsSL "${DOWNLOAD_URL}" -o "${INSTALL_DIR}/forgejo-runner"
+chmod 755 "${INSTALL_DIR}/forgejo-runner"
 
 cd "${INSTALL_DIR}"
 
 if [[ ! -f .runner ]]; then
   echo "Registering runner '${RUNNER_NAME}' with labels '${RUNNER_LABELS}'..."
-  ./act_runner register \
+  ./forgejo-runner register \
     --no-interactive \
     --instance "${FORGEJO_URL}" \
     --token "${FORGEJO_RUNNER_TOKEN}" \
@@ -80,7 +75,7 @@ fi
 echo ""
 echo "Runner installed at ${INSTALL_DIR}"
 echo "Start manually:"
-echo "  cd ${INSTALL_DIR} && ./act_runner daemon"
+echo "  cd ${INSTALL_DIR} && ./forgejo-runner daemon"
 echo ""
 echo "Or enable systemd (after editing deploy/forgejo/act_runner.service):"
 echo "  sudo cp deploy/forgejo/act_runner.service /etc/systemd/system/forgejo-act-runner.service"
