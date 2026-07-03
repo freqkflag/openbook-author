@@ -57,4 +57,33 @@ describe("package-io", () => {
     expect(parsed.assetBlobs.get("asset-1")).toBeDefined();
     expect(await parsed.assetBlobs.get("asset-1")!.text()).toBe("fake");
   });
+
+  it("normalizes legacy metadata without store fields on import", async () => {
+    const legacyBook = {
+      id: "legacy",
+      metadata: {
+        title: "Legacy Book",
+        subtitle: "",
+        author: "Author",
+        publisher: "",
+        language: "en",
+        description: "",
+      },
+      template: "portrait",
+      layoutMode: "portrait",
+      formatProfile: "standard",
+      kbpSettings: DEFAULT_KBP_SETTINGS,
+      chapters: [],
+      assets: [],
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+
+    const zip = await buildPackageZip(legacyBook as Book, new Map());
+    const parsed = await parsePackageFile(zip);
+
+    expect(parsed.book.metadata.bisac).toEqual([]);
+    expect(parsed.book.metadata.keywords).toEqual([]);
+    expect(parsed.book.metadata.isbn).toBe("");
+  });
 });

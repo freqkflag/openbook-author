@@ -6,6 +6,9 @@ import {
   normalizeCheatSheetPayload,
 } from "@/types/guidebook";
 import { getAssetByFilename } from "@/lib/asset-store";
+import { isKbpEnabled } from "@/lib/kbp";
+
+const H1_RE = /<h1[\s>]/i;
 
 export type ReadinessSeverity = "error" | "warning";
 
@@ -278,6 +281,112 @@ function checkGuidebookBlocks(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function checkTocIssues(book: Book, issues: ReadinessIssue[]): void {
+  const titleGroups = new Map<string, Chapter[]>();
+
+  for (const chapter of book.chapters) {
+    const normalizedTitle = chapter.title.trim();
+    if (!normalizedTitle) {
+      issues.push(
+        issue(
+          `empty-chapter-title-${chapter.id}`,
+          "warning",
+          "A chapter has no title — it will not appear in the table of contents",
+          chapter
+        )
+      );
+      continue;
+    }
+
+    const key = normalizedTitle.toLowerCase();
+    const group = titleGroups.get(key) ?? [];
+    group.push(chapter);
+    titleGroups.set(key, group);
+  }
+
+  for (const [, chapters] of titleGroups) {
+    if (chapters.length > 1) {
+      issues.push(
+        issue(
+          `duplicate-title-${chapters[0].id}`,
+          "warning",
+          `Duplicate chapter title “${chapters[0].title}” (${chapters.length} chapters)`,
+          chapters[0]
+        )
+      );
+    }
+  }
+
+  const titledChapters = book.chapters.filter((ch) => ch.title.trim());
+  if (book.chapters.length > 0 && titledChapters.length === 0) {
+    issues.push(issue("empty-toc", "error", "Table of contents is empty — all chapters lack titles"));
+  }
+}
+
+function checkKbpStructure(book: Book, issues: ReadinessIssue[]): void {
+  if (!isKbpEnabled(book)) return;
+
+  for (const chapter of book.chapters) {
+    if (chapter.sectionType && chapter.sectionType !== "chapter") continue;
+    if (!H1_RE.test(chapter.content)) {
+      issues.push(
+        issue(
+          `missing-h1-${chapter.id}`,
+          "warning",
+          `“${chapter.title}” has no H1 heading (KBP uses H1 for automatic TOC)`,
+          chapter
+        )
+      );
+    }
+  }
+}
+
+function checkKbpStoreMetadata(book: Book, issues: ReadinessIssue[]): void {
+  if (!isKbpEnabled(book)) return;
+
+  const desc = book.metadata.description.trim();
+  if (!desc) {
+    issues.push(
+      issue(
+        "kbp-missing-description",
+        "warning",
+        "KBP export: book description is empty (required for KDP listing)"
+      )
+    );
+  } else if (desc.length < 50) {
+    issues.push(
+      issue(
+        "kbp-description-short",
+        "warning",
+        `Description is ${desc.length} characters — KDP recommends at least 50`
+      )
+    );
+  } else if (desc.length > 4000) {
+    issues.push(
+      issue(
+        "kbp-description-long",
+        "error",
+        `Description is ${desc.length} characters — KDP maximum is 4000`
+      )
+    );
+  }
+
+  if (!book.metadata.isbn?.trim()) {
+    issues.push(
+      issue("kbp-missing-isbn", "warning", "ISBN not set (optional for KDP but recommended)")
+    );
+  }
+  if (!book.metadata.keywords?.length) {
+    issues.push(issue("kbp-missing-keywords", "warning", "No keywords set for store listing"));
+  }
+  if (!book.metadata.bisac?.length) {
+    issues.push(issue("kbp-missing-bisac", "warning", "No BISAC categories set"));
+  }
+  if (!book.metadata.ageRating?.trim()) {
+    issues.push(issue("kbp-missing-age-rating", "warning", "Age rating not set for store listing"));
+  }
+}
+
 /** Pre-flight validation before export or publish */
 export function assessPublishReadiness(book: Book): PublishReadinessReport {
   const issues: ReadinessIssue[] = [];
@@ -291,6 +400,9 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
   checkAssetRefs(book, issues);
   checkMissingAltText(book, issues);
   checkGuidebookBlocks(book, issues);
+  checkTocIssues(book, issues);
+  checkKbpStructure(book, issues);
+  checkKbpStoreMetadata(book, issues);
 
   const errorCount = issues.filter((i) => i.severity === "error").length;
   const warningCount = issues.filter((i) => i.severity === "warning").length;

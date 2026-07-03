@@ -7,9 +7,50 @@ import { assessPublishReadiness } from "@/lib/publish-readiness";
 
 interface PublishReadinessPanelProps {
   book: Book;
+  onNavigateToChapter?: (chapterId: string) => void;
 }
 
-export default function PublishReadinessPanel({ book }: PublishReadinessPanelProps) {
+function IssueRow({
+  severity,
+  message,
+  chapterId,
+  onNavigateToChapter,
+}: {
+  severity: "error" | "warning";
+  message: string;
+  chapterId?: string;
+  onNavigateToChapter?: (chapterId: string) => void;
+}) {
+  const Icon = severity === "error" ? AlertCircle : AlertTriangle;
+  const colorClass = severity === "error" ? "text-red-300/90" : "text-amber-300/90";
+
+  if (chapterId && onNavigateToChapter) {
+    return (
+      <li className={`flex items-start gap-1.5 text-xs ${colorClass}`}>
+        <Icon size={12} className="shrink-0 mt-0.5" aria-hidden />
+        <button
+          type="button"
+          onClick={() => onNavigateToChapter(chapterId)}
+          className="text-left hover:underline focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 rounded"
+        >
+          {message}
+        </button>
+      </li>
+    );
+  }
+
+  return (
+    <li className={`flex items-start gap-1.5 text-xs ${colorClass}`}>
+      <Icon size={12} className="shrink-0 mt-0.5" aria-hidden />
+      <span>{message}</span>
+    </li>
+  );
+}
+
+export default function PublishReadinessPanel({
+  book,
+  onNavigateToChapter,
+}: PublishReadinessPanelProps) {
   const report = useMemo(() => assessPublishReadiness(book), [book]);
 
   const errors = report.issues.filter((i) => i.severity === "error");
@@ -39,22 +80,22 @@ export default function PublishReadinessPanel({ book }: PublishReadinessPanelPro
       ) : (
         <ul className="space-y-1.5 max-h-48 overflow-y-auto">
           {errors.map((item) => (
-            <li
+            <IssueRow
               key={item.id}
-              className="flex items-start gap-1.5 text-xs text-red-300/90"
-            >
-              <AlertCircle size={12} className="shrink-0 mt-0.5" aria-hidden />
-              <span>{item.message}</span>
-            </li>
+              severity="error"
+              message={item.message}
+              chapterId={item.chapterId}
+              onNavigateToChapter={onNavigateToChapter}
+            />
           ))}
           {warnings.map((item) => (
-            <li
+            <IssueRow
               key={item.id}
-              className="flex items-start gap-1.5 text-xs text-amber-300/90"
-            >
-              <AlertTriangle size={12} className="shrink-0 mt-0.5" aria-hidden />
-              <span>{item.message}</span>
-            </li>
+              severity="warning"
+              message={item.message}
+              chapterId={item.chapterId}
+              onNavigateToChapter={onNavigateToChapter}
+            />
           ))}
         </ul>
       )}

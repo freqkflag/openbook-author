@@ -246,6 +246,11 @@ export default function EditorPage() {
     downloadPdf(book, getAssetBlobs(book.id));
   }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
+  const handleExportKBP = useCallback(() => {
+    if (!book || !confirmExportIfNeeded(book)) return;
+    downloadKBP(book, getAssetBlobs(book.id));
+  }, [book, confirmExportIfNeeded, getAssetBlobs]);
+
   const kbpMode = book ? isKbpEnabled(book) || book.template === "guidebook" : false;
 
   if (!hydrated) {
@@ -389,7 +394,7 @@ export default function EditorPage() {
           </button>
           {kbpMode && (
             <button
-              onClick={() => downloadKBP(book, getAssetBlobs(book.id))}
+              onClick={handleExportKBP}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/30"
               title="Export KBP package for Kindle Direct Publishing"
             >
@@ -515,6 +520,10 @@ export default function EditorPage() {
               onUpdate={(metadata) => updateMetadata(book.id, metadata)}
               onUpdateKBP={(settings) => updateKBPSettings(book.id, settings)}
               onSetFormatProfile={(profile) => setFormatProfile(book.id, profile)}
+              onNavigateToChapter={(chapterId) => {
+                setSelectedChapterId(chapterId);
+                setViewMode("edit");
+              }}
             />
           </div>
         )}

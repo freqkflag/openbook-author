@@ -11,7 +11,7 @@ import type {
   ChapterSectionType,
   KBPSettings,
 } from "@/types/book";
-import { DEFAULT_KBP_SETTINGS } from "@/types/book";
+import { DEFAULT_KBP_SETTINGS, normalizeBookMetadata } from "@/types/book";
 import { getTemplate, getDefaultKbpForTemplate } from "@/lib/templates";
 import { getSectionTemplate } from "@/lib/chapter-sections";
 import { loadAISettings, loadBooks, saveAISettings, saveBooks } from "@/lib/storage";
@@ -85,6 +85,7 @@ const autoSaveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 function normalizeBook(b: Book): Book {
   return {
     ...b,
+    metadata: normalizeBookMetadata(b.metadata),
     formatProfile: b.formatProfile ?? "standard",
     kbpSettings: b.kbpSettings ?? { ...DEFAULT_KBP_SETTINGS },
     assets: b.assets ?? [],

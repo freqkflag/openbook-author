@@ -145,4 +145,65 @@ describe("assessPublishReadiness", () => {
     );
     expect(report.issues.some((i) => i.id.startsWith("missing-alt"))).toBe(true);
   });
+
+  it("warns on duplicate chapter titles", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        chapters: [
+          { id: "ch-1", title: "Introduction", content: "<p>A</p>", order: 0 },
+          { id: "ch-2", title: "Introduction", content: "<p>B</p>", order: 1 },
+        ],
+      })
+    );
+    expect(report.issues.some((i) => i.id.startsWith("duplicate-title"))).toBe(true);
+  });
+
+  it("flags empty TOC when all chapter titles are blank", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        chapters: [
+          { id: "ch-1", title: "   ", content: "<p>Body</p>", order: 0 },
+        ],
+      })
+    );
+    expect(report.ready).toBe(false);
+    expect(report.issues.some((i) => i.id === "empty-toc")).toBe(true);
+  });
+
+  it("warns when KBP chapters lack H1 headings", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        formatProfile: "kbp",
+        kbpSettings: { ...baseBook().kbpSettings, enabled: true },
+        chapters: [
+          {
+            id: "ch-1",
+            title: "Chapter 1",
+            content: "<p>No heading here</p>",
+            order: 0,
+          },
+        ],
+      })
+    );
+    expect(report.issues.some((i) => i.id.startsWith("missing-h1"))).toBe(true);
+  });
+
+  it("warns on KBP store metadata gaps", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        formatProfile: "kbp",
+        metadata: {
+          ...baseBook().metadata,
+          description: "Too short.",
+          isbn: "",
+          bisac: [],
+          keywords: [],
+        },
+      })
+    );
+    expect(report.issues.some((i) => i.id === "kbp-description-short")).toBe(true);
+    expect(report.issues.some((i) => i.id === "kbp-missing-isbn")).toBe(true);
+    expect(report.issues.some((i) => i.id === "kbp-missing-keywords")).toBe(true);
+    expect(report.issues.some((i) => i.id === "kbp-missing-bisac")).toBe(true);
+  });
 });

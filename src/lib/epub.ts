@@ -1,5 +1,5 @@
 import JSZip from "jszip";
-import type { Book, Chapter, ChapterSectionType } from "@/types/book";
+import type { Book, BookMetadata, Chapter, ChapterSectionType } from "@/types/book";
 import type {
   GuidebookBlockType,
   TrailStopPayload,
@@ -41,6 +41,32 @@ function decodePayload(raw: string): unknown {
   } catch {
     return null;
   }
+}
+
+function buildStoreMetadataOpf(metadata: BookMetadata): string {
+  const lines: string[] = [];
+  const isbn = metadata.isbn?.replace(/[\s-]/g, "").trim();
+  if (isbn) {
+    lines.push(`<dc:identifier id="isbn">urn:isbn:${escapeXml(isbn)}</dc:identifier>`);
+  }
+  for (const subject of [...(metadata.bisac ?? []), ...(metadata.keywords ?? [])]) {
+    const trimmed = subject.trim();
+    if (trimmed) {
+      lines.push(`<dc:subject>${escapeXml(trimmed)}</dc:subject>`);
+    }
+  }
+  if (metadata.ageRating?.trim()) {
+    lines.push(
+      `<meta name="age-rating" content="${escapeXml(metadata.ageRating.trim())}"/>`
+    );
+  }
+  if (metadata.series?.trim()) {
+    lines.push(`<meta name="series" content="${escapeXml(metadata.series.trim())}"/>`);
+    if (metadata.seriesIndex != null && metadata.seriesIndex > 0) {
+      lines.push(`<meta name="series-index" content="${metadata.seriesIndex}"/>`);
+    }
+  }
+  return lines.length ? `${lines.join("\n    ")}\n    ` : "";
 }
 
 function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: string): string {
@@ -537,8 +563,10 @@ export async function exportToEpub(
     ? `<meta name="cover" content="img-${coverFilename!.replace(/[^a-z0-9]/gi, "-")}"/>`
     : "";
 
+  const storeMetadata = buildStoreMetadataOpf(metadata);
+
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
-<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
+<package xmlns="http://www.idpf.org/2007/opf" xmlns:opf="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
   <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">
     <dc:identifier id="uid">urn:uuid:${book.id}</dc:identifier>
     <dc:title>${escapeXml(metadata.title)}</dc:title>
@@ -546,6 +574,7 @@ export async function exportToEpub(
     <dc:language>${escapeXml(metadata.language || "en")}</dc:language>
     <dc:description>${escapeXml(metadata.description)}</dc:description>
     <dc:publisher>${escapeXml(metadata.publisher || "OpenBook Author")}</dc:publisher>
+    ${storeMetadata}
     <meta property="dcterms:modified">${new Date().toISOString().split(".")[0]}Z</meta>
     ${coverMeta}
     ${isFixed ? '<meta property="rendition:layout">pre-paginated</meta>' : '<meta property="rendition:layout">reflowable</meta>'}

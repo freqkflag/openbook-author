@@ -167,15 +167,25 @@ export function applyKbpToHtml(html: string, settings: KBPSettings): string {
 }
 
 export function kbpManifest(book: Book) {
+  const { metadata } = book;
   return {
     format: "kbp",
     version: "1.0",
     generator: "OpenBook Author",
-    title: book.metadata.title,
-    author: book.metadata.author,
-    language: book.metadata.language,
+    title: metadata.title,
+    author: metadata.author,
+    language: metadata.language,
+    description: metadata.description,
     chapterCount: book.chapters.length,
     settings: book.kbpSettings,
+    store: {
+      isbn: metadata.isbn || undefined,
+      bisac: metadata.bisac?.length ? metadata.bisac : undefined,
+      keywords: metadata.keywords?.length ? metadata.keywords : undefined,
+      ageRating: metadata.ageRating || undefined,
+      series: metadata.series || undefined,
+      seriesIndex: metadata.seriesIndex,
+    },
     exportedAt: new Date().toISOString(),
     kdpNotes: [
       "Upload the included .epub file to Kindle Direct Publishing",

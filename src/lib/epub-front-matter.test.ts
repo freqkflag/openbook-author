@@ -168,4 +168,27 @@ describe("EPUB front matter export", () => {
     expect(opf).not.toContain('href="text/title.xhtml"');
     expect(titleFile).toBe("");
   });
+
+  it("embeds store metadata in OPF", async () => {
+    const book = createFrontMatterBook({
+      metadata: {
+        ...createFrontMatterBook().metadata,
+        isbn: "978-3-16-148410-0",
+        bisac: ["FIC028000", "SCI000000"],
+        keywords: ["cyberpunk", "neon"],
+        ageRating: "16+",
+        series: "Neon Dreams",
+        seriesIndex: 2,
+      },
+    });
+    const blob = await exportToEpub(book);
+    const opf = await readEpubText(blob, "content.opf");
+
+    expect(opf).toContain("urn:isbn:9783161484100");
+    expect(opf).toContain("<dc:subject>FIC028000</dc:subject>");
+    expect(opf).toContain("<dc:subject>cyberpunk</dc:subject>");
+    expect(opf).toContain('name="age-rating" content="16+"');
+    expect(opf).toContain('name="series" content="Neon Dreams"');
+    expect(opf).toContain('name="series-index" content="2"');
+  });
 });

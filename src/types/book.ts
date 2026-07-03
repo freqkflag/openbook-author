@@ -65,6 +65,35 @@ export interface BookMetadata {
   language: string;
   description: string;
   coverImage?: string;
+  /** Store listing — optional ISBN (978… or 979…) */
+  isbn?: string;
+  /** BISAC subject codes or category labels */
+  bisac?: string[];
+  /** Store search keywords */
+  keywords?: string[];
+  /** e.g. "All Ages", "12+", "18+" */
+  ageRating?: string;
+  series?: string;
+  seriesIndex?: number;
+}
+
+/** Backward-compatible defaults for books saved before store metadata shipped */
+export function normalizeBookMetadata(metadata: Partial<BookMetadata> = {}): BookMetadata {
+  return {
+    title: metadata.title ?? "",
+    subtitle: metadata.subtitle ?? "",
+    author: metadata.author ?? "",
+    publisher: metadata.publisher ?? "",
+    language: metadata.language ?? "en",
+    description: metadata.description ?? "",
+    coverImage: metadata.coverImage,
+    isbn: metadata.isbn ?? "",
+    bisac: metadata.bisac ?? [],
+    keywords: metadata.keywords ?? [],
+    ageRating: metadata.ageRating ?? "",
+    series: metadata.series ?? "",
+    seriesIndex: metadata.seriesIndex,
+  };
 }
 
 export interface Book {

@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { Book } from "@/types/book";
+import { normalizeBookMetadata } from "@/types/book";
 import { cacheAssetBlob } from "@/lib/asset-store";
 
 export const PACKAGE_VERSION = "1.0";
@@ -61,6 +62,7 @@ export async function parsePackageFile(file: File | Blob): Promise<OpenPackageRe
   if (!bookRaw) throw new Error("Invalid .openbook package: missing book.json");
 
   const book = JSON.parse(bookRaw) as Book;
+  book.metadata = normalizeBookMetadata(book.metadata);
   book.assets = book.assets ?? [];
   book.packagePath = book.packagePath;
 

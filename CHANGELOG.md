@@ -8,6 +8,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Store metadata fields: ISBN, BISAC, keywords, age rating, series — in Book Properties, EPUB OPF, and KBP manifest (#18)
+- Extended publish readiness: duplicate TOC titles, empty TOC, KBP H1 checks, KBP store metadata warnings (#17)
+- KBP export now runs through the same readiness gate as EPUB/PDF (#17)
+- Click-to-chapter navigation from publish readiness issues in Book Properties
 - Keyboard shortcuts cheat sheet documents shipped bindings; `Cmd+Shift+P` toggles full-book preview (#7)
 - Grip-handle chapter reorder in sidebar with `aria-grabbed` (#10)
 - Section templates: Resources, Learning Objectives, Practice Quiz, Bibliography (#12)

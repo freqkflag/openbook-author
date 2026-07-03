@@ -9,6 +9,18 @@ interface MetadataPanelProps {
   onUpdate: (metadata: Partial<Book["metadata"]>) => void;
   onUpdateKBP: (settings: Partial<KBPSettings>) => void;
   onSetFormatProfile: (profile: Book["formatProfile"]) => void;
+  onNavigateToChapter?: (chapterId: string) => void;
+}
+
+function parseListInput(value: string): string[] {
+  return value
+    .split(/[\n,]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+function formatListInput(values: string[] | undefined): string {
+  return (values ?? []).join("\n");
 }
 
 export default function MetadataPanel({
@@ -16,6 +28,7 @@ export default function MetadataPanel({
   onUpdate,
   onUpdateKBP,
   onSetFormatProfile,
+  onNavigateToChapter,
 }: MetadataPanelProps) {
   const { metadata, kbpSettings, formatProfile } = book;
   const kbpActive = formatProfile === "kbp" || kbpSettings.enabled;
@@ -43,22 +56,108 @@ export default function MetadataPanel({
               value={metadata[key]}
               onChange={(e) => onUpdate({ [key]: e.target.value })}
               rows={3}
-              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-none"
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white resize-none focus:border-cyan-500/40 focus:outline-none"
             />
           ) : (
             <input
               type="text"
               value={metadata[key]}
               onChange={(e) => onUpdate({ [key]: e.target.value })}
-              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-500/40 focus:outline-none"
             />
           )}
         </label>
       ))}
 
+      <div className="pt-3 border-t border-white/10 space-y-3">
+        <h3 className="text-xs font-medium text-magenta-400 uppercase tracking-wider text-[#FF00AA]">
+          Store Listing
+        </h3>
+        <p className="text-xs text-slate-500">
+          Fields for KDP and Apple Books — included in EPUB and KBP export metadata.
+        </p>
+
+        <label className="block text-xs text-slate-400">
+          ISBN
+          <input
+            type="text"
+            value={metadata.isbn ?? ""}
+            onChange={(e) => onUpdate({ isbn: e.target.value })}
+            placeholder="978-3-16-148410-0"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-[#FF00AA]/40 focus:outline-none"
+          />
+        </label>
+
+        <label className="block text-xs text-slate-400">
+          BISAC categories
+          <textarea
+            value={formatListInput(metadata.bisac)}
+            onChange={(e) => onUpdate({ bisac: parseListInput(e.target.value) })}
+            rows={2}
+            placeholder="One per line or comma-separated"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 resize-none focus:border-[#FF00AA]/40 focus:outline-none"
+          />
+        </label>
+
+        <label className="block text-xs text-slate-400">
+          Keywords
+          <textarea
+            value={formatListInput(metadata.keywords)}
+            onChange={(e) => onUpdate({ keywords: parseListInput(e.target.value) })}
+            rows={2}
+            placeholder="cyberpunk, sci-fi, queer fiction"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 resize-none focus:border-[#FF00AA]/40 focus:outline-none"
+          />
+        </label>
+
+        <label className="block text-xs text-slate-400">
+          Age rating
+          <select
+            value={metadata.ageRating ?? ""}
+            onChange={(e) => onUpdate({ ageRating: e.target.value })}
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#FF00AA]/40 focus:outline-none"
+          >
+            <option value="">Not set</option>
+            <option value="All Ages">All Ages</option>
+            <option value="9+">9+</option>
+            <option value="12+">12+</option>
+            <option value="17+">17+</option>
+            <option value="18+">18+</option>
+          </select>
+        </label>
+
+        <label className="block text-xs text-slate-400">
+          Series
+          <input
+            type="text"
+            value={metadata.series ?? ""}
+            onChange={(e) => onUpdate({ series: e.target.value })}
+            placeholder="Neon Dreams Saga"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-[#FF00AA]/40 focus:outline-none"
+          />
+        </label>
+
+        {metadata.series?.trim() && (
+          <label className="block text-xs text-slate-400">
+            Series volume
+            <input
+              type="number"
+              min={1}
+              value={metadata.seriesIndex ?? ""}
+              onChange={(e) =>
+                onUpdate({
+                  seriesIndex: e.target.value ? Number(e.target.value) : undefined,
+                })
+              }
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-[#FF00AA]/40 focus:outline-none"
+            />
+          </label>
+        )}
+      </div>
+
       <CoverEditor book={book} />
 
-      <PublishReadinessPanel book={book} />
+      <PublishReadinessPanel book={book} onNavigateToChapter={onNavigateToChapter} />
 
       <div className="pt-3 border-t border-white/10 space-y-3">
         <h3 className="text-xs font-medium text-fuchsia-400 uppercase tracking-wider">
