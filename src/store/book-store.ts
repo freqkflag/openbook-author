@@ -51,6 +51,7 @@ interface BookStore {
   updateChapter: (bookId: string, chapterId: string, updates: Partial<Chapter>) => void;
   deleteChapter: (bookId: string, chapterId: string) => void;
   reorderChapter: (bookId: string, chapterId: string, direction: "up" | "down") => void;
+  reorderChapters: (bookId: string, fromIndex: number, toIndex: number) => void;
   importBook: (book: Book | Omit<Book, "id" | "createdAt" | "updatedAt">) => string;
   updateAISettings: (settings: Partial<AISettings>) => void;
   addAsset: (bookId: string, file: File) => Promise<BookAsset>;
@@ -282,6 +283,22 @@ export const useBookStore = create<BookStore>((set, get) => {
         if (swapIdx < 0 || swapIdx >= b.chapters.length) return b;
         const chapters = [...b.chapters];
         [chapters[idx], chapters[swapIdx]] = [chapters[swapIdx], chapters[idx]];
+        return {
+          ...b,
+          chapters: chapters.map((ch, i) => ({ ...ch, order: i })),
+          updatedAt: new Date().toISOString(),
+        };
+      });
+    },
+
+    reorderChapters: (bookId, fromIndex, toIndex) => {
+      if (fromIndex === toIndex) return;
+      touchBook(bookId, (b) => {
+        if (fromIndex < 0 || fromIndex >= b.chapters.length) return b;
+        if (toIndex < 0 || toIndex >= b.chapters.length) return b;
+        const chapters = [...b.chapters];
+        const [moved] = chapters.splice(fromIndex, 1);
+        chapters.splice(toIndex, 0, moved);
         return {
           ...b,
           chapters: chapters.map((ch, i) => ({ ...ch, order: i })),

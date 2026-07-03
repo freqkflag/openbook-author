@@ -125,6 +125,24 @@ body::before {
   margin: 1rem 0;
 }
 
+/* Guidebook blocks — editor */
+.ProseMirror .guidebook-block,
+.ProseMirror [data-guidebook] {
+  margin: 1rem 0;
+}
+
+.ProseMirror .guidebook-trail-stop {
+  border-color: rgba(0, 255, 136, 0.35);
+}
+
+.ProseMirror .guidebook-workshop {
+  border-color: rgba(217, 70, 239, 0.35);
+}
+
+.ProseMirror .guidebook-cheat-sheet {
+  border-color: rgba(0, 229, 255, 0.35);
+}
+
 /* Print preview */
 .print-preview-page {
   color: #1a1a1a;
@@ -287,6 +305,106 @@ body::before {
   color: #666;
   margin-top: 0.4em;
   font-style: italic;
+}
+
+/* Guidebook blocks — print preview */
+.print-preview-body .guidebook-block {
+  margin: 1.25em 0;
+  border-radius: 6px;
+  overflow: hidden;
+  text-indent: 0;
+  border: 1px solid #ccc;
+}
+
+.print-preview-body .guidebook-block header,
+.print-preview-body .guidebook-block .guidebook-block-header {
+  padding: 0.5em 0.85em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.print-preview-body .guidebook-block .guidebook-block-body {
+  padding: 0.75em 0.85em;
+}
+
+.print-preview-body .guidebook-trail-stop {
+  border-color: #00a86b;
+  border-left-width: 4px;
+}
+
+.print-preview-body .guidebook-trail-stop header,
+.print-preview-body .guidebook-trail-stop .guidebook-block-header {
+  background: #f0faf5;
+  color: #007a4d;
+}
+
+.print-preview-body .guidebook-trail-stop .trail-meta {
+  font-size: 0.85em;
+  color: #666;
+  margin: 0.25em 0 0.5em;
+}
+
+.print-preview-body .guidebook-trail-stop .trail-amenities {
+  margin: 0.5em 0 0;
+  padding-left: 1.25em;
+  font-size: 0.9em;
+}
+
+.print-preview-body .guidebook-workshop {
+  border-color: #c026d3;
+  border-left-width: 4px;
+}
+
+.print-preview-body .guidebook-workshop header,
+.print-preview-body .guidebook-workshop .guidebook-block-header {
+  background: #fdf4ff;
+  color: #a21caf;
+}
+
+.print-preview-body .guidebook-workshop .workshop-exercise {
+  margin: 0.6em 0;
+  padding: 0.5em 0.75em;
+  background: #faf5ff;
+  border-radius: 4px;
+  font-size: 0.9em;
+}
+
+.print-preview-body .guidebook-workshop .response-hint {
+  font-size: 0.8em;
+  color: #888;
+  font-style: italic;
+}
+
+.print-preview-body .guidebook-cheat-sheet {
+  border-color: #0891b2;
+  border-left-width: 4px;
+}
+
+.print-preview-body .guidebook-cheat-sheet header,
+.print-preview-body .guidebook-cheat-sheet .guidebook-block-header {
+  background: #ecfeff;
+  color: #0e7490;
+}
+
+.print-preview-body .guidebook-cheat-sheet .cheat-grid {
+  display: grid;
+  gap: 0.35em 1em;
+  font-size: 0.9em;
+}
+
+.print-preview-body .guidebook-cheat-sheet .cheat-grid.cols-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.print-preview-body .guidebook-cheat-sheet .cheat-grid.cols-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.print-preview-body .guidebook-cheat-sheet .cheat-label {
+  font-weight: 600;
+  color: #0e7490;
 }
 
 .print-preview-body img { max-width: 100%; height: auto; display: block; margin: 1em auto; }

@@ -1,0 +1,79 @@
+---
+description: Shared YAML contract for OpenBook Author agent orchestration
+alwaysApply: false
+---
+
+# Agent Handoff Contract
+
+All agents in the OpenBook Author studio accept and produce this schema.
+
+## Router Handoff (input to execution agents)
+
+```yaml
+issue: <number>
+title: <string>
+classification: bug | feature | docs | refactor | test | design | unknown
+confidence: <0.00–1.00>
+agent: debug-agent | feature-agent | docs-agent | refactor-agent | test-agent | ui-agent
+priority: low | medium | high | critical
+estimated_scope: small | medium | large | epic
+escalate: true | false
+recommendation: <string | null>  # required when escalate is true
+relevant_adrs: []  # full slugs, e.g. ADR-0001-guidebook-block-model — from @architecture-memory
+deliverables:
+  - <item>
+success_criteria:
+  - <criterion>
+context:
+  labels: []
+  linked_files: []
+  summary: <1–3 sentences>
+workflow:
+  - <current-agent>
+  - review-agent
+  - pr-creator-agent
+```
+
+## Execution Handoff (output from execution agents → review-agent)
+
+```yaml
+issue: <number>
+source_agent: <agent-id>
+status: complete | blocked | needs_human
+changes_summary: <what was done>
+files_touched: []
+deliverables_completed: []
+success_criteria_met: []
+adrs_consulted: []  # full ADR slugs read and followed
+architecture_change: true | false
+adr_proposal: null  # or { id: ADR-0005-short-slug, title: "...", action: new|supersede, supersedes: ADR-XXXX-short-slug }
+open_questions: []
+next_agent: review-agent
+```
+
+## Review Handoff (output from review-agent)
+
+```yaml
+issue: <number>
+source_agent: review-agent
+verdict: approved | changes_requested | blocked
+findings: []
+security_flags: []
+a11y_flags: []
+adr_compliance: pass | adr_missing | adr_conflict
+next_agent: <execution-agent-id> | pr-creator-agent
+```
+
+### Review routing (`next_agent`)
+
+- `needs_human` or empty `files_touched` (planning gate) → `next_agent` is the execution handoff `source_agent`
+- `changes_requested` or `blocked` → `next_agent` is the execution handoff `source_agent`
+- `status: complete`, tests pass, `verdict: approved` → `next_agent: pr-creator-agent`
+
+### ADR compliance gate
+
+When `architecture_change: true` in the execution handoff:
+
+- `pass` — `adrs_consulted` shows Accepted ADRs were followed, or `adr_proposal` is present for merge
+- `adr_missing` — architectural change with no ADR coverage
+- `adr_conflict` — implementation contradicts an Accepted ADR without supersede proposal

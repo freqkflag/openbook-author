@@ -13,6 +13,7 @@
     "start": "next start",
     "start:electron": "next start -p 3847",
     "lint": "eslint",
+    "test": "vitest run",
     "electron:dev": "concurrently -k \"npm run dev:web\" \"wait-on http://localhost:3847 && OPENBOOK_PORT=3847 electron .\"",
     "electron:build": "npm run build && electron-builder --mac"
   },
@@ -71,6 +72,7 @@
     "eslint-config-next": "16.2.10",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^3.2.4",
     "wait-on": "^9.0.10"
   }
 }

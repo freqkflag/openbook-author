@@ -8,7 +8,8 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
+import type { Editor } from "@tiptap/react";
 import type { Book } from "@/types/book";
 import AssetPicker from "@/components/AssetPicker";
 import { EditorAssetContext } from "@/context/EditorAssetContext";
@@ -36,15 +37,21 @@ import {
   Lightbulb,
   AlertTriangle,
   Minus,
+  MapPin,
+  ClipboardList,
+  FileText,
+  Keyboard,
 } from "lucide-react";
 import { PopupWidget } from "@/components/extensions/PopupWidget";
 import { GalleryWidget } from "@/components/extensions/GalleryWidget";
+import { GuidebookBlock } from "@/components/extensions/GuidebookBlock";
 import {
   TipCallout,
   WarningCallout,
   StepBlock,
   SceneBreak,
 } from "@/components/extensions/KBPCallouts";
+import type { GuidebookBlockType } from "@/types/guidebook";
 
 interface RichEditorProps {
   book: Book;
@@ -52,6 +59,7 @@ interface RichEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   kbpMode?: boolean;
+  onShowShortcuts?: () => void;
 }
 
 function ToolbarButton({
@@ -81,10 +89,18 @@ function ToolbarButton({
   );
 }
 
-export default function RichEditor({ book, content, onChange, placeholder, kbpMode }: RichEditorProps) {
+export default function RichEditor({
+  book,
+  content,
+  onChange,
+  placeholder,
+  kbpMode,
+  onShowShortcuts,
+}: RichEditorProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerTitle, setPickerTitle] = useState("Choose Image");
   const [pickerHandler, setPickerHandler] = useState<((src: string, alt?: string) => void) | null>(null);
+  const editorRef = useRef<Editor | null>(null);
 
   const openAssetPicker = (onSelect: (src: string, alt?: string) => void, title?: string) => {
     setPickerTitle(title || "Choose Image");
@@ -107,10 +123,107 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
       WarningCallout,
       StepBlock,
       SceneBreak,
+      GuidebookBlock,
     ],
     content,
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
+    onCreate: ({ editor: e }) => {
+      editorRef.current = e;
+    },
+    onDestroy: () => {
+      editorRef.current = null;
+    },
     editorProps: {
+      handleKeyDown: (_view, event) => {
+        const ed = editorRef.current;
+        if (!ed) return false;
+
+        const mod = event.metaKey || event.ctrlKey;
+
+        if (mod && event.key === "/" && onShowShortcuts) {
+          event.preventDefault();
+          onShowShortcuts();
+          return true;
+        }
+        if (event.key === "?" && !mod && !event.altKey && onShowShortcuts) {
+          event.preventDefault();
+          onShowShortcuts();
+          return true;
+        }
+
+        if (!mod) return false;
+
+        const key = event.key.toLowerCase();
+        const shift = event.shiftKey;
+        const alt = event.altKey;
+
+        if (key === "b" && !shift) {
+          event.preventDefault();
+          ed.chain().focus().toggleBold().run();
+          return true;
+        }
+        if (key === "i" && !shift) {
+          event.preventDefault();
+          ed.chain().focus().toggleItalic().run();
+          return true;
+        }
+        if (key === "u" && !shift) {
+          event.preventDefault();
+          ed.chain().focus().toggleUnderline().run();
+          return true;
+        }
+        if (key === "s" && shift && !alt) {
+          event.preventDefault();
+          ed.chain().focus().toggleStrike().run();
+          return true;
+        }
+        if (key === "h" && shift) {
+          event.preventDefault();
+          ed.chain().focus().toggleHighlight().run();
+          return true;
+        }
+        if (alt && key === "1") {
+          event.preventDefault();
+          ed.chain().focus().toggleHeading({ level: 1 }).run();
+          return true;
+        }
+        if (alt && key === "2") {
+          event.preventDefault();
+          ed.chain().focus().toggleHeading({ level: 2 }).run();
+          return true;
+        }
+        if (alt && key === "3") {
+          event.preventDefault();
+          ed.chain().focus().toggleHeading({ level: 3 }).run();
+          return true;
+        }
+        if (shift && key === "8") {
+          event.preventDefault();
+          ed.chain().focus().toggleBulletList().run();
+          return true;
+        }
+        if (shift && key === "7") {
+          event.preventDefault();
+          ed.chain().focus().toggleOrderedList().run();
+          return true;
+        }
+        if (shift && key === "b") {
+          event.preventDefault();
+          ed.chain().focus().toggleBlockquote().run();
+          return true;
+        }
+        if (key === "z" && shift) {
+          event.preventDefault();
+          ed.chain().focus().redo().run();
+          return true;
+        }
+        if (key === "z" && !shift) {
+          event.preventDefault();
+          ed.chain().focus().undo().run();
+          return true;
+        }
+        return false;
+      },
       attributes: {
         class:
           "prose prose-invert max-w-none min-h-[400px] focus:outline-none px-6 py-4 text-slate-200",
@@ -125,6 +238,12 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
   }, [content, editor]);
 
   if (!editor) return null;
+
+  const guidebookBlocksEnabled = kbpMode || book.template === "guidebook";
+
+  const insertGuidebookBlock = (blockType: GuidebookBlockType) => {
+    editor.chain().focus().setGuidebookBlock({ blockType }).run();
+  };
 
   const addImage = () => {
     openAssetPicker((src, alt) => {
@@ -175,8 +294,14 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
         <ToolbarButton onClick={() => editor.chain().focus().undo().run()} title="Undo">
           <Undo size={16} />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo">
+        <ToolbarButton onClick={() => editor.chain().focus().redo().run()} title="Redo (⌘⇧Z)">
           <Redo size={16} />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => onShowShortcuts?.()}
+          title="Keyboard shortcuts (⌘/)"
+        >
+          <Keyboard size={16} />
         </ToolbarButton>
         <div className="w-px h-5 bg-white/10 mx-1" />
         <ToolbarButton
@@ -334,6 +459,29 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
               title="Insert scene break"
             >
               <Minus size={16} />
+            </ToolbarButton>
+          </>
+        )}
+        {guidebookBlocksEnabled && (
+          <>
+            <div className="w-px h-5 bg-white/10 mx-1" />
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("trail_stop")}
+              title="Insert trail stop"
+            >
+              <MapPin size={16} />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("workshop")}
+              title="Insert workshop block"
+            >
+              <ClipboardList size={16} />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("cheat_sheet")}
+              title="Insert cheat sheet"
+            >
+              <FileText size={16} />
             </ToolbarButton>
           </>
         )}

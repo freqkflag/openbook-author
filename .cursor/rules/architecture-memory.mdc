@@ -1,0 +1,43 @@
+---
+description: Shared architectural memory policy — consult ADRs before proposing changes
+alwaysApply: false
+---
+
+# Architecture Memory
+
+All OpenBook Author studio agents share architectural memory in `docs/adr/`.
+
+## Before proposing a solution
+
+1. Read [docs/adr/README.md](docs/adr/README.md) index
+2. Grep `docs/adr/` for keywords from the issue (affected area, file paths, feature names)
+3. Read full ADR files for any match
+4. Honor `relevant_adrs` from the router handoff when present (full slugs map to `docs/adr/<slug>.md`)
+
+## Policy
+
+- **Accepted ADRs are binding** — follow them unless the issue explicitly proposes changing architecture
+- **To supersede an ADR** — set `adr_proposal` in the execution handoff with `action: supersede` and `supersedes: ADR-XXXX`; do not silently diverge
+- **Architectural changes** — set `architecture_change: true`; require ADR coverage before merge (existing ADR followed or new ADR proposed)
+
+## Keyword → ADR map
+
+| Keywords / area | ADR slug |
+|-----------------|----------|
+| guidebook, trail_stop, workshop, cheat_sheet | ADR-0001-guidebook-block-model |
+| popup, gallery, widget | ADR-0002-widget-plugin-api |
+| epub, export, kbp | ADR-0003-epub-export-pipeline |
+| agent, handoff, router, workflow | ADR-0004-agent-handoff-contract |
+
+## Affected area → ADR hints
+
+| Issue form area | Likely ADRs |
+|-----------------|-------------|
+| Guidebook blocks | ADR-0001-guidebook-block-model, ADR-0003-epub-export-pipeline |
+| Export / EPUB | ADR-0003-epub-export-pipeline |
+| Widgets / rich content | ADR-0002-widget-plugin-api, ADR-0003-epub-export-pipeline |
+| Editor | ADR-0001-guidebook-block-model, ADR-0002-widget-plugin-api (if widgets involved) |
+
+## After architectural work
+
+When `architecture_change: true`, `@docs-agent` finalizes ADR markdown from `adr_proposal` after review approval.
