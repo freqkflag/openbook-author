@@ -12,6 +12,7 @@ on:
       - ".openbook/review/**"
 
 permissions:
+  contents: read
   issues: write
   pull-requests: write
 
@@ -40,12 +41,6 @@ jobs:
               return;
             }
 
-            await github.rest.issues.addLabels({
-              ...context.repo,
-              issue_number: issueNumber,
-              labels: labelsToAdd,
-            });
-
             for (const name of labelsToRemove) {
               try {
                 await github.rest.issues.removeLabel({
@@ -57,6 +52,12 @@ jobs:
                 // optional
               }
             }
+
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: issueNumber,
+              labels: labelsToAdd,
+            });
 
   apply-pr:
     if: github.event_name == 'pull_request'
@@ -132,12 +133,6 @@ jobs:
                 continue;
               }
 
-              await github.rest.issues.addLabels({
-                ...context.repo,
-                issue_number: Number(issueNumber),
-                labels: labelsToAdd,
-              });
-
               for (const name of labelsToRemove) {
                 try {
                   await github.rest.issues.removeLabel({
@@ -149,6 +144,12 @@ jobs:
                   // optional
                 }
               }
+
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                labels: labelsToAdd,
+              });
 
               core.info(`Applied review handoff for issue #${issueNumber}`);
             }

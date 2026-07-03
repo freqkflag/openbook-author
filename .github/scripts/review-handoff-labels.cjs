@@ -8,6 +8,7 @@ const AGENT_LABEL = Object.freeze({
 });
 
 const VALID_REVIEW_VERDICTS = new Set(["approved", "changes_requested", "blocked"]);
+const AGENT_LABELS = Object.freeze(Object.values(AGENT_LABEL));
 
 function extractYamlPayload(body) {
   const yamlMatch = body.match(/```ya?ml\s*([\s\S]*?)```/);
@@ -38,10 +39,10 @@ function getReviewLabelPlan({ verdict, nextAgent }) {
 
   if (verdict === "approved") {
     labelsToAdd.push("approved-for-merge");
-    labelsToRemove.push("needs-rework", "needs-human", "ready-for-execution");
+    labelsToRemove.push("needs-rework", "needs-human", "ready-for-execution", ...AGENT_LABELS);
   } else {
     labelsToAdd.push("needs-rework");
-    labelsToRemove.push("approved-for-merge", "needs-human");
+    labelsToRemove.push("approved-for-merge", "needs-human", "ready-for-execution", ...AGENT_LABELS);
     if (AGENT_LABEL[nextAgent]) {
       labelsToAdd.push(AGENT_LABEL[nextAgent], "ready-for-execution");
     }
@@ -52,6 +53,7 @@ function getReviewLabelPlan({ verdict, nextAgent }) {
 
 module.exports = {
   AGENT_LABEL,
+  AGENT_LABELS,
   extractYamlPayload,
   getReviewLabelPlan,
   parseReviewFields,

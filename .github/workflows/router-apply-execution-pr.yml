@@ -83,11 +83,13 @@ jobs:
 
               const status = raw.match(/^status:\s*(\S+)/m)?.[1] ?? "complete";
               const labelsToAdd = [];
+              const labelsToRemove = ["ready-for-execution"];
 
               if (status === "needs_human" || status === "blocked") {
                 labelsToAdd.push("needs-human");
               } else {
                 labelsToAdd.push("ready-for-review");
+                labelsToRemove.push("needs-rework");
               }
 
               if (labelsToAdd.length > 0) {
@@ -96,6 +98,18 @@ jobs:
                   issue_number: Number(issueNumber),
                   labels: labelsToAdd,
                 });
+              }
+
+              for (const name of labelsToRemove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    ...context.repo,
+                    issue_number: Number(issueNumber),
+                    name,
+                  });
+                } catch {
+                  // optional
+                }
               }
 
               core.info(`Applied execution handoff for issue #${issueNumber}`);

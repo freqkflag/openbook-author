@@ -185,6 +185,13 @@ describe("review handoff label routing", () => {
       "ready-for-review",
       "approved-for-merge",
       "needs-human",
+      "ready-for-execution",
+      "agent:bug",
+      "agent:feature",
+      "agent:docs",
+      "agent:refactor",
+      "agent:test",
+      "agent:design",
     ]);
   });
 });
