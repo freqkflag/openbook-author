@@ -101,7 +101,7 @@ export default function EditorPage() {
         return;
       }
 
-      if (mod && e.key.toLowerCase() === "p") {
+      if (mod && e.key.toLowerCase() === "p" && !e.shiftKey) {
         e.preventDefault();
         setViewMode((mode) => (mode === "edit" ? "preview" : "edit"));
         setShowAI(false);
