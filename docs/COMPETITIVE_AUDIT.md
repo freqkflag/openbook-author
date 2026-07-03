@@ -49,6 +49,7 @@
 | **`.openbook`** | Zip: `manifest.json`, `book.json`, `assets/` |
 | **EPUB import** | Dashboard; widget reverse-transform (popups, galleries, guidebook blocks) |
 | **IBA import** | `.iba`, `.book`, templates — metadata, chapters, text, images (layout/widgets lost) |
+| **DOCX import** | Dashboard **Import DOCX** — mammoth HTML, heading-based chapters, inline images to `assets/`, import report |
 | **Legacy** | `.openbook.json` import |
 
 ### Interactive & KBP
@@ -182,7 +183,7 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | Theme/font library | Vellum 26, Atticus 1500+ | ❌ Single CSS stack | **P0** | M | High |
 | Footnotes/endnotes | Atticus, Scrivener, textbooks | ✅ Shipped (Wave A.1) | — | — | Core |
 | Tables | Pressbooks, textbooks | ✅ Shipped (Wave A.1) | — | — | Core |
-| DOCX import/export | Atticus, Ulysses, KC | ❌ | **P1** | L | High |
+| DOCX import/export | Atticus, Ulysses, KC | Import ✅ / export ❌ | **P1** | L | High |
 | Store validation (KDP/Apple) | KC, Vellum ecosystem | 🟡 Readiness panel only | **P1** | M | High |
 | Fixed-layout editor | IBA, Canva, KC | 🟡 Metadata flag only | **P1** | XL | Medium (photo/comic niche) |
 | Media widgets (audio/video) | IBA, Pressbooks | ❌ | **P1** | L | Medium |
@@ -223,7 +224,7 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 
 1. **Footnotes/endnotes + tables** ✅ Wave A.1 — TipTap extensions, EPUB/KBP transforms ([#8](https://github.com/freqkflag/openbook-author/issues/8) · close)
 2. **Export theme system** 🟡 Wave A.2 — 3–5 built-in themes + custom CSS hook — [#55](https://github.com/freqkflag/openbook-author/issues/55)
-3. **DOCX import** 🟡 Wave A.2 — mammoth or pandoc WASM — [#54](https://github.com/freqkflag/openbook-author/issues/54)
+3. **DOCX import** ✅ — mammoth browser conversion — [#54](https://github.com/freqkflag/openbook-author/issues/54)
 4. **Print PDF hardening** 🟡 Wave A.2 — trim sizes, page breaks, TOC leaders; Electron `printToPDF` presets
 5. **PWA offline shell** 🟡 Wave A.2 — service worker, cache editor — [#27](https://github.com/freqkflag/openbook-author/issues/27)
 6. **axe-core in CI** ✅ Wave A.1 — export HTML fixtures in Vitest/CI

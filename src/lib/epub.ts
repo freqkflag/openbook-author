@@ -8,6 +8,12 @@ import type {
   TrailStopAmenity,
 } from "@/types/guidebook";
 import { applyKbpToHtml, isKbpEnabled, KBP_CSS } from "@/lib/kbp";
+import {
+  appendCustomCss,
+  buildThemeTypographyCss,
+  normalizeExportTheme,
+} from "@/lib/export-themes";
+import type { ExportThemeSettings } from "@/types/book";
 import { getAssetByFilename } from "@/lib/asset-store";
 import { transformNotesForEpub, TABLE_EXPORT_CSS } from "@/lib/note-export";
 
@@ -477,32 +483,16 @@ details.popup-widget > div { padding: 1em; }
 }
 `;
 
-const MAIN_CSS = `body {
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.6;
-  margin: 1em;
-  color: #1a1a1a;
-}
-h1 { font-size: 2em; margin-bottom: 0.5em; }
-h2 { font-size: 1.5em; margin-top: 1.5em; }
-h3 { font-size: 1.25em; }
-p { margin: 0.8em 0; }
-blockquote {
-  border-left: 3px solid #00e5ff;
-  margin: 1em 0;
-  padding-left: 1em;
-  color: #444;
-}
-img { max-width: 100%; height: auto; }
-ul, ol { margin: 0.8em 0; padding-left: 1.5em; }
-`;
-
 /** Assembled export stylesheet — guidebook CSS is always included (KBP path previously dropped it). */
-export function buildExportCss(useKbp: boolean): string {
-  if (useKbp) {
-    return `${KBP_CSS}\n${WIDGET_EXPORT_CSS}\n${TABLE_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
-  }
-  return `${MAIN_CSS}\n${WIDGET_EXPORT_CSS}\n${TABLE_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+export function buildExportCss(
+  useKbp: boolean,
+  theme?: Partial<ExportThemeSettings> | null
+): string {
+  const normalized = normalizeExportTheme(theme);
+  const themeCss = buildThemeTypographyCss(normalized.themeId, useKbp);
+  const base = useKbp ? `${KBP_CSS}\n${themeCss}` : themeCss;
+  const css = `${base}\n${WIDGET_EXPORT_CSS}\n${TABLE_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+  return appendCustomCss(css, normalized.customCss);
 }
 
 export async function exportToEpub(
@@ -513,7 +503,7 @@ export async function exportToEpub(
   const { metadata, chapters } = book;
   const isFixed = book.layoutMode === "landscape";
   const useKbp = isKbpEnabled(book);
-  const css = buildExportCss(useKbp);
+  const css = buildExportCss(useKbp, book.exportTheme);
 
   const coverFilename = book.metadata.coverImage?.startsWith("assets/")
     ? book.metadata.coverImage.replace("assets/", "")

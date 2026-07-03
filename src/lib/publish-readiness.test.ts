@@ -240,4 +240,17 @@ describe("assessPublishReadiness", () => {
     expect(report.issues.some((i) => i.id === "kbp-missing-keywords")).toBe(true);
     expect(report.issues.some((i) => i.id === "kbp-missing-bisac")).toBe(true);
   });
+
+  it("warns when custom export CSS references missing assets", () => {
+    const report = assessPublishReadiness(
+      baseBook({
+        exportTheme: {
+          themeId: "classic-serif",
+          customCss: '.hero { background: url("assets/missing.png"); }',
+        },
+      })
+    );
+    expect(report.issues.some((i) => i.id.startsWith("custom-css-asset"))).toBe(true);
+    expect(report.ready).toBe(true);
+  });
 });

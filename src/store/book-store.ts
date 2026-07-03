@@ -12,6 +12,8 @@ import type {
   KBPSettings,
 } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS, normalizeBookMetadata } from "@/types/book";
+import type { ExportThemeSettings } from "@/types/book";
+import { normalizeExportTheme } from "@/lib/export-themes";
 import { getTemplate, getDefaultKbpForTemplate } from "@/lib/templates";
 import { getSectionTemplate } from "@/lib/chapter-sections";
 import { loadAISettings, loadBooks, saveAISettings, saveBooks } from "@/lib/storage";
@@ -46,6 +48,7 @@ interface BookStore {
   getAssetBlobs: (bookId: string) => Map<string, Blob>;
   updateMetadata: (id: string, metadata: Partial<Book["metadata"]>) => void;
   updateKBPSettings: (id: string, settings: Partial<KBPSettings>) => void;
+  updateExportTheme: (id: string, settings: Partial<ExportThemeSettings>) => void;
   setFormatProfile: (id: string, profile: Book["formatProfile"]) => void;
   addChapter: (bookId: string, title?: string) => string;
   addSection: (bookId: string, sectionType: ChapterSectionType) => string;
@@ -91,6 +94,7 @@ function normalizeBook(b: Book): Book {
     metadata: normalizeBookMetadata(b.metadata),
     formatProfile: b.formatProfile ?? "standard",
     kbpSettings: b.kbpSettings ?? { ...DEFAULT_KBP_SETTINGS },
+    exportTheme: normalizeExportTheme(b.exportTheme),
     assets: b.assets ?? [],
     packagePath: b.packagePath,
     chapters: b.chapters.map((ch) => ({
@@ -168,6 +172,9 @@ export const useBookStore = create<BookStore>((set, get) => {
         layoutMode: tpl.layoutMode,
         formatProfile: tpl.formatProfile ?? "standard",
         kbpSettings: getDefaultKbpForTemplate(template),
+        exportTheme: normalizeExportTheme(
+          template === "guidebook" ? { themeId: "guidebook" } : undefined
+        ),
         assets: [],
         metadata: {
           title: title || "Untitled Book",
@@ -224,6 +231,14 @@ export const useBookStore = create<BookStore>((set, get) => {
       touchBook(id, (b) => ({
         ...b,
         kbpSettings: { ...b.kbpSettings, ...settings },
+        updatedAt: new Date().toISOString(),
+      }));
+    },
+
+    updateExportTheme: (id, settings) => {
+      touchBook(id, (b) => ({
+        ...b,
+        exportTheme: normalizeExportTheme({ ...b.exportTheme, ...settings }),
         updatedAt: new Date().toISOString(),
       }));
     },

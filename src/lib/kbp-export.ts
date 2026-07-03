@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import type { Book } from "@/types/book";
-import { kbpManifest, KBP_CSS } from "@/lib/kbp";
-import { exportToEpub, hasTitlePage, prepareChapterContent } from "@/lib/epub";
+import { kbpManifest } from "@/lib/kbp";
+import { buildExportCss, exportToEpub, hasTitlePage, prepareChapterContent } from "@/lib/epub";
 import { getAssetByFilename } from "@/lib/asset-store";
 
 function escapeHtml(text: string): string {
@@ -136,7 +136,7 @@ Contents:
 KDP Upload: Use export.epub or import HTML chapters into Kindle Create.
 `);
 
-  zip.folder("styles")?.file("kbp.css", KBP_CSS);
+  zip.folder("styles")?.file("kbp.css", buildExportCss(true, book.exportTheme));
 
   const assetsFolder = zip.folder("assets");
   for (const asset of book.assets) {

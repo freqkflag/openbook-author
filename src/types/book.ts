@@ -2,6 +2,23 @@ export type LayoutMode = "portrait" | "landscape";
 export type BookTemplate = "portrait" | "landscape" | "textbook" | "guidebook" | "blank";
 export type FormatProfile = "standard" | "kbp";
 
+export type ExportThemeId =
+  | "classic-serif"
+  | "modern-sans"
+  | "textbook"
+  | "guidebook"
+  | "minimal";
+
+export interface ExportThemeSettings {
+  themeId: ExportThemeId;
+  /** Advanced override appended after built-in theme CSS */
+  customCss?: string;
+}
+
+export const DEFAULT_EXPORT_THEME: ExportThemeSettings = {
+  themeId: "classic-serif",
+};
+
 export interface KBPSettings {
   enabled: boolean;
   firstLineIndent: boolean;
@@ -103,6 +120,7 @@ export interface Book {
   layoutMode: LayoutMode;
   formatProfile: FormatProfile;
   kbpSettings: KBPSettings;
+  exportTheme?: ExportThemeSettings;
   chapters: Chapter[];
   assets: BookAsset[];
   packagePath?: string;

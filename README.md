@@ -62,6 +62,13 @@ The Guidebook template includes four sample chapters. **Chapter 1: Getting Start
 - Extracts metadata, chapters, text, and embedded images
 - Converts to editable reflowable content (layout/widgets not preserved)
 
+### Word / Scrivener Import
+- **Import DOCX** — Dashboard **Import DOCX** for `.docx` manuscripts
+- Extracts title, author, and body; splits on Heading 1 (or Heading 2) into chapters
+- Preserves headings, bold/italic, lists, blockquotes, and links
+- Inline images extracted to the book `assets/` folder
+- Import report lists tables and footnotes that need manual review
+
 ### Native macOS App (Electron)
 - Run as a native desktop app with `npm run electron:dev`
 - Build a `.dmg` installer with `npm run electron:build`

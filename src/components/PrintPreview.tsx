@@ -4,6 +4,11 @@ import { useMemo } from "react";
 import type { Book } from "@/types/book";
 import { getPreviewHtml, getPreviewMode } from "@/lib/preview";
 import { resolveAssetUrl, resolveHtmlAssets } from "@/lib/asset-store";
+import {
+  buildPreviewThemeCss,
+  getPreviewThemeClass,
+  normalizeExportTheme,
+} from "@/lib/export-themes";
 import { useBookStore } from "@/store/book-store";
 
 interface PrintPreviewProps {
@@ -27,6 +32,8 @@ export default function PrintPreview({ book, chapterTitle, chapterContent }: Pri
 
   const mode = getPreviewMode(book);
   const isLandscape = book.layoutMode === "landscape";
+  const themeClass = getPreviewThemeClass(normalizeExportTheme(book.exportTheme).themeId);
+  const themeCss = useMemo(() => buildPreviewThemeCss(book), [book]);
 
   return (
     <div className="flex flex-col h-full rounded-xl border border-white/10 overflow-hidden bg-[#1a1a2e]">
@@ -39,6 +46,7 @@ export default function PrintPreview({ book, chapterTitle, chapterContent }: Pri
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center gap-8">
+        <style dangerouslySetInnerHTML={{ __html: themeCss }} />
         {coverSrc && (
           <article
             className={`print-preview-page bg-white shadow-2xl ${
@@ -63,7 +71,7 @@ export default function PrintPreview({ book, chapterTitle, chapterContent }: Pri
         <article
           className={`print-preview-page bg-white shadow-2xl ${
             isLandscape ? "w-full max-w-4xl min-h-[480px]" : "w-full max-w-[32rem] min-h-[600px]"
-          } ${mode === "kbp" ? "print-preview-kbp" : "print-preview-standard"}`}
+          } ${mode === "kbp" ? "print-preview-kbp" : "print-preview-standard"} ${themeClass}`}
         >
           <header className="print-preview-masthead">
             <p className="print-preview-publisher">

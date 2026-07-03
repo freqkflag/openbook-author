@@ -1,13 +1,15 @@
 "use client";
 
-import type { Book, KBPSettings } from "@/types/book";
+import type { Book, ExportThemeSettings, KBPSettings } from "@/types/book";
 import CoverEditor from "@/components/CoverEditor";
 import PublishReadinessPanel from "@/components/PublishReadinessPanel";
+import { EXPORT_THEME_OPTIONS, normalizeExportTheme } from "@/lib/export-themes";
 
 interface MetadataPanelProps {
   book: Book;
   onUpdate: (metadata: Partial<Book["metadata"]>) => void;
   onUpdateKBP: (settings: Partial<KBPSettings>) => void;
+  onUpdateExportTheme: (settings: Partial<ExportThemeSettings>) => void;
   onSetFormatProfile: (profile: Book["formatProfile"]) => void;
   onNavigateToChapter?: (chapterId: string) => void;
 }
@@ -27,10 +29,12 @@ export default function MetadataPanel({
   book,
   onUpdate,
   onUpdateKBP,
+  onUpdateExportTheme,
   onSetFormatProfile,
   onNavigateToChapter,
 }: MetadataPanelProps) {
   const { metadata, kbpSettings, formatProfile } = book;
+  const exportTheme = normalizeExportTheme(book.exportTheme);
   const kbpActive = formatProfile === "kbp" || kbpSettings.enabled;
 
   return (
@@ -156,6 +160,51 @@ export default function MetadataPanel({
       </div>
 
       <CoverEditor book={book} />
+
+      <div className="pt-3 border-t border-white/10 space-y-3">
+        <h3 className="text-xs font-medium text-cyan-400 uppercase tracking-wider">
+          Export Theme
+        </h3>
+        <p className="text-xs text-slate-500">
+          Typography for EPUB, KBP, and print/PDF export. Custom CSS is appended after the preset.
+        </p>
+
+        <label className="block text-xs text-slate-400">
+          Built-in theme
+          <select
+            value={exportTheme.themeId}
+            onChange={(e) =>
+              onUpdateExportTheme({
+                themeId: e.target.value as ExportThemeSettings["themeId"],
+              })
+            }
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white focus:border-cyan-500/40 focus:outline-none"
+          >
+            {EXPORT_THEME_OPTIONS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="text-xs text-slate-600">
+          {EXPORT_THEME_OPTIONS.find((o) => o.id === exportTheme.themeId)?.description}
+        </p>
+
+        <details className="text-xs text-slate-400">
+          <summary className="cursor-pointer text-slate-300 hover:text-cyan-300">
+            Custom CSS override (advanced)
+          </summary>
+          <textarea
+            value={exportTheme.customCss ?? ""}
+            onChange={(e) => onUpdateExportTheme({ customCss: e.target.value })}
+            rows={4}
+            placeholder={'/* e.g. .chapter-opener { background: url("assets/logo.png"); } */'}
+            spellCheck={false}
+            className="mt-2 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white font-mono resize-y focus:border-cyan-500/40 focus:outline-none"
+          />
+        </details>
+      </div>
 
       <PublishReadinessPanel book={book} onNavigateToChapter={onNavigateToChapter} />
 

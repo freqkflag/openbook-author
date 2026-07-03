@@ -4,6 +4,11 @@ import { useMemo } from "react";
 import type { Book } from "@/types/book";
 import { getPreviewHtml, getPreviewMode } from "@/lib/preview";
 import { resolveAssetUrl, resolveHtmlAssets } from "@/lib/asset-store";
+import {
+  buildPreviewThemeCss,
+  getPreviewThemeClass,
+  normalizeExportTheme,
+} from "@/lib/export-themes";
 import { useBookStore } from "@/store/book-store";
 
 interface FullBookPreviewProps {
@@ -15,6 +20,8 @@ export default function FullBookPreview({ book }: FullBookPreviewProps) {
   const blobs = getAssetBlobs(book.id);
   const mode = getPreviewMode(book);
   const isLandscape = book.layoutMode === "landscape";
+  const themeClass = getPreviewThemeClass(normalizeExportTheme(book.exportTheme).themeId);
+  const themeCss = useMemo(() => buildPreviewThemeCss(book), [book]);
 
   const coverSrc = book.metadata.coverImage
     ? resolveAssetUrl(book, book.metadata.coverImage, blobs)
@@ -44,6 +51,7 @@ export default function FullBookPreview({ book }: FullBookPreviewProps) {
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center gap-8">
+        <style dangerouslySetInnerHTML={{ __html: themeCss }} />
         {coverSrc && (
           <article
             className={`print-preview-page bg-white shadow-2xl ${
@@ -91,7 +99,7 @@ export default function FullBookPreview({ book }: FullBookPreviewProps) {
             key={section.id}
             className={`print-preview-page bg-white shadow-2xl ${
               isLandscape ? "w-full max-w-4xl min-h-[480px]" : "w-full max-w-[32rem] min-h-[500px]"
-            } ${mode === "kbp" ? "print-preview-kbp" : "print-preview-standard"}`}
+            } ${mode === "kbp" ? "print-preview-kbp" : "print-preview-standard"} ${themeClass}`}
           >
             <div className="print-preview-body" dangerouslySetInnerHTML={{ __html: section.html }} />
           </article>

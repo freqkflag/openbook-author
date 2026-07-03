@@ -17,6 +17,7 @@ import { useBookStore } from "@/store/book-store";
 import { TEMPLATES } from "@/lib/templates";
 import { importIBAFile } from "@/lib/iba-import";
 import { importEpubFile } from "@/lib/epub-import";
+import { importDocxFile } from "@/lib/docx-import";
 import type { Book, BookTemplate } from "@/types/book";
 
 export default function Dashboard() {
@@ -76,6 +77,28 @@ export default function Dashboard() {
         router.push(`/editor/${id}`);
       } catch (err) {
         alert(err instanceof Error ? err.message : "Failed to import EPUB");
+      } finally {
+        setImporting(false);
+      }
+    };
+    input.click();
+  };
+
+  const handleImportDOCX = () => {
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      setImporting(true);
+      try {
+        const { book, assetBlobs, warnings } = await importDocxFile(file);
+        const id = importBookWithAssets(book, assetBlobs);
+        setImportWarnings(warnings);
+        router.push(`/editor/${id}`);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to import DOCX");
       } finally {
         setImporting(false);
       }
@@ -160,6 +183,14 @@ export default function Dashboard() {
               >
                 <BookOpen size={16} />
                 {importing ? "Importing..." : "Import EPUB"}
+              </button>
+              <button
+                onClick={handleImportDOCX}
+                disabled={importing}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-green-500/30 text-green-300 text-sm hover:bg-green-500/10 transition-colors disabled:opacity-50"
+              >
+                <FileArchive size={16} />
+                {importing ? "Importing..." : "Import DOCX"}
               </button>
               <button
                 onClick={handleImportIBA}
