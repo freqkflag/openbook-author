@@ -7,7 +7,7 @@ OpenBook Author uses a self-hosted [Forgejo](https://forgejo.org/) instance for 
 | **Forgejo URL** | `http://192.168.12.115:3000` |
 | **Workflow** | `.forgejo/workflows/docker-smoke.yml` |
 | **Runner label** | `docker` |
-| **Default repo path** | `freqkflag/openbook-author` |
+| **Default repo path** | `king/openbook-author` |
 
 Forgejo listens on **port 3000** (not 80/443). The web UI and Git HTTP remotes use that port.
 
@@ -52,7 +52,7 @@ In the Forgejo web UI (as site admin): **Site Administration → Actions → Gen
 
 ### 2. Create the repository
 
-If the repo does not exist yet, create **`openbook-author`** under your Forgejo user (default owner in docs: `freqkflag`).
+If the repo does not exist yet, create **`openbook-author`** under your Forgejo user (default owner in docs: `king`).
 
 **Web UI:** `+` → New Repository → name `openbook-author`, visibility as you prefer.
 
@@ -80,9 +80,9 @@ bash scripts/forgejo-create-repo.sh
 Add the Forgejo remote (once):
 
 ```bash
-git remote add forgejo "http://192.168.12.115:3000/freqkflag/openbook-author.git"
+git remote add forgejo "http://192.168.12.115:3000/king/openbook-author.git"
 # SSH alternative if Forgejo SSH is on port 22:
-# git remote add forgejo "ssh://git@192.168.12.115/freqkflag/openbook-author.git"
+# git remote add forgejo "ssh://git@192.168.12.115/king/openbook-author.git"
 ```
 
 Push `main`:
@@ -153,7 +153,7 @@ Add to `.env.local` (never commit). `.env.example` lists optional names:
 |----------|---------|
 | `FORGEJO_URL` | Base URL, e.g. `http://192.168.12.115:3000` |
 | `FORGEJO_TOKEN` | Personal access token for API / HTTP git push |
-| `FORGEJO_OWNER` | Username or org (default `freqkflag`) |
+| `FORGEJO_OWNER` | Username or org (default `king`) |
 | `FORGEJO_REPO` | Repository name (default `openbook-author`) |
 | `FORGEJO_RUNNER_TOKEN` | One-time runner registration token from Forgejo UI |
 

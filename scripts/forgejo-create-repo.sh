@@ -6,7 +6,7 @@ set -euo pipefail
 
 FORGEJO_URL="${FORGEJO_URL:-http://192.168.12.115:3000}"
 FORGEJO_TOKEN="${FORGEJO_TOKEN:-}"
-FORGEJO_OWNER="${FORGEJO_OWNER:-freqkflag}"
+FORGEJO_OWNER="${FORGEJO_OWNER:-king}"
 FORGEJO_REPO="${FORGEJO_REPO:-openbook-author}"
 
 if [[ -z "${FORGEJO_TOKEN}" ]]; then
@@ -18,7 +18,7 @@ FORGEJO_URL="${FORGEJO_URL%/}"
 
 echo "Creating ${FORGEJO_OWNER}/${FORGEJO_REPO} on ${FORGEJO_URL}..."
 
-response="$(curl -fsS -w "\n%{http_code}" -X POST "${FORGEJO_URL}/api/v1/user/repos" \
+response="$(curl -sS -w "\n%{http_code}" -X POST "${FORGEJO_URL}/api/v1/user/repos" \
   -H "Authorization: token ${FORGEJO_TOKEN}" \
   -H "Content-Type: application/json" \
   -d "{\"name\":\"${FORGEJO_REPO}\",\"private\":false,\"auto_init\":false}")"

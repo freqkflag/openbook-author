@@ -169,7 +169,7 @@ Full setup (Actions enable, runner install, troubleshooting): **[docs/FORGEJO.md
 Push to Forgejo (after creating the repo on the server):
 
 ```bash
-git remote add forgejo http://192.168.12.115:3000/freqkflag/openbook-author.git
+git remote add forgejo http://192.168.12.115:3000/king/openbook-author.git
 git push -u forgejo main
 ```
 
