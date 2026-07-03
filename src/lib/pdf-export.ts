@@ -170,7 +170,7 @@ function buildPrintDocument(book: Book, assetBlobs?: Map<string, Blob>): string 
 /** Opens the browser print dialog for a PDF-friendly export of the full book. */
 export function downloadPdf(book: Book, assetBlobs?: Map<string, Blob>): void {
   const html = buildPrintDocument(book, assetBlobs);
-  const printWindow = window.open("", "_blank", "noopener,noreferrer");
+  const printWindow = window.open("", "_blank");
   if (!printWindow) {
     alert("Pop-up blocked. Allow pop-ups to export PDF.");
     return;

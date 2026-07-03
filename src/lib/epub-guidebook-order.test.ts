@@ -79,6 +79,22 @@ describe("guidebook block EPUB export order", () => {
     expect(getGuidebookBlockExportOrder(html)).toEqual(["trail_stop", "workshop"]);
   });
 
+  it("decodes double-encoded HTML entities before JSON parse in guidebook payloads", () => {
+    const html = editorGuidebookBlock("trail_stop", {
+      name: 'Use " for quotes',
+      mileMarker: "1.0",
+      elevation: "",
+      notes: "See &lt;marker&gt;",
+      amenities: [{ id: "a1", value: "Hot &lt;warm&gt;" }],
+    });
+    const result = transformWidgetsForEpub(html);
+
+    expect(result).toContain('Use " for quotes');
+    expect(result).toContain("See &lt;marker&gt;");
+    expect(result).toContain("Hot &lt;warm&gt;");
+    expect(result).not.toContain("&amp;lt;");
+  });
+
   it("preserves trail stop names with ampersands in EPUB export", () => {
     const html = editorGuidebookBlock("trail_stop", {
       name: "Thompson & Sons",

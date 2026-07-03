@@ -28,11 +28,11 @@ function escapeHtml(text: string): string {
 
 function decodeHtmlAttributeEntities(raw: string): string {
   return raw
+    .replace(/&amp;/g, "&")
     .replace(/&quot;/g, '"')
     .replace(/&apos;/g, "'")
     .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&amp;/g, "&");
+    .replace(/&gt;/g, ">");
 }
 
 function decodePayload(raw: string): unknown {
