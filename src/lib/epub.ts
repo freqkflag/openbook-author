@@ -1,5 +1,6 @@
 import JSZip from "jszip";
 import type { Book, BookMetadata, Chapter, ChapterSectionType } from "@/types/book";
+import type { FixedSpread } from "@/types/fixed-layout";
 import type {
   GuidebookBlockType,
   TrailStopPayload,
@@ -311,6 +312,63 @@ function transformWidgetsForEpub(html: string): string {
   );
 
   result = result.replace(
+    /<div[^>]*data-widget="media"[^>]*data-kind="([^"]*)"[^>]*data-src="([^"]*)"[^>]*(?:data-title="([^"]*)")?[^>]*><\/div>/gi,
+    (_, kind, src, title) => {
+      const mediaSrc = src.startsWith("assets/") ? `../images/${src.replace("assets/", "")}` : src;
+      const label = escapeXml(title || "");
+      if (kind === "video") {
+        return `<figure class="media-widget"><video controls src="${mediaSrc}"></video>${label ? `<figcaption>${label}</figcaption>` : ""}</figure>`;
+      }
+      return `<figure class="media-widget"><audio controls src="${mediaSrc}"></audio>${label ? `<figcaption>${label}</figcaption>` : ""}</figure>`;
+    }
+  );
+
+  result = result.replace(
+    /<div[^>]*data-widget="quiz"[^>]*data-title="([^"]*)"[^>]*data-payload="([^"]*)"[^>]*>[\s\S]*?<\/div>/gi,
+    (_, title, payload) => {
+      try {
+        const questions = JSON.parse(decodeHtmlAttributeEntities(payload)) as {
+          prompt: string;
+          choices: string[];
+          answerIndex: number;
+        }[];
+        const items = questions
+          .map(
+            (q, i) =>
+              `<li><p><strong>Q${i + 1}.</strong> ${escapeXml(q.prompt)}</p><ol type="A">${q.choices
+                .map(
+                  (c, ci) =>
+                    `<li${ci === q.answerIndex ? ' class="quiz-answer"' : ""}>${escapeXml(c)}</li>`
+                )
+                .join("")}</ol></li>`
+          )
+          .join("");
+        return `<section class="quiz-widget"><h3>${escapeXml(title)}</h3><ol>${items}</ol></section>`;
+      } catch {
+        return `<section class="quiz-widget"><h3>${escapeXml(title)}</h3></section>`;
+      }
+    }
+  );
+
+  result = result.replace(
+    /<div[^>]*data-widget="timeline"[^>]*data-title="([^"]*)"[^>]*data-payload="([^"]*)"[^>]*>[\s\S]*?<\/div>/gi,
+    (_, title, payload) => {
+      try {
+        const events = JSON.parse(decodeHtmlAttributeEntities(payload)) as {
+          year: string;
+          label: string;
+        }[];
+        const items = events
+          .map((ev) => `<li><time>${escapeXml(ev.year)}</time> ${escapeXml(ev.label)}</li>`)
+          .join("");
+        return `<section class="timeline-widget"><h3>${escapeXml(title)}</h3><ul>${items}</ul></section>`;
+      } catch {
+        return `<section class="timeline-widget"><h3>${escapeXml(title)}</h3></section>`;
+      }
+    }
+  );
+
+  result = result.replace(
     /<div[^>]*data-callout="tip"[^>]*data-text="([^"]*)"[^>]*><\/div>/gi,
     '<div class="kbp-tip">$1</div>'
   );
@@ -495,7 +553,43 @@ export function getSectionEpubType(sectionType?: ChapterSectionType): string {
   }
 }
 
+function buildFixedSpreadBody(spread: FixedSpread): string {
+  const elements = spread.elements
+    .map((el) => {
+      const style = `position:absolute;left:${el.x}%;top:${el.y}%;width:${el.width}%;height:${el.height}%;`;
+      if (el.type === "image") {
+        const src = el.content.startsWith("assets/")
+          ? `../images/${el.content.replace("assets/", "")}`
+          : el.content;
+        return `<img src="${src}" style="${style}object-fit:contain;" alt=""/>`;
+      }
+      return `<p style="${style}font-size:${el.fontSize ?? 16}px;margin:0;">${escapeXml(el.content)}</p>`;
+    })
+    .join("\n    ");
+  return `<div class="fixed-spread" style="position:relative;width:${spread.width}px;height:${spread.height}px;background:${spread.background ?? "#fff"};">${elements}</div>`;
+}
+
 function chapterXhtml(book: Book, chapter: Chapter, index: number): string {
+  if (chapter.fixedSpread) {
+    const body = buildFixedSpreadBody(chapter.fixedSpread);
+    return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
+<head>
+  <title>${escapeXml(chapter.title)}</title>
+  <meta name="viewport" content="width=${chapter.fixedSpread.width}, height=${chapter.fixedSpread.height}"/>
+  <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
+  <style>.fixed-spread { margin: 0 auto; overflow: hidden; }</style>
+</head>
+<body>
+  <section epub:type="chapter" id="chapter-${index}">
+    <h1 class="sr-only">${escapeXml(chapter.title)}</h1>
+    ${body}
+  </section>
+</body>
+</html>`;
+  }
+
   const content = rewriteAssetPaths(prepareChapterContent(book, chapter.content));
   const epubType = getSectionEpubType(chapter.sectionType);
   return `<?xml version="1.0" encoding="UTF-8"?>

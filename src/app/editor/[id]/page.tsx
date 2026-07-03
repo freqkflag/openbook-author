@@ -34,6 +34,10 @@ import {
 } from "@/lib/epub-validation";
 import { downloadPdf, type PrintPdfOptions } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
+import { downloadAudiobookManifest } from "@/lib/audiobook-export";
+import { htmlToMarkdown, markdownToHtml } from "@/lib/markdown-roundtrip";
+import FixedLayoutCanvas from "@/components/FixedLayoutCanvas";
+import { DEFAULT_FIXED_SPREAD } from "@/types/fixed-layout";
 import { isKbpEnabled } from "@/lib/kbp";
 import { adjacentChapterId, isEditableTarget } from "@/lib/keyboard-shortcuts";
 import {
@@ -72,6 +76,9 @@ export default function EditorPage() {
     reorderPart,
     saveBookToDisk,
     openBookFromDisk,
+    openFolderProject,
+    createFolderProject,
+    backupBookNow,
     saveStatus,
     saveError,
     lastSavedAt,
@@ -86,6 +93,8 @@ export default function EditorPage() {
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [showSearch, setShowSearch] = useState(false);
   const [showPrintPdf, setShowPrintPdf] = useState(false);
+  const [markdownMode, setMarkdownMode] = useState(false);
+  const [markdownDraft, setMarkdownDraft] = useState("");
 
   useEffect(() => {
     hydrate();
@@ -179,14 +188,20 @@ export default function EditorPage() {
         if (id) router.push(`/editor/${id}`);
       });
     });
+    const unsubOpenFolder = window.openBook.onMenuOpenFolder?.(() => {
+      openFolderProject().then((id) => {
+        if (id) router.push(`/editor/${id}`);
+      });
+    });
     const unsubSave = window.openBook.onMenuSave(() => handleSave(false));
     const unsubSaveAs = window.openBook.onMenuSaveAs(() => handleSave(true));
     return () => {
       unsubOpen();
+      unsubOpenFolder?.();
       unsubSave();
       unsubSaveAs();
     };
-  }, [handleSave, openBookFromDisk, router]);
+  }, [handleSave, openBookFromDisk, openFolderProject, router]);
 
   const handleContentChange = useCallback(
     (html: string) => {
@@ -286,6 +301,11 @@ export default function EditorPage() {
     setShowPrintPdf(true);
   }, [book, confirmExportIfNeeded]);
 
+  const handleExportAudiobook = useCallback(() => {
+    if (!book || !confirmExportIfNeeded(book)) return;
+    void downloadAudiobookManifest(book, getAssetBlobs(book.id));
+  }, [book, confirmExportIfNeeded, getAssetBlobs]);
+
   const handleExportKBP = useCallback(() => {
     if (!book || !confirmExportIfNeeded(book)) return;
     downloadKBP(book, getAssetBlobs(book.id));
@@ -331,16 +351,17 @@ export default function EditorPage() {
               <SaveStatusBadge
                 status={saveStatus}
                 error={saveError}
-                hasPackagePath={Boolean(book.packagePath)}
+                hasPackagePath={Boolean(book.packagePath || book.projectPath)}
                 lastSavedAt={lastSavedAt}
               />
             </div>
             <p className="text-xs text-slate-500">
               {book.chapters.length} chapters
-              {book.packagePath && (
+              {(book.packagePath || book.projectPath) && (
                 <span className="text-slate-600">
                   {" · "}
-                  {book.packagePath.split(/[/\\]/).pop()}
+                  {(book.projectPath || book.packagePath)?.split(/[/\\]/).pop()}
+                  {book.storageMode === "folder" || book.projectPath ? " (folder)" : ""}
                 </span>
               )}
               {viewMode !== "edit" && (
@@ -432,6 +453,14 @@ export default function EditorPage() {
           >
             <FileDown size={14} />
             PDF
+          </button>
+          <button
+            onClick={handleExportAudiobook}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-green-500/20 border border-green-500/30 text-green-300 hover:bg-green-500/30"
+            title="Export W3C Audiobook manifest (LPF)"
+          >
+            <Download size={14} />
+            Audiobook
           </button>
           {kbpMode && (
             <button
@@ -539,17 +568,79 @@ export default function EditorPage() {
                 <p className="mb-3 text-sm text-amber-400/80 font-medium">{activeChapter.title}</p>
               )}
               <div className="flex-1 min-h-0">
-                {viewMode === "edit" ? (
-                  <RichEditor
-                    key={`edit-${activeChapter.id}`}
-                    book={book}
-                    content={activeChapter.content}
-                    onChange={handleContentChange}
-                    placeholder="Start writing your chapter..."
-                    kbpMode={kbpMode}
-                    onShowShortcuts={() => setShowShortcuts(true)}
-                  />
-                ) : (
+              {viewMode === "edit" ? (
+                <>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!activeChapter) return;
+                        if (!markdownMode) {
+                          setMarkdownDraft(htmlToMarkdown(activeChapter.content));
+                          setMarkdownMode(true);
+                        } else {
+                          updateChapter(book.id, activeChapter.id, {
+                            content: markdownToHtml(markdownDraft),
+                          });
+                          setMarkdownMode(false);
+                        }
+                      }}
+                      className={`px-2 py-1 rounded text-xs border ${
+                        markdownMode
+                          ? "border-cyan-500/40 text-cyan-300"
+                          : "border-white/10 text-slate-400"
+                      }`}
+                    >
+                      {markdownMode ? "Apply Markdown" : "Markdown mode"}
+                    </button>
+                    {book.layoutMode === "landscape" && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!activeChapter) return;
+                          const isFixed = activeChapter.editorMode === "fixed";
+                          updateChapter(book.id, activeChapter.id, {
+                            editorMode: isFixed ? "reflow" : "fixed",
+                            fixedSpread: isFixed ? undefined : activeChapter.fixedSpread ?? DEFAULT_FIXED_SPREAD,
+                          });
+                        }}
+                        className={`px-2 py-1 rounded text-xs border ${
+                          activeChapter.editorMode === "fixed"
+                            ? "border-purple-500/40 text-purple-300"
+                            : "border-white/10 text-slate-400"
+                        }`}
+                      >
+                        {activeChapter.editorMode === "fixed" ? "Reflow mode" : "Fixed spread"}
+                      </button>
+                    )}
+                  </div>
+                  {markdownMode ? (
+                    <textarea
+                      value={markdownDraft}
+                      onChange={(e) => setMarkdownDraft(e.target.value)}
+                      className="flex-1 min-h-[320px] w-full bg-[#0B1020] border border-white/10 rounded-xl p-4 font-mono text-sm text-slate-200"
+                      placeholder="# Chapter in Markdown"
+                    />
+                  ) : activeChapter.editorMode === "fixed" ? (
+                    <FixedLayoutCanvas
+                      spread={activeChapter.fixedSpread ?? DEFAULT_FIXED_SPREAD}
+                      onChange={(spread) =>
+                        updateChapter(book.id, activeChapter.id, { fixedSpread: spread })
+                      }
+                    />
+                  ) : (
+                    <RichEditor
+                      key={`edit-${activeChapter.id}`}
+                      book={book}
+                      content={activeChapter.content}
+                      onChange={handleContentChange}
+                      placeholder="Start writing your chapter..."
+                      kbpMode={kbpMode}
+                      onShowShortcuts={() => setShowShortcuts(true)}
+                    />
+                  )}
+                </>
+              ) : (
                   <PrintPreview
                     key={`preview-${activeChapter.id}`}
                     book={book}
@@ -574,6 +665,9 @@ export default function EditorPage() {
                 setSelectedChapterId(chapterId);
                 setViewMode("edit");
               }}
+              onCreateFolderProject={() => void createFolderProject(book.id)}
+              onBackupNow={() => backupBookNow(book.id)}
+              activeChapterId={activeChapterId}
             />
           </div>
         )}

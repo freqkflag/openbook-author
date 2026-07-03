@@ -48,6 +48,7 @@
     }
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1079.0",
     "@tiptap/extension-highlight": "^3.27.1",
     "@tiptap/extension-image": "^3.27.1",
     "@tiptap/extension-link": "^3.27.1",
@@ -60,6 +61,7 @@
     "@tiptap/extension-underline": "^3.27.1",
     "@tiptap/react": "^3.27.1",
     "@tiptap/starter-kit": "^3.27.1",
+    "isomorphic-git": "^1.38.6",
     "jszip": "^3.10.1",
     "lucide-react": "^1.23.0",
     "mammoth": "^1.12.0",
@@ -68,6 +70,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "uuid": "^14.0.1",
+    "yjs": "^13.6.31",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

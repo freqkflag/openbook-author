@@ -3,6 +3,9 @@
 import type { Book, ExportThemeSettings, KBPSettings } from "@/types/book";
 import CoverEditor from "@/components/CoverEditor";
 import PublishReadinessPanel from "@/components/PublishReadinessPanel";
+import GitPanel from "@/components/GitPanel";
+import BackupSyncPanel from "@/components/BackupSyncPanel";
+import CollabPanel from "@/components/CollabPanel";
 import { EXPORT_THEME_OPTIONS, normalizeExportTheme } from "@/lib/export-themes";
 
 interface MetadataPanelProps {
@@ -12,6 +15,9 @@ interface MetadataPanelProps {
   onUpdateExportTheme: (settings: Partial<ExportThemeSettings>) => void;
   onSetFormatProfile: (profile: Book["formatProfile"]) => void;
   onNavigateToChapter?: (chapterId: string) => void;
+  onCreateFolderProject?: () => void;
+  onBackupNow?: () => Promise<string | null>;
+  activeChapterId?: string;
 }
 
 function parseListInput(value: string): string[] {
@@ -32,6 +38,9 @@ export default function MetadataPanel({
   onUpdateExportTheme,
   onSetFormatProfile,
   onNavigateToChapter,
+  onCreateFolderProject,
+  onBackupNow,
+  activeChapterId,
 }: MetadataPanelProps) {
   const { metadata, kbpSettings, formatProfile } = book;
   const exportTheme = normalizeExportTheme(book.exportTheme);
@@ -321,6 +330,42 @@ export default function MetadataPanel({
           </>
         )}
       </div>
+
+      <div className="pt-3 border-t border-white/10 space-y-3">
+        <h3 className="text-xs font-medium text-cyan-400 uppercase tracking-wider">Project</h3>
+        {book.storageMode === "folder" || book.projectPath ? (
+          <p className="text-xs text-slate-400">
+            Folder project — git-friendly saves to{" "}
+            <span className="text-slate-300 font-mono truncate block" title={book.projectPath}>
+              {book.projectPath?.split(/[/\\]/).pop()}
+            </span>
+          </p>
+        ) : (
+          <>
+            <p className="text-xs text-slate-500">
+              Package mode uses a single `.openbook` zip. Switch to a folder project for readable git diffs.
+            </p>
+            {onCreateFolderProject && window.openBook?.isElectron && (
+              <button
+                type="button"
+                onClick={onCreateFolderProject}
+                className="w-full px-3 py-2 rounded-lg text-xs font-medium border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+              >
+                Save as Folder Project…
+              </button>
+            )}
+          </>
+        )}
+        <GitPanel projectPath={book.projectPath} />
+      </div>
+
+      {onBackupNow && (
+        <div className="pt-3 border-t border-white/10">
+          <BackupSyncPanel bookId={book.id} onBackupNow={onBackupNow} />
+        </div>
+      )}
+
+      <CollabPanel bookId={book.id} chapterId={activeChapterId ?? book.chapters[0]?.id ?? ""} />
 
       <div className="pt-2 border-t border-white/10">
         <p className="text-xs text-slate-500">

@@ -5,6 +5,9 @@ const fs = require("fs").promises;
 const { unlink } = require("fs/promises");
 const { spawn } = require("child_process");
 const http = require("http");
+const { gitStatus, gitInit, gitCommit } = require("./git.cjs");
+const { readConfig, writeConfig } = require("./backup.cjs");
+const { uploadBackup } = require("./backup-upload.cjs");
 
 const PORT = process.env.OPENBOOK_PORT || 3847;
 let mainWindow = null;
@@ -56,6 +59,65 @@ async function writePackageToPath(filePath, payload) {
   return { path: filePath, assets };
 }
 
+async function writeFolderProjectToPath(projectPath, payload) {
+  await fs.mkdir(path.join(projectPath, "assets"), { recursive: true });
+  await fs.writeFile(path.join(projectPath, "manifest.json"), payload.manifestJson, "utf8");
+  await fs.writeFile(path.join(projectPath, "book.json"), payload.bookJson, "utf8");
+  await fs.writeFile(
+    path.join(projectPath, ".openbook-project.json"),
+    payload.projectMetaJson,
+    "utf8"
+  );
+
+  for (const asset of payload.assets) {
+    const assetPath = path.join(projectPath, "assets", asset.filename);
+    const data = Buffer.from(asset.data);
+    let shouldWrite = true;
+    try {
+      const existing = await fs.readFile(assetPath);
+      if (existing.equals(data)) shouldWrite = false;
+    } catch {
+      shouldWrite = true;
+    }
+    if (shouldWrite) await fs.writeFile(assetPath, data);
+  }
+
+  return projectPath;
+}
+
+async function readFolderProjectFromPath(projectPath) {
+  const manifestJson = await fs.readFile(path.join(projectPath, "manifest.json"), "utf8");
+  const bookJson = await fs.readFile(path.join(projectPath, "book.json"), "utf8");
+  let projectMetaJson;
+  try {
+    projectMetaJson = await fs.readFile(
+      path.join(projectPath, ".openbook-project.json"),
+      "utf8"
+    );
+  } catch {
+    projectMetaJson = undefined;
+  }
+
+  const book = JSON.parse(bookJson);
+  const assets = [];
+  for (const asset of book.assets ?? []) {
+    const assetPath = path.join(projectPath, "assets", asset.filename);
+    try {
+      const data = await fs.readFile(assetPath);
+      assets.push({
+        filename: asset.filename,
+        data: data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength),
+        mimeType: asset.mimeType,
+        assetId: asset.id,
+      });
+    } catch {
+      // asset file missing on disk
+    }
+  }
+
+  return { manifestJson, bookJson, projectMetaJson, assets, projectPath };
+}
+
 function setupIpc() {
   ipcMain.handle("openbook:save-dialog", async (_event, defaultName) => {
     const result = await dialog.showSaveDialog(mainWindow, {
@@ -87,6 +149,68 @@ function setupIpc() {
   ipcMain.handle("openbook:read-package", async (_event, filePath) => {
     const data = await fs.readFile(filePath);
     return { buffer: data.buffer, filePath };
+  });
+
+  ipcMain.handle("openbook:open-folder-dialog", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Open OpenBook Folder Project",
+      properties: ["openDirectory"],
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle("openbook:create-folder-dialog", async (_event, defaultName) => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Choose Parent Folder for New Project",
+      properties: ["openDirectory", "createDirectory"],
+      buttonLabel: "Create Project Here",
+      message: defaultName
+        ? `A new folder "${defaultName}" will be created inside the selected directory.`
+        : "Select where to create the folder project.",
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    const parent = result.filePaths[0];
+    const slug = (defaultName || "my-book").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const projectPath = path.join(parent, slug);
+    await fs.mkdir(projectPath, { recursive: true });
+    await fs.mkdir(path.join(projectPath, "assets"), { recursive: true });
+    return projectPath;
+  });
+
+  ipcMain.handle("openbook:write-folder-project", async (_event, projectPath, payload) => {
+    return writeFolderProjectToPath(projectPath, payload);
+  });
+
+  ipcMain.handle("openbook:read-folder-project", async (_event, projectPath) => {
+    return readFolderProjectFromPath(projectPath);
+  });
+
+  ipcMain.handle("openbook:git-status", async (_event, projectPath) => {
+    return gitStatus(projectPath);
+  });
+
+  ipcMain.handle("openbook:git-init", async (_event, projectPath) => {
+    return gitInit(projectPath);
+  });
+
+  ipcMain.handle("openbook:git-commit", async (_event, projectPath, message) => {
+    return gitCommit(projectPath, message);
+  });
+
+  ipcMain.handle("openbook:backup-get-config", async () => readConfig());
+
+  ipcMain.handle("openbook:backup-set-config", async (_event, config) => {
+    writeConfig(config);
+    return true;
+  });
+
+  ipcMain.handle("openbook:backup-upload", async (_event, payload) => {
+    const config = readConfig();
+    if (!config?.enabled) {
+      throw new Error("Backup & Sync is not enabled");
+    }
+    return uploadBackup(config, payload);
   });
 
   ipcMain.handle("openbook:print-to-pdf", async (_event, { html, defaultName, printOptions }) => {
@@ -180,6 +304,11 @@ function createWindow() {
           label: "Open Book...",
           accelerator: "CmdOrCtrl+O",
           click: () => mainWindow?.webContents.send("openbook:menu-open"),
+        },
+        {
+          label: "Open Folder Project...",
+          accelerator: "CmdOrCtrl+Shift+O",
+          click: () => mainWindow?.webContents.send("openbook:menu-open-folder"),
         },
         {
           label: "Save Book",

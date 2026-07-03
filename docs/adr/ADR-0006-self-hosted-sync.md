@@ -1,6 +1,6 @@
 # ADR-0006: Self-hosted sync and backup
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-03
 - **Issue:** _TBD — self-hosted backup of `.openbook` (COMPETITIVE_AUDIT Wave B item 7)_
 

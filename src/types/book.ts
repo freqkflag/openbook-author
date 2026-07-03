@@ -63,6 +63,9 @@ export interface Chapter {
   content: string;
   order: number;
   sectionType?: ChapterSectionType;
+  /** Fixed-layout spread (ADR-0007) — when set, chapter exports as pre-paginated spread */
+  fixedSpread?: import("@/types/fixed-layout").FixedSpread;
+  editorMode?: import("@/types/fixed-layout").ChapterEditorMode;
 }
 
 /** Volume/part grouping for hierarchical table of contents */
@@ -142,7 +145,11 @@ export interface Book {
   /** Optional parts/volumes — omitted in legacy flat .openbook files */
   parts?: BookPart[];
   assets: BookAsset[];
+  /** Package mode — single `.openbook` zip path (default) */
   packagePath?: string;
+  /** Folder mode — project directory path (ADR-0005) */
+  projectPath?: string;
+  storageMode?: "package" | "folder";
   createdAt: string;
   updatedAt: string;
 }

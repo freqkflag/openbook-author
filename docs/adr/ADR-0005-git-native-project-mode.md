@@ -1,6 +1,6 @@
 # ADR-0005: Git-native project mode
 
-- **Status:** Proposed
+- **Status:** Accepted
 - **Date:** 2026-07-03
 - **Issue:** _TBD — `feat: Git-friendly project folder mode with save-to-directory` (COMPETITIVE_AUDIT §9 #16)_
 

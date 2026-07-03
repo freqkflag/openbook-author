@@ -119,7 +119,7 @@ export default function ChapterSidebar({
   const [dropIndex, setDropIndex] = useState<number | null>(null);
   const [collapsedParts, setCollapsedParts] = useState<Set<string>>(new Set());
 
-  const hierarchical = hasHierarchicalToc({ chapters, parts } as { chapters: Chapter[]; parts?: BookPart[] });
+  const hierarchical = hasHierarchicalToc({ parts });
   const rows = useMemo(() => buildSidebarRows(chapters, parts), [chapters, parts]);
 
   const handleDragStart = (e: DragEvent<HTMLButtonElement>, index: number) => {
@@ -168,7 +168,7 @@ export default function ChapterSidebar({
     const isSpecial = sectionType !== "chapter";
     const isDragging = dragIndex === idx;
     const isDropTarget = dropIndex === idx && dragIndex !== idx;
-    const currentPart = getPartForChapter({ chapters, parts } as { chapters: Chapter[]; parts?: BookPart[] }, chapter.id);
+    const currentPart = getPartForChapter({ parts }, chapter.id);
 
     return (
       <div
@@ -433,10 +433,7 @@ export default function ChapterSidebar({
               );
             }
 
-            const partId = getPartForChapter(
-              { chapters, parts } as { chapters: Chapter[]; parts?: BookPart[] },
-              row.chapter.id
-            )?.id;
+            const partId = getPartForChapter({ parts }, row.chapter.id)?.id;
             if (partId && collapsedParts.has(partId)) {
               return null;
             }

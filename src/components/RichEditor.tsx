@@ -40,6 +40,10 @@ import {
   Redo,
   MessageSquare,
   Images,
+  Headphones,
+  Video,
+  HelpCircle,
+  Clock,
   Lightbulb,
   AlertTriangle,
   Minus,
@@ -53,6 +57,9 @@ import {
 } from "lucide-react";
 import { PopupWidget } from "@/components/extensions/PopupWidget";
 import { GalleryWidget } from "@/components/extensions/GalleryWidget";
+import { MediaWidget } from "@/components/extensions/MediaWidget";
+import { QuizWidget } from "@/components/extensions/QuizWidget";
+import { TimelineWidget } from "@/components/extensions/TimelineWidget";
 import { GuidebookBlock } from "@/components/extensions/GuidebookBlock";
 import { NoteReference, type NoteType } from "@/components/extensions/NoteReference";
 import EditorNoteModal from "@/components/EditorNoteModal";
@@ -142,6 +149,9 @@ export default function RichEditor({
       TableCell,
       PopupWidget,
       GalleryWidget,
+      MediaWidget,
+      QuizWidget,
+      TimelineWidget,
       TipCallout,
       WarningCallout,
       StepBlock,
@@ -326,6 +336,34 @@ export default function RichEditor({
     }, "Choose Gallery Image");
   };
 
+  const addMedia = (kind: "audio" | "video") => {
+    openAssetPicker((src, alt) => {
+      editor.chain().focus().setMediaWidget({ kind, src, title: alt || "" }).run();
+    }, `Choose ${kind} file`);
+  };
+
+  const addQuiz = () => {
+    editor
+      .chain()
+      .focus()
+      .setQuizWidget({
+        title: "Quick Quiz",
+        questions: [{ prompt: "Question?", choices: ["A", "B", "C"], answerIndex: 0 }],
+      })
+      .run();
+  };
+
+  const addTimeline = () => {
+    editor
+      .chain()
+      .focus()
+      .setTimelineWidget({
+        title: "Timeline",
+        events: [{ year: "2026", label: "Milestone" }],
+      })
+      .run();
+  };
+
   const openNoteModal = (noteType: NoteType) => {
     setNoteModalType(noteType);
     setNoteModalKey((k) => k + 1);
@@ -490,6 +528,18 @@ export default function RichEditor({
         </ToolbarButton>
         <ToolbarButton onClick={addGallery} title="Insert image gallery">
           <Images size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => addMedia("audio")} title="Insert audio widget">
+          <Headphones size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => addMedia("video")} title="Insert video widget">
+          <Video size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={addQuiz} title="Insert quiz widget">
+          <HelpCircle size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={addTimeline} title="Insert timeline widget (plugin example)">
+          <Clock size={16} />
         </ToolbarButton>
         <div className="w-px h-5 bg-white/10 mx-1" />
         <ToolbarButton onClick={insertTable} title="Insert table (3×3)">

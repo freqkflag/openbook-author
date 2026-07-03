@@ -1,6 +1,6 @@
 import type { Book, BookPart, Chapter } from "@/types/book";
 
-export function hasHierarchicalToc(book: Book): boolean {
+export function hasHierarchicalToc(book: Pick<Book, "parts">): boolean {
   return (book.parts?.length ?? 0) > 0;
 }
 
@@ -34,7 +34,7 @@ export function getChapterIndex(book: Book, chapterId: string): number {
   return book.chapters.findIndex((ch) => ch.id === chapterId);
 }
 
-export function getPartForChapter(book: Book, chapterId: string): BookPart | undefined {
+export function getPartForChapter(book: Pick<Book, "parts">, chapterId: string): BookPart | undefined {
   return book.parts?.find((part) => part.chapterIds.includes(chapterId));
 }
 

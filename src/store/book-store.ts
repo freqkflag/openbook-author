@@ -27,6 +27,13 @@ import {
 } from "@/lib/asset-store";
 import { buildPackageZip, downloadPackage, parsePackageFile } from "@/lib/package-io";
 import {
+  buildFolderWritePayload,
+  parseFolderContents,
+  validateFolderProject,
+} from "@/lib/folder-io";
+import type { OpenBookProjectMeta } from "@/types/folder-project";
+import { DEFAULT_PROJECT_META } from "@/types/folder-project";
+import {
   getBookAssetBlobs,
   removeBookAssetBlobs,
   setAssetBlob,
@@ -81,6 +88,9 @@ interface BookStore {
   setCoverImage: (bookId: string, assetId: string | null) => void;
   saveBookToDisk: (bookId: string, saveAs?: boolean) => Promise<string | null>;
   openBookFromDisk: (file?: File) => Promise<string | null>;
+  createFolderProject: (bookId: string, saveAs?: boolean) => Promise<string | null>;
+  openFolderProject: () => Promise<string | null>;
+  backupBookNow: (bookId: string) => Promise<string | null>;
   autoSave: (bookId: string) => void;
 }
 
@@ -104,6 +114,8 @@ function normalizeBook(b: Book): Book {
     exportTheme: normalizeExportTheme(b.exportTheme),
     assets: b.assets ?? [],
     packagePath: b.packagePath,
+    projectPath: b.projectPath,
+    storageMode: b.storageMode ?? (b.projectPath ? "folder" : b.packagePath ? "package" : undefined),
     chapters: b.chapters.map((ch) => ({
       ...ch,
       sectionType: ch.sectionType ?? "chapter",
@@ -134,6 +146,53 @@ async function writeBookPackage(
 
   downloadPackage(zipBlob, book.metadata.title);
   return "downloaded";
+}
+
+async function writeBookFolder(
+  book: Book,
+  blobs: Map<string, Blob>,
+  options: {
+    saveAs?: boolean;
+    path?: string;
+    projectMeta?: OpenBookProjectMeta;
+  } = {}
+) {
+  if (!window.openBook?.writeFolderProject) return null;
+
+  let targetPath = options.saveAs ? undefined : options.path ?? book.projectPath;
+  if (!targetPath) {
+    const slug = (book.metadata.title || "book").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    const chosen = await window.openBook.createFolderDialog?.(slug);
+    if (!chosen) return null;
+    targetPath = chosen;
+  }
+
+  const meta: OpenBookProjectMeta = {
+    ...DEFAULT_PROJECT_META,
+    ...options.projectMeta,
+    storageMode: "folder",
+  };
+
+  const payload = await buildFolderWritePayload(book, blobs, meta);
+  await window.openBook.writeFolderProject(targetPath, payload);
+  return targetPath;
+}
+
+async function persistBookToDisk(
+  book: Book,
+  blobs: Map<string, Blob>,
+  options: { saveAs?: boolean } = {}
+): Promise<string | null> {
+  if (book.storageMode === "folder" || book.projectPath) {
+    return writeBookFolder(book, blobs, {
+      saveAs: options.saveAs,
+      path: book.projectPath,
+    });
+  }
+  return writeBookPackage(book, blobs, {
+    saveAs: options.saveAs,
+    path: book.packagePath,
+  });
 }
 
 export const useBookStore = create<BookStore>((set, get) => {
@@ -573,18 +632,30 @@ export const useBookStore = create<BookStore>((set, get) => {
       set({ saveStatus: "saving", saveError: null });
       try {
         const blobs = getBookAssetBlobs(bookId);
-        const filePath = await writeBookPackage(book, blobs, {
-          saveAs,
-          path: book.packagePath,
-        });
+        const filePath = await persistBookToDisk(book, blobs, { saveAs });
         if (!filePath) {
           set({ saveStatus: "idle" });
           return null;
         }
         if (filePath !== "downloaded") {
-          const books = get().books.map((b) =>
-            b.id === bookId ? { ...b, packagePath: filePath, updatedAt: new Date().toISOString() } : b
-          );
+          const books = get().books.map((b) => {
+            if (b.id !== bookId) return b;
+            const updated = { ...b, updatedAt: new Date().toISOString() };
+            if (b.storageMode === "folder" || b.projectPath) {
+              return {
+                ...updated,
+                storageMode: "folder" as const,
+                projectPath: filePath,
+                packagePath: undefined,
+              };
+            }
+            return {
+              ...updated,
+              storageMode: "package" as const,
+              packagePath: filePath,
+              projectPath: undefined,
+            };
+          });
           saveBooks(books);
           set({ books, saveStatus: "saved", lastSavedAt: new Date().toISOString() });
         } else {
@@ -642,9 +713,122 @@ export const useBookStore = create<BookStore>((set, get) => {
       }
     },
 
+    createFolderProject: async (bookId, saveAs = false) => {
+      const book = get().books.find((b) => b.id === bookId);
+      if (!book || !window.openBook?.writeFolderProject) return null;
+
+      set({ saveStatus: "saving", saveError: null });
+      try {
+        const blobs = getBookAssetBlobs(bookId);
+        const folderBook = { ...book, storageMode: "folder" as const };
+        const filePath = await writeBookFolder(folderBook, blobs, {
+          saveAs: true,
+          path: saveAs ? undefined : book.projectPath,
+        });
+        if (!filePath) {
+          set({ saveStatus: "idle" });
+          return null;
+        }
+        const books = get().books.map((b) =>
+          b.id === bookId
+            ? {
+                ...b,
+                storageMode: "folder" as const,
+                projectPath: filePath,
+                packagePath: undefined,
+                updatedAt: new Date().toISOString(),
+              }
+            : b
+        );
+        saveBooks(books);
+        set({ books, saveStatus: "saved", lastSavedAt: new Date().toISOString() });
+        setTimeout(() => set({ saveStatus: "idle" }), 2000);
+        return filePath;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Folder project creation failed";
+        set({ saveStatus: "error", saveError: message });
+        return null;
+      }
+    },
+
+    openFolderProject: async () => {
+      if (!window.openBook?.readFolderProject || !window.openBook.openFolderDialog) {
+        return null;
+      }
+
+      set({ saveStatus: "saving", saveError: null });
+      try {
+        const projectPath = await window.openBook.openFolderDialog();
+        if (!projectPath) {
+          set({ saveStatus: "idle" });
+          return null;
+        }
+
+        const payload = await window.openBook.readFolderProject(projectPath);
+        validateFolderProject(payload);
+        const { book, assetBlobs } = parseFolderContents(payload);
+
+        const normalized = normalizeBook({
+          ...book,
+          id: uuidv4(),
+          storageMode: "folder",
+          projectPath,
+          packagePath: undefined,
+          updatedAt: new Date().toISOString(),
+        });
+        setBookAssetBlobs(normalized.id, assetBlobs);
+
+        const books = [...get().books, normalized];
+        persistBooks(books);
+        set({ books, currentBookId: normalized.id, saveStatus: "saved" });
+        setTimeout(() => set({ saveStatus: "idle" }), 2000);
+        return normalized.id;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Open folder failed";
+        set({ saveStatus: "error", saveError: message });
+        return null;
+      }
+    },
+
+    backupBookNow: async (bookId) => {
+      const book = get().books.find((b) => b.id === bookId);
+      if (!book) return null;
+
+      set({ saveStatus: "saving", saveError: null });
+      try {
+        const blobs = getBookAssetBlobs(bookId);
+        const zipBlob = await buildPackageZip(book, blobs);
+        const buffer = await zipBlob.arrayBuffer();
+        const slug = (book.metadata.title || "book").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+
+        if (!window.openBook?.backupUpload) {
+          throw new Error("Backup requires the Electron desktop app with Backup & Sync enabled");
+        }
+
+        const result = await window.openBook.backupUpload({
+          bookId: book.id,
+          slug,
+          buffer,
+          updatedAt: book.updatedAt,
+        });
+        set({ saveStatus: "saved", lastSavedAt: result.syncedAt });
+        setTimeout(() => set({ saveStatus: "idle" }), 2000);
+        return result.remotePath;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Backup failed";
+        set({ saveStatus: "error", saveError: message });
+        return null;
+      }
+    },
+
     autoSave: (bookId) => {
       const book = get().books.find((b) => b.id === bookId);
-      if (!book?.packagePath || !window.openBook?.writePackage) return;
+      if (!book) return;
+      const hasDiskTarget =
+        book.packagePath || book.projectPath || book.storageMode === "folder";
+      if (!hasDiskTarget || (!window.openBook?.writePackage && !window.openBook?.writeFolderProject)) {
+        return;
+      }
 
       const existing = autoSaveTimers.get(bookId);
       if (existing) clearTimeout(existing);

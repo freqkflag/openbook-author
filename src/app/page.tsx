@@ -23,7 +23,7 @@ import type { Book, BookTemplate } from "@/types/book";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { books, hydrated, hydrate, createBook, deleteBook, importBook, importBookWithAssets, openBookFromDisk } = useBookStore();
+  const { books, hydrated, hydrate, createBook, deleteBook, importBook, importBookWithAssets, openBookFromDisk, openFolderProject } = useBookStore();
   const [showTemplates, setShowTemplates] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [importing, setImporting] = useState(false);
@@ -41,6 +41,16 @@ export default function Dashboard() {
     setShowTemplates(false);
     setNewTitle("");
     router.push(`/editor/${id}`);
+  };
+
+  const handleOpenFolder = () => {
+    if (!window.openBook?.isElectron) {
+      alert("Folder projects require the Electron desktop app.");
+      return;
+    }
+    openFolderProject().then((id) => {
+      if (id) router.push(`/editor/${id}`);
+    });
   };
 
   const handleOpenBook = () => {
@@ -182,6 +192,15 @@ export default function Dashboard() {
                 <FolderOpen size={16} />
                 Open Book
               </button>
+              {typeof window !== "undefined" && window.openBook?.isElectron && (
+                <button
+                  onClick={handleOpenFolder}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg border border-green-500/30 text-green-300 text-sm hover:bg-green-500/10 transition-colors"
+                >
+                  <FolderOpen size={16} />
+                  Open Folder
+                </button>
+              )}
               <button
                 onClick={handleImportEPUB}
                 disabled={importing}
@@ -280,9 +299,12 @@ export default function Dashboard() {
                     <span className="capitalize px-2 py-0.5 rounded bg-white/5">
                       {book.template}
                     </span>
-                    {book.packagePath ? (
-                      <span className="text-cyan-500/70 truncate max-w-[120px]" title={book.packagePath}>
-                        On disk
+                    {book.packagePath || book.projectPath ? (
+                      <span
+                        className="text-cyan-500/70 truncate max-w-[120px]"
+                        title={book.projectPath || book.packagePath}
+                      >
+                        {book.storageMode === "folder" || book.projectPath ? "Folder" : "On disk"}
                       </span>
                     ) : (
                       <span className="text-amber-500/70">Unsaved</span>
