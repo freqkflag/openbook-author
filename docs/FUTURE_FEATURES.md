@@ -1,6 +1,6 @@
 # Future Features
 
-Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave status:** [WAVE-A-STATUS.md](WAVE-A-STATUS.md) (✅ complete) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) (✅ complete) · [WAVE-C-STATUS.md](WAVE-C-STATUS.md) (✅ complete).
+Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave status:** [WAVE-A-STATUS-COMPLETE.md](WAVE-A-STATUS-COMPLETE.md) (✅ complete) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) (✅ complete) · [WAVE-C-STATUS.md](WAVE-C-STATUS.md) (✅ complete).
 
 **Status key:** ✅ Shipped · 🟡 Partial · ⬜ Planned
 
@@ -171,7 +171,7 @@ Detail: [WAVE-C-STATUS.md](WAVE-C-STATUS.md)
 
 ## Related GitHub issues
 
-See [WAVE-A-STATUS.md](WAVE-A-STATUS.md), [WAVE-B-STATUS.md](WAVE-B-STATUS.md), and [WAVE-C-STATUS.md](WAVE-C-STATUS.md) for issue closure guidance.
+See [WAVE-A-STATUS-COMPLETE.md](WAVE-A-STATUS-COMPLETE.md), [WAVE-B-STATUS.md](WAVE-B-STATUS.md), and [WAVE-C-STATUS.md](WAVE-C-STATUS.md) for issue closure guidance.
 
 | Topic | Issue | Status |
 |-------|-------|--------|

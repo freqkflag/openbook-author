@@ -12,7 +12,7 @@
 
 OpenBook Author is **local-first**: books live in browser storage and, in Electron, on disk as `.openbook` zip files ([ADR-0005](ADR-0005-git-native-project-mode.md) adds optional folder projects). Authors on multiple machines or those wanting off-site backup need a way to copy projects without Atticus-style proprietary cloud lock-in.
 
-Docker self-host already ships for the web app ([WAVE-A-STATUS.md](../WAVE-A-STATUS.md)); **sync is not collab**. Wave C covers realtime Yjs collaboration with a separate ADR. Wave B scope is **optional backup/sync of the `.openbook` artifact** (or folder project) to user-controlled storage.
+Docker self-host already ships for the web app ([WAVE-A-STATUS-COMPLETE.md](../WAVE-A-STATUS-COMPLETE.md)); **sync is not collab**. Wave C covers realtime Yjs collaboration with a separate ADR. Wave B scope is **optional backup/sync of the `.openbook` artifact** (or folder project) to user-controlled storage.
 
 Requirements from [COMPETITIVE_AUDIT.md](../COMPETITIVE_AUDIT.md):
 

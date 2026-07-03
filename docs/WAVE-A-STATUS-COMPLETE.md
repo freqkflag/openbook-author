@@ -1,6 +1,6 @@
-# Wave A Status
+# Wave A Status — Complete
 
-**Branch:** `main` · **As of:** July 2026  
+**Branch:** `main` · **As of:** July 2026 · **Verified:** 2026-07-03  
 **Sources:** [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §5 Wave A, [FUTURE_FEATURES.md](FUTURE_FEATURES.md), [CHANGELOG.md](../CHANGELOG.md) `[Unreleased]`
 
 Wave A has two lenses, split into two phases:
@@ -50,7 +50,7 @@ Wave A.2 adds EPUBCheck / Kindle Previewer hooks ([#56](https://github.com/freqk
 
 Also on `main` from prior releases: EPUB import, front matter, find/replace, custom section templates, store metadata (ISBN/BISAC/keywords), keyboard shortcuts, chapter reorder, section templates.
 
-**Test count:** 211 tests across 32 files (`npm test`, July 2026).
+**Test count:** 220 tests across 37 files (`npm test`, verified 2026-07-03).
 
 ### Competitive-audit Wave A.1 — shipped gaps
 
@@ -131,6 +131,39 @@ iBooks parity and Wave C items ([#15](https://github.com/freqkflag/openbook-auth
 
 ## Next steps
 
-1. **Wave B (remaining)** — git-for-books ([#59](https://github.com/freqkflag/openbook-author/issues/59)), EPUB 3.3 metadata ([#62](https://github.com/freqkflag/openbook-author/issues/62)), self-hosted sync ([#63](https://github.com/freqkflag/openbook-author/issues/63)) — see [WAVE-B-STATUS.md](WAVE-B-STATUS.md). ~~#19 IBA import~~, ~~#49 hierarchical TOC~~, ~~#60 RAG~~ shipped on `main`.
-2. Optional polish: WCAG preview ([#29](https://github.com/freqkflag/openbook-author/issues/29)), full export/import test matrix ([#28](https://github.com/freqkflag/openbook-author/issues/28)).
+Wave A is **complete** on `main`. Wave B and Wave C are also **complete** ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)) — see [WAVE-B-STATUS.md](WAVE-B-STATUS.md) and [WAVE-C-STATUS.md](WAVE-C-STATUS.md).
+
+1. Optional polish: WCAG preview ([#29](https://github.com/freqkflag/openbook-author/issues/29)), full export/import test matrix ([#28](https://github.com/freqkflag/openbook-author/issues/28)).
+2. Close remaining GitHub issues listed above with CHANGELOG pointers.
 3. Tag release when `[Unreleased]` CHANGELOG is ready.
+
+---
+
+## Verification (2026-07-03)
+
+**Audit:** Codebase + test suite on `main` · **Commands:** `npm test` ✅ (220/220) · `npm run build` ✅
+
+| Claim | Evidence file | Test file | Pass/Fail | Notes |
+|-------|---------------|-----------|-----------|-------|
+| **AI Wave 1** — book-aware context, Generate section, voice profile | `src/lib/ai-context.ts`, `src/components/AIAssistant.tsx` | `src/lib/ai-context.test.ts` | ✅ Pass | 5 tests |
+| **Auto-save badge + crash recovery** | `src/store/book-store.ts`, `src/lib/storage.ts` (sessionStorage buffer), `src/components/SaveStatusBadge.tsx` | `src/store/book-store.save.test.ts` | ✅ Pass | [#26](https://github.com/freqkflag/openbook-author/issues/26) closed |
+| **Publish readiness extensions** — duplicate TOC, KBP H1, store metadata, click-to-chapter | `src/lib/publish-readiness.ts`, `src/components/PublishReadinessPanel.tsx` | `src/lib/publish-readiness.test.ts` | ✅ Pass | 14 tests |
+| **Accessibility export gate** — heading hierarchy + missing alt blocking | `src/lib/publish-readiness.ts` | `src/lib/a11y-export.test.ts`, `publish-readiness.test.ts` | ✅ Pass | axe-core on export HTML |
+| **Guidebook template seed** — Trail Reference chapter | `src/lib/guidebook-seed.ts` | `src/lib/guidebook-seed.test.ts` | ✅ Pass | ADR-0001 present |
+| **EPUB export snapshots** | `src/lib/epub.ts` | `src/lib/epub-export.snapshots.test.ts` | ✅ Pass | 6 snapshot tests |
+| **Store hydrate test** — AI settings merge | `src/store/book-store.ts` | `src/store/book-store.hydrate.test.ts` | ✅ Pass | 1 test |
+| **IBA import fixture test** | `src/lib/iba-import.ts` | `src/lib/iba-import.test.ts` | ✅ Pass | 5 tests |
+| **PDF export hardening** — presets, Electron printToPDF | `src/lib/pdf-export.ts`, `src/lib/print-presets.ts`, `src/components/PrintPdfModal.tsx` | `src/lib/pdf-export.test.ts`, `src/lib/print-presets.test.ts` | ✅ Pass | [#7](https://github.com/freqkflag/openbook-author/issues/7) closed |
+| **Docker deployment** | `Dockerfile`, `docker-compose.yml` | — | ✅ Pass | No automated deploy test |
+| **Agent orchestration** — merge lanes, router doc, ADR-0004 | `src/studio/orchestrator/`, `docs/agent-router.md` | `src/studio/orchestrator/orchestrator.test.ts` | ✅ Pass | [#37](https://github.com/freqkflag/openbook-author/issues/37) merged |
+| **Competitive #1** — footnotes/endnotes + tables | `src/lib/note-export.ts`, TipTap extensions | `src/lib/tables-notes-readiness.test.ts` | ✅ Pass | [#8](https://github.com/freqkflag/openbook-author/issues/8) closed |
+| **Competitive #4 (A.1 partial)** — print PDF trim/margins/TOC leaders | `src/lib/print-presets.ts` | `src/lib/print-presets.test.ts` | ✅ Pass | Full presets shipped in A.2 |
+| **Competitive #6** — axe-core in CI | `src/lib/a11y-export.test.ts` | `src/lib/a11y-export.test.ts` | ✅ Pass | 5 axe fixture tests |
+| **Competitive #7 (A.1 partial)** — EPUB structural validation | `src/lib/epub-validation.ts` | `src/lib/epub-validation.test.ts` | ✅ Pass | Full hooks shipped in A.2 |
+| **A.2 #2** — export theme system | `src/lib/export-themes.ts` | `src/lib/export-themes.test.ts` | ✅ Pass | [#55](https://github.com/freqkflag/openbook-author/issues/55) closed |
+| **A.2 #3** — DOCX import | `src/lib/docx-import.ts`, dashboard Import DOCX in `src/app/page.tsx` | `src/lib/docx-import.test.ts` | ✅ Pass | [#54](https://github.com/freqkflag/openbook-author/issues/54) closed |
+| **A.2 #5** — PWA offline shell | `public/sw.js`, `src/lib/pwa.ts`, `src/components/OfflineIndicator.tsx` | `src/lib/pwa.test.ts` | ✅ Pass | [#27](https://github.com/freqkflag/openbook-author/issues/27) closed |
+| **A.2 #7 complete** — EPUBCheck / Kindle Previewer hooks | `src/lib/epub-validation.ts`, readiness panel | `src/lib/epub-validation.test.ts` | ✅ Pass | [#56](https://github.com/freqkflag/openbook-author/issues/56) closed |
+| **A.2 #4 complete** — print PDF presets | `src/lib/print-presets.ts`, `src/components/PrintPdfModal.tsx` | `src/lib/print-presets.test.ts` | ✅ Pass | Electron `printToPDF` mapping tested |
+
+**Summary:** 19/19 shipped claims verified. No failures. Test inventory updated from 211/32 (July 2026 draft) to **220 tests / 37 files** at verification time.

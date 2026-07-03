@@ -3,7 +3,7 @@
 **Branch:** `main` · **Version:** 0.2.0 + unreleased wave  
 **Audit date:** July 2026  
 **Scope:** Inventory from `README.md`, `CHANGELOG.md`, `docs/FUTURE_FEATURES.md`, and `src/` scan  
-**Related:** [FUTURE_FEATURES.md](FUTURE_FEATURES.md) · [WAVE-A-STATUS.md](WAVE-A-STATUS.md) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) · [ADR index](adr/README.md)
+**Related:** [FUTURE_FEATURES.md](FUTURE_FEATURES.md) · [WAVE-A-STATUS-COMPLETE.md](WAVE-A-STATUS-COMPLETE.md) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) · [ADR index](adr/README.md)
 
 ---
 
@@ -234,15 +234,15 @@ Do not re-list these as gaps without noting Wave status:
 
 **Goal:** Authors can finish and ship a reflowable nonfiction/fiction book without leaving OpenBook.
 
-**Status (July 2026):** **Wave A.1** shipped on `main` (product-lane AI/platform work, footnotes/tables, axe-core export fixtures, partial PDF + EPUB validation). **Wave A.2 completion sprint** is in progress in parallel — themes ([#55](https://github.com/freqkflag/openbook-author/issues/55)), DOCX ([#54](https://github.com/freqkflag/openbook-author/issues/54)), PWA ([#27](https://github.com/freqkflag/openbook-author/issues/27)), PDF presets, and EPUBCheck ([#56](https://github.com/freqkflag/openbook-author/issues/56)). Track phase detail in [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
+**Status (July 2026):** ✅ **Complete** — Wave A.1 and A.2 shipped on `main`. All seven competitive-audit gaps closed (footnotes/tables, themes ([#55](https://github.com/freqkflag/openbook-author/issues/55)), DOCX ([#54](https://github.com/freqkflag/openbook-author/issues/54)), PDF presets, PWA ([#27](https://github.com/freqkflag/openbook-author/issues/27)), axe-core CI, EPUBCheck ([#56](https://github.com/freqkflag/openbook-author/issues/56))). Track verification in [WAVE-A-STATUS-COMPLETE.md](WAVE-A-STATUS-COMPLETE.md).
 
 1. **Footnotes/endnotes + tables** ✅ Wave A.1 — TipTap extensions, EPUB/KBP transforms ([#8](https://github.com/freqkflag/openbook-author/issues/8) · close)
-2. **Export theme system** 🟡 Wave A.2 — 3–5 built-in themes + custom CSS hook — [#55](https://github.com/freqkflag/openbook-author/issues/55)
-3. **DOCX import** ✅ — mammoth browser conversion — [#54](https://github.com/freqkflag/openbook-author/issues/54)
-4. **Print PDF hardening** 🟡 Wave A.2 — trim sizes, page breaks, TOC leaders; Electron `printToPDF` presets
-5. **PWA offline shell** 🟡 Wave A.2 — service worker, cache editor — [#27](https://github.com/freqkflag/openbook-author/issues/27)
+2. **Export theme system** ✅ Wave A.2 — 3–5 built-in themes + custom CSS hook — [#55](https://github.com/freqkflag/openbook-author/issues/55)
+3. **DOCX import** ✅ Wave A.2 — mammoth browser conversion — [#54](https://github.com/freqkflag/openbook-author/issues/54)
+4. **Print PDF hardening** ✅ Wave A.2 — trim sizes, page breaks, TOC leaders; Electron `printToPDF` presets
+5. **PWA offline shell** ✅ Wave A.2 — service worker, cache editor — [#27](https://github.com/freqkflag/openbook-author/issues/27)
 6. **axe-core in CI** ✅ Wave A.1 — export HTML fixtures in Vitest/CI
-7. **Kindle Previewer / EPUBCheck integration** 🟡 Wave A.2 — post-export validation in readiness panel — [#56](https://github.com/freqkflag/openbook-author/issues/56)
+7. **Kindle Previewer / EPUBCheck integration** ✅ Wave A.2 — post-export validation in readiness panel — [#56](https://github.com/freqkflag/openbook-author/issues/56)
 
 ### Wave B — FOSS differentiation moat (months 2–4)
 

@@ -41,7 +41,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `serializeGuidebookBlockToHtml()` helper for generating TipTap-compatible `<aside data-guidebook="…">` markup
 - Developer reference: [docs/guidebook-blocks.md](docs/guidebook-blocks.md)
 - Competitive & tech feature audit: [docs/COMPETITIVE_AUDIT.md](docs/COMPETITIVE_AUDIT.md) — gap matrix, roadmap waves, and issue tracking
-- Wave A status tracker: [docs/WAVE-A-STATUS.md](docs/WAVE-A-STATUS.md) — product-lane vs competitive-audit completion and issue closure guidance
+- Wave A status tracker: [docs/WAVE-A-STATUS-COMPLETE.md](docs/WAVE-A-STATUS-COMPLETE.md) — product-lane vs competitive-audit completion and issue closure guidance
 
 ### Planned
 
