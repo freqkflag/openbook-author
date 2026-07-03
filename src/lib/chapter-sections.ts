@@ -281,8 +281,10 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
   },
 ];
 
+const DEFAULT_SECTION_TEMPLATE = SECTION_TEMPLATES.find((t) => t.id === "chapter")!;
+
 export function getSectionTemplate(id: ChapterSectionType): SectionTemplate {
-  return SECTION_TEMPLATES.find((t) => t.id === id) ?? SECTION_TEMPLATES[0];
+  return SECTION_TEMPLATES.find((t) => t.id === id) ?? DEFAULT_SECTION_TEMPLATE;
 }
 
 export function getSectionsByCategory() {

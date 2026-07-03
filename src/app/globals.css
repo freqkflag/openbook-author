@@ -451,6 +451,30 @@ body::before {
 .print-preview-body ul, .print-preview-body ol { margin: 0.8em 0; padding-left: 1.5em; }
 
 /* Section page types */
+.print-preview-body .section-copyright,
+.ProseMirror .section-copyright {
+  padding: 2em 1.5em;
+  font-size: 0.9em;
+  color: #444;
+  text-align: center;
+}
+.print-preview-body .section-copyright p,
+.ProseMirror .section-copyright p {
+  margin: 0.75em 0;
+}
+
+.print-preview-body .section-dedication,
+.ProseMirror .section-dedication {
+  text-align: center;
+  padding: 4em 2em;
+  font-style: italic;
+}
+.print-preview-body .section-dedication p,
+.ProseMirror .section-dedication p {
+  margin: 0;
+  font-size: 1.1em;
+}
+
 .print-preview-body .section-indented,
 .ProseMirror .section-indented {
   margin: 1.25em 2em;
