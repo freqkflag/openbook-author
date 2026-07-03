@@ -89,6 +89,10 @@ export function serializeGuidebookBlockToHtml(
       case "cheat_sheet":
         data = normalizeCheatSheetPayload(payload as CheatSheetPayload);
         break;
+      default: {
+        const _exhaustive: never = blockType;
+        throw new Error(`Unhandled block type: ${_exhaustive}`);
+      }
     }
   } else {
     data = defaultGuidebookPayload(blockType).data;

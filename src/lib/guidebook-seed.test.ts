@@ -173,6 +173,10 @@ describe("guidebook template seed", () => {
           expect(normalized.items.length).toBe(seedCheatSheetPayload.items.length);
           break;
         }
+        default: {
+          const _exhaustive: never = blockType;
+          throw new Error(`Unhandled block type: ${_exhaustive}`);
+        }
       }
     }
   });
