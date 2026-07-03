@@ -75,6 +75,41 @@ Exits `0` when valid, `1` with field errors when invalid.
 6. Execution agent completes work and emits an Execution Handoff → `@review-agent`.
 7. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
 
+## Joey notification gates
+
+[`agent-webhook.yml`](../.github/workflows/agent-webhook.yml) fans out human-gate labels to Joey's Author automation:
+
+| Signal | Source | Joey notification |
+|--------|--------|-------------------|
+| Low router confidence | Dispatch handoff with `escalate: true` → `needs-human` | Author automation |
+| Execution/review needs human | Execution handoff `status: needs_human` or `blocked` → `needs-human` | Author automation |
+| Epic plan needs sign-off | Router handoff `estimated_scope: epic` → `epic` | Project automation + Author automation |
+| Release ready for approval | Review handoff `verdict: approved` → `approved-for-merge` | Merge automation + Author automation |
+
+## macOS report intake
+
+Paste a macOS bug or feature notification into the studio CLI to create a structured GitHub issue and restart DISPATCH with `router-ready`:
+
+```bash
+npm run studio -- macos-report --file report.txt
+```
+
+The parser accepts concise reports such as:
+
+```text
+Bug: Export crash on macOS
+Summary: EPUB export crashes after selecting a guidebook project.
+Steps:
+1. Open a guidebook project
+2. Choose Export EPUB
+Expected: EPUB file is written.
+Actual: The app crashes before writing the file.
+Area: Export / EPUB
+Environment: macOS 15.5, OpenBook Author v0.2.0
+```
+
+Feature reports use `Feature:`, `Goal:`, `User story:`, `Area:`, `Success criteria:`, and optional `Notes:` fields. Use `--dry-run` to preview the generated `gh issue create --template ... --label router-ready` command and issue body without creating an issue.
+
 ## Agent rules
 
 Cursor agent definitions live in [`.cursor/rules/`](../.cursor/rules/):

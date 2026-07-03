@@ -1,6 +1,7 @@
 #!/usr/bin/env node
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
+import { buildGhIssueCreateArgs, parseMacosReport } from "./orchestrator/macos-report";
 import { parseHandoff, validateHandoff } from "./orchestrator/parse-handoff";
 import { routeIssue } from "./orchestrator/route-issue";
 import { getNextStep } from "./orchestrator/workflow";
@@ -11,6 +12,8 @@ interface CliArgs {
   body?: string;
   issue?: number;
   file?: string;
+  repo?: string;
+  dryRun?: boolean;
 }
 
 function parseArgs(argv: string[]): CliArgs {
@@ -36,6 +39,14 @@ function parseArgs(argv: string[]): CliArgs {
       args.file = argv[++i];
       continue;
     }
+    if (arg === "--repo" && argv[i + 1]) {
+      args.repo = argv[++i];
+      continue;
+    }
+    if (arg === "--dry-run") {
+      args.dryRun = true;
+      continue;
+    }
 
     if (!arg.startsWith("-")) {
       positional.push(arg);
@@ -54,11 +65,13 @@ Usage:
   npm run studio -- route --issue 6
   npm run studio -- next --file handoff.yaml
   npm run studio -- validate --file handoff.yaml
+  npm run studio -- macos-report --file report.txt [--repo owner/repo] [--dry-run]
 
 Commands:
-  route     Classify an issue and emit Router Handoff YAML
-  next      Read a handoff file and print next agent instructions
-  validate  Validate a handoff file (exit 0 valid, 1 invalid)
+  route         Classify an issue and emit Router Handoff YAML
+  next          Read a handoff file and print next agent instructions
+  validate      Validate a handoff file (exit 0 valid, 1 invalid)
+  macos-report  Parse a macOS bug/feature report and create a router-ready issue
 `);
 }
 
@@ -85,6 +98,13 @@ function fetchIssueFromGh(issueNumber: number): { title: string; body: string; l
 
 function readHandoffFile(filePath: string): string {
   return readFileSync(filePath, "utf8");
+}
+
+function quoteShellArg(value: string): string {
+  if (/^[A-Za-z0-9_./:@=-]+$/.test(value)) {
+    return value;
+  }
+  return `'${value.replace(/'/g, "'\\''")}'`;
 }
 
 function cmdRoute(args: CliArgs): number {
@@ -188,6 +208,42 @@ function cmdValidate(args: CliArgs): number {
   }
 }
 
+function cmdMacosReport(args: CliArgs): number {
+  const repo = args.repo ?? "freqkflag/openbook-author";
+  const input = args.file ? readFileSync(args.file, "utf8") : readFileSync(0, "utf8");
+
+  if (!input.trim()) {
+    console.error("Error: provide report text via --file or stdin.");
+    return 1;
+  }
+
+  const report = parseMacosReport(input);
+  const ghArgs = buildGhIssueCreateArgs(report, {
+    repo,
+    bodyFile: "-",
+  });
+
+  if (args.dryRun) {
+    console.log(["gh", ...ghArgs].map(quoteShellArg).join(" "));
+    console.log("\n--- issue body ---");
+    console.log(report.body);
+    return 0;
+  }
+
+  try {
+    const output = execFileSync("gh", ghArgs, {
+      encoding: "utf8",
+      input: `${report.body}\n`,
+      stdio: ["pipe", "pipe", "inherit"],
+    });
+    console.log(output.trim());
+    return 0;
+  } catch (error) {
+    console.error(error instanceof Error ? error.message : String(error));
+    return 1;
+  }
+}
+
 function main(): number {
   const args = parseArgs(process.argv.slice(2));
 
@@ -203,6 +259,8 @@ function main(): number {
       return cmdNext(args);
     case "validate":
       return cmdValidate(args);
+    case "macos-report":
+      return cmdMacosReport(args);
     default:
       console.error(`Unknown command: ${args.command}`);
       printUsage();

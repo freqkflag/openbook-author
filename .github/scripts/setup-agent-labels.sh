@@ -15,11 +15,11 @@ labels=(
   "agent:design|d946ef|Route to UI/UX agent"
   "ready-for-execution|fbca04|Execution agent may start"
   "ready-for-review|5319e7|Awaiting Review agent"
-  "approved-for-merge|0e8a16|Approved for PR merge"
-  "needs-human|b60205|Human gate required"
+  "approved-for-merge|0e8a16|Release ready for Joey approval"
+  "needs-human|b60205|Joey human gate required"
   "needs-research|7057ff|ADR research required"
   "needs-rework|d93f0b|Review requested changes"
-  "epic|8a5cff|Epic breakdown required"
+  "epic|8a5cff|Epic plan requires Joey sign-off"
 )
 
 for entry in "${labels[@]}"; do

@@ -32,7 +32,7 @@ After saving each automation in Cursor, copy its Webhook URL + Bearer token (crs
 | OPENBOOK_WEBHOOK_REVIEW_AUTH        | Review                  | (Bearer token)                      |
 | OPENBOOK_WEBHOOK_MERGE              | Merge                   | approved-for-merge                  |
 | OPENBOOK_WEBHOOK_MERGE_AUTH         | Merge                   | (Bearer token)                      |
-| OPENBOOK_WEBHOOK_AUTHOR             | Author                  | needs-human                         |
+| OPENBOOK_WEBHOOK_AUTHOR             | Author                  | needs-human, epic, approved-for-merge |
 | OPENBOOK_WEBHOOK_AUTHOR_AUTH        | Author                  | (Bearer token)                      |
 
 RELEASE uses a PR-merged trigger — no webhook secret needed.
