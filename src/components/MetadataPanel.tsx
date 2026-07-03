@@ -159,6 +159,51 @@ export default function MetadataPanel({
         )}
       </div>
 
+      <div className="pt-3 border-t border-white/10 space-y-3">
+        <h3 className="text-xs font-medium text-[#00FF88] uppercase tracking-wider">
+          Accessibility
+        </h3>
+        <p className="text-xs text-slate-500">
+          EPUB 3.3 schema.org accessibility metadata — auto-derived from structure; override
+          summary or add certification claims below.
+        </p>
+
+        <label className="block text-xs text-slate-400">
+          Accessibility summary
+          <textarea
+            value={metadata.accessibilitySummary ?? ""}
+            onChange={(e) => onUpdate({ accessibilitySummary: e.target.value })}
+            rows={3}
+            placeholder="Leave blank to auto-generate from book structure"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 resize-none focus:border-[#00FF88]/40 focus:outline-none"
+          />
+        </label>
+
+        <label className="block text-xs text-slate-400">
+          Accessibility claim
+          <textarea
+            value={metadata.accessibilityClaim ?? ""}
+            onChange={(e) => onUpdate({ accessibilityClaim: e.target.value })}
+            rows={2}
+            placeholder="e.g. EPUB Accessibility 1.1 — WCAG 2.0 Level A"
+            className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 resize-none focus:border-[#00FF88]/40 focus:outline-none"
+          />
+        </label>
+
+        {(metadata.accessibilityClaim?.trim() || metadata.accessibilityCertifier?.trim()) && (
+          <label className="block text-xs text-slate-400">
+            Certifier
+            <input
+              type="text"
+              value={metadata.accessibilityCertifier ?? ""}
+              onChange={(e) => onUpdate({ accessibilityCertifier: e.target.value })}
+              placeholder="Organization that certified accessibility"
+              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-[#00FF88]/40 focus:outline-none"
+            />
+          </label>
+        )}
+      </div>
+
       <CoverEditor book={book} />
 
       <div className="pt-3 border-t border-white/10 space-y-3">
