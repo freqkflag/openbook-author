@@ -1,0 +1,5 @@
+# Code review is owned by OpenBook Author Cursor REVIEW automation only.
+# To fully remove CodeRabbit: repo Settings → Integrations → GitHub Apps → Uninstall.
+reviews:
+  auto_review:
+    enabled: false
