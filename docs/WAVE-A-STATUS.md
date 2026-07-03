@@ -11,7 +11,7 @@ Wave A has two lenses, split into two phases:
 | Phase | Scope | Status |
 |-------|-------|--------|
 | **Wave A.1** | Product-lane deliveries + competitive gaps 1, 6, and partial 4 & 7 | ✅ Shipped on `main` |
-| **Wave A.2** | Remaining competitive gaps 2–5 and 7 completion (themes, DOCX, PWA, PDF presets, EPUBCheck) | 🟡 In progress — parallel completion sprint |
+| **Wave A.2** | Remaining competitive gaps 2–5 and 7 completion (themes, DOCX, PWA, PDF presets, EPUBCheck) | ✅ Shipped on `main` (July 2026) |
 
 This document tracks both lenses, clarifies publish-readiness severity, and recommends GitHub issue closure.
 
@@ -63,7 +63,7 @@ Also on `main` from prior releases: EPUB import, front matter, find/replace, cus
 
 ---
 
-## Wave A.2 — in progress (completion sprint)
+## Wave A.2 — shipped (July 2026)
 
 **Goal:** Close remaining competitive-audit gaps so authors can finish and ship a reflowable book without leaving OpenBook.
 
@@ -77,9 +77,9 @@ Parallel implementation tracks (July 2026):
 | EPUBCheck / Kindle Previewer integration | 7 | [#56](https://github.com/freqkflag/openbook-author/issues/56) | ✅ Shipped — `epub-validation.ts`, post-export validation, macOS/Electron CLI docs in readiness panel |
 | Print PDF presets (trim, margins, TOC leaders) | 4 | _(no dedicated issue)_ | ✅ Shipped — `print-presets.ts`, `PrintPdfModal`, Electron `printToPDF` presets |
 
-Related umbrella issues (keep open until A.2 lands): [#51](https://github.com/freqkflag/openbook-author/issues/51) (themes), [#52](https://github.com/freqkflag/openbook-author/issues/52) (DOCX), [#53](https://github.com/freqkflag/openbook-author/issues/53) (EPUBCheck).
+Related umbrella issues: [#51](https://github.com/freqkflag/openbook-author/issues/51), [#52](https://github.com/freqkflag/openbook-author/issues/52), [#53](https://github.com/freqkflag/openbook-author/issues/53) — close with #55 / #54 / #56.
 
-**Wave A.2 exit criteria:** All five tracks shipped on `main`, competitive-audit Wave A checklist complete, [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §1 inventory updated.
+**Wave A.2 exit criteria:** ✅ All five tracks on `main`; competitive-audit Wave A checklist complete.
 
 ---
 
@@ -131,6 +131,6 @@ iBooks parity and Wave B/C items ([#15](https://github.com/freqkflag/openbook-au
 
 ## Next steps
 
-1. Close Wave A.1 shipped issues listed above (batch close PR or manual triage) — include [#8](https://github.com/freqkflag/openbook-author/issues/8).
-2. Land remaining Wave A.2 parallel tracks; close [#55](https://github.com/freqkflag/openbook-author/issues/55) / [#51](https://github.com/freqkflag/openbook-author/issues/51) and [#54](https://github.com/freqkflag/openbook-author/issues/54) / [#52](https://github.com/freqkflag/openbook-author/issues/52).
-3. Update [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §1 inventory when Wave A.2 items land.
+1. **Wave B** — hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49)), IBA import depth ([#19](https://github.com/freqkflag/openbook-author/issues/19)), git-for-books, AI RAG — see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §5 Wave B.
+2. Optional polish: WCAG preview ([#29](https://github.com/freqkflag/openbook-author/issues/29)), full export/import test matrix ([#28](https://github.com/freqkflag/openbook-author/issues/28)).
+3. Tag release when `[Unreleased]` CHANGELOG is ready.
