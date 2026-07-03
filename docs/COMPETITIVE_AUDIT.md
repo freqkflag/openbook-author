@@ -10,7 +10,7 @@
 ## Executive Summary
 
 - **OpenBook Author is a credible FOSS reflowable book studio** — TipTap editing, 19 section types, EPUB 3 + KBP export, publish readiness, `.openbook` packages, Electron macOS app, and a multi-provider AI panel with book-aware context already ship. It competes with Atticus/Vellum on *formatting intent*, not polish.
-- **Biggest daily-author gaps** are structural editing (footnotes/tables), professional print output (bleed/trim themes), import breadth (DOCX), and store validation (Kindle Previewer / EPUBCheck hooks) — not missing “another editor.”
+- **Biggest daily-author gaps** are professional print output (bleed/trim themes), import breadth (DOCX), PWA offline, and store validation (Kindle Previewer / EPUBCheck hooks) — footnotes/tables shipped in Wave A.1 ([#8](https://github.com/freqkflag/openbook-author/issues/8)).
 - **iBooks Author parity is partial:** popups + galleries exist; fixed-layout canvas, media widgets, quizzes, and deep IBA semantics do not. Landscape template sets EPUB `pre-paginated` metadata but the editor remains reflowable.
 - **Differentiation moat is FOSS + local-first + AI:** Ollama support, open `.openbook` format, IBA import, guidebook/KBP blocks, and Docker self-host are rare in paid competitors. Lean into these rather than chasing Atticus cloud sync.
 - **Bleeding-edge pilots need ADRs first:** realtime collab (Yjs), plugin marketplace, cloud sync, and git-for-books all change storage, security, and export contracts — ADR-0002 covers TipTap widgets, not a marketplace.
@@ -37,7 +37,8 @@
 | **EPUB 3** | JSZip pipeline (`src/lib/epub.ts`); reflowable default; landscape sets `rendition:layout=pre-paginated` |
 | **KBP** | `.kbp` zip for KDP — EPUB + HTML chapters + stylesheet |
 | **PDF** | Web print dialog; Electron native `printToPDF`; section print CSS |
-| **Readiness** | Pre-export gate — empty chapters, broken assets, TOC dupes, heading hierarchy, missing alt (export-blocking), KBP H1 checks, store metadata warnings |
+| **Readiness** | Pre-export gate — **errors** block export (heading hierarchy, missing alt); **warnings** advise only (TOC dupes, KBP H1, store metadata, empty notes, headerless tables) |
+| **Tables & notes** | TipTap tables; footnote/endnote refs with EPUB 3 noteref export and endnotes section |
 | **Metadata** | ISBN, BISAC, keywords, age rating, series → EPUB OPF + KBP manifest |
 | **Front matter** | Copyright, dedication, title page in export |
 
@@ -74,14 +75,14 @@
 | **Web** | Next.js 16, React 19, Tailwind 4 |
 | **Electron** | macOS `.dmg`; Save/Open/Save As; auto-save with path |
 | **Docker** | Multi-stage Dockerfile + compose |
-| **CI** | Lint, Vitest, build — **no axe-core** |
+| **CI** | Lint, Vitest, build — axe-core export HTML fixtures in Vitest (Wave A.1) |
 | **A11y (partial)** | Heading hierarchy warnings; alt-text export block; `aria-grabbed` on reorder |
 | **Search** | Book-wide find/replace (`Cmd+Shift+F`) |
 | **Spellcheck** | Browser native + book language |
 
 ### Explicitly not shipped
 
-Do not re-list these as gaps without noting status: tables, footnotes/endnotes (planned v0.4), PWA/offline, fixed-layout canvas, media widgets, quiz widgets, hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49)), platform validators, print bleed/CMYK, DOCX/MOBI, collaboration, cloud sync, markdown mode, plugin marketplace, audiobook export, git-for-books, multi-step AI agents/RAG.
+Do not re-list these as gaps without noting status: PWA/offline, fixed-layout canvas, media widgets, quiz widgets, hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49)), platform validators (EPUBCheck CLI), print bleed/CMYK, DOCX/MOBI, collaboration, cloud sync, markdown mode, plugin marketplace, audiobook export, git-for-books, multi-step AI agents/RAG.
 
 ---
 
@@ -107,7 +108,7 @@ Do not re-list these as gaps without noting status: tables, footnotes/endnotes (
 
 **Weaknesses:** Cloud-dependent; reliability complaints; not FOSS.
 
-**OpenBook position:** Matches chapter workflow and callouts; lacks footnotes, theme library, cloud sync, writing goals. Wins: local-first, Ollama, open format, IBA import.
+**OpenBook position:** Matches chapter workflow, callouts, and footnotes; lacks theme library, cloud sync, writing goals. Wins: local-first, Ollama, open format, IBA import.
 
 ### Scrivener (~$60, Mac/Win/iOS)
 
@@ -179,8 +180,8 @@ Do not re-list these as gaps without noting status: tables, footnotes/endnotes (
 | EPUB export | All | ✅ EPUB 3 reflowable | — | — | Core |
 | Print/PDF export | Vellum, Atticus, KC | 🟡 Print dialog; no bleed/trim | **P0** | M | High |
 | Theme/font library | Vellum 26, Atticus 1500+ | ❌ Single CSS stack | **P0** | M | High |
-| Footnotes/endnotes | Atticus, Scrivener, textbooks | ❌ Planned v0.4 | **P0** | M | High |
-| Tables | Pressbooks, textbooks | ❌ Planned v0.4 | **P1** | M | High |
+| Footnotes/endnotes | Atticus, Scrivener, textbooks | ✅ Shipped (Wave A.1) | — | — | Core |
+| Tables | Pressbooks, textbooks | ✅ Shipped (Wave A.1) | — | — | Core |
 | DOCX import/export | Atticus, Ulysses, KC | ❌ | **P1** | L | High |
 | Store validation (KDP/Apple) | KC, Vellum ecosystem | 🟡 Readiness panel only | **P1** | M | High |
 | Fixed-layout editor | IBA, Canva, KC | 🟡 Metadata flag only | **P1** | XL | Medium (photo/comic niche) |
@@ -218,15 +219,15 @@ Do not re-list these as gaps without noting status: tables, footnotes/endnotes (
 
 **Goal:** Authors can finish and ship a reflowable nonfiction/fiction book without leaving OpenBook.
 
-**Status (July 2026):** Product-lane deliveries (AI Wave 1, guidebook seed, export snapshots, hydrate test, orchestration) are on `main`. Competitive-audit gaps 1–3 and 5–7 remain — see [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
+**Status (July 2026):** **Wave A.1** shipped on `main` (product-lane AI/platform work, footnotes/tables, axe-core export fixtures, partial PDF + EPUB validation). **Wave A.2 completion sprint** is in progress in parallel — themes ([#55](https://github.com/freqkflag/openbook-author/issues/55)), DOCX ([#54](https://github.com/freqkflag/openbook-author/issues/54)), PWA ([#27](https://github.com/freqkflag/openbook-author/issues/27)), PDF presets, and EPUBCheck ([#56](https://github.com/freqkflag/openbook-author/issues/56)). Track phase detail in [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
 
-1. **Footnotes/endnotes + tables** (TipTap extensions, EPUB/KBP transforms) — [#8](https://github.com/freqkflag/openbook-author/issues/8)
-2. **Export theme system** — 3–5 built-in themes + custom CSS hook (Atticus/Vellum parity floor) — [#55](https://github.com/freqkflag/openbook-author/issues/55)
-3. **DOCX import** (mammoth or pandoc WASM) — bridge from Word/Scrivener — [#54](https://github.com/freqkflag/openbook-author/issues/54)
-4. **Print PDF hardening** — trim sizes, page breaks, TOC leaders; Electron `printToPDF` presets
-5. **PWA offline shell** — service worker, cache editor; `.openbook` works offline — [#27](https://github.com/freqkflag/openbook-author/issues/27)
-6. **axe-core in CI** — editor + export HTML fixtures
-7. **Kindle Previewer / EPUBCheck integration** — post-export validation step in readiness panel — [#56](https://github.com/freqkflag/openbook-author/issues/56)
+1. **Footnotes/endnotes + tables** ✅ Wave A.1 — TipTap extensions, EPUB/KBP transforms ([#8](https://github.com/freqkflag/openbook-author/issues/8) · close)
+2. **Export theme system** 🟡 Wave A.2 — 3–5 built-in themes + custom CSS hook — [#55](https://github.com/freqkflag/openbook-author/issues/55)
+3. **DOCX import** 🟡 Wave A.2 — mammoth or pandoc WASM — [#54](https://github.com/freqkflag/openbook-author/issues/54)
+4. **Print PDF hardening** 🟡 Wave A.2 — trim sizes, page breaks, TOC leaders; Electron `printToPDF` presets
+5. **PWA offline shell** 🟡 Wave A.2 — service worker, cache editor — [#27](https://github.com/freqkflag/openbook-author/issues/27)
+6. **axe-core in CI** ✅ Wave A.1 — export HTML fixtures in Vitest/CI
+7. **Kindle Previewer / EPUBCheck integration** 🟡 Wave A.2 — post-export validation in readiness panel — [#56](https://github.com/freqkflag/openbook-author/issues/56)
 
 ### Wave B — FOSS differentiation moat (months 2–4)
 
@@ -256,16 +257,16 @@ Do not re-list these as gaps without noting status: tables, footnotes/endnotes (
 
 ## 6. Top 10 Recommendations (ordered)
 
-1. **Ship footnotes/endnotes + tables (v0.4)** — blocks textbook/guidebook credibility vs Atticus/Pressbooks. → [#8](https://github.com/freqkflag/openbook-author/issues/8)
-2. **Theme system (3–5 export themes + CSS override)** — biggest perceived quality gap vs Vellum/Atticus. → [#55](https://github.com/freqkflag/openbook-author/issues/55)
-3. **DOCX import** — lowers switching cost from Word/Scrivener (dominant drafting path). → [#54](https://github.com/freqkflag/openbook-author/issues/54)
-4. **Print PDF presets (trim, margins, page numbers)** — completes the “publish ready” story beyond browser print.
-5. **PWA offline mode** — matches local-first brand; roadmap item #23. → [#27](https://github.com/freqkflag/openbook-author/issues/27)
-6. **EPUBCheck + Kindle Previewer hooks in publish readiness** — turns partial validation into trust. → [#56](https://github.com/freqkflag/openbook-author/issues/56)
-7. **Hierarchical TOC / parts ([#49](https://github.com/freqkflag/openbook-author/issues/49))** — Scrivener/textbook expectation.
-8. **Deepen IBA import with diagnostics** — unique FOSS moat no competitor matches.
-9. **AI RAG consistency pass (local-first, Ollama-friendly)** — differentiation beyond single-shot prompts.
-10. **ADR before collab/plugins/cloud** — avoid painting into proprietary corners; `.openbook` stays canonical.
+1. **Theme system (3–5 export themes + CSS override)** — biggest perceived quality gap vs Vellum/Atticus. → [#55](https://github.com/freqkflag/openbook-author/issues/55) *(Wave A.2 sprint)*
+2. **DOCX import** — lowers switching cost from Word/Scrivener (dominant drafting path). → [#54](https://github.com/freqkflag/openbook-author/issues/54) *(Wave A.2 sprint)*
+3. **Print PDF presets (trim, margins, page numbers)** — completes the “publish ready” story beyond browser print. *(Wave A.2 sprint)*
+4. **PWA offline mode** — matches local-first brand; roadmap item #23. → [#27](https://github.com/freqkflag/openbook-author/issues/27) *(Wave A.2 sprint)*
+5. **EPUBCheck + Kindle Previewer hooks in publish readiness** — turns partial validation into trust. → [#56](https://github.com/freqkflag/openbook-author/issues/56) *(Wave A.2 sprint)*
+6. **Hierarchical TOC / parts ([#49](https://github.com/freqkflag/openbook-author/issues/49))** — Scrivener/textbook expectation.
+7. **Deepen IBA import with diagnostics** — unique FOSS moat no competitor matches.
+8. **AI RAG consistency pass (local-first, Ollama-friendly)** — differentiation beyond single-shot prompts.
+9. **ADR before collab/plugins/cloud** — avoid painting into proprietary corners; `.openbook` stays canonical.
+10. ~~Footnotes/endnotes + tables~~ — ✅ shipped Wave A.1 ([#8](https://github.com/freqkflag/openbook-author/issues/8) · close)
 
 ---
 
@@ -292,14 +293,14 @@ Existing ADRs: guidebook blocks (0001), widgets (0002), EPUB pipeline (0003), ag
 | **AI API keys in browser** | Document tradeoff; Electron could proxy; Ollama as privacy default |
 | **EPUB `<details>` widget support** | Document reader compatibility; offer fallback markup |
 | **Landscape “fixed” without canvas** | Misleading metadata — fix UX label or deliver real fixed-layout |
-| **Small team vs Atticus feature surface** | Theme + footnotes + DOCX = 80% author satisfaction |
+| **Small team vs Atticus feature surface** | Theme + DOCX + PWA = 80% author satisfaction (footnotes shipped A.1) |
 
 ---
 
 ## 9. Suggested GitHub Issue Titles
 
-1. `feat: TipTap footnotes and endnotes with EPUB/KBP export transforms` → [#8](https://github.com/freqkflag/openbook-author/issues/8)
-2. `feat: TipTap tables extension with export and publish readiness checks`
+1. ~~`feat: TipTap footnotes and endnotes with EPUB/KBP export transforms`~~ → ✅ [#8](https://github.com/freqkflag/openbook-author/issues/8) shipped Wave A.1
+2. ~~`feat: TipTap tables extension with export and publish readiness checks`~~ → ✅ shipped Wave A.1 (same issue)
 3. `feat: Export theme system — built-in themes and custom CSS override` → [#55](https://github.com/freqkflag/openbook-author/issues/55)
 4. `feat: DOCX import for manuscript migration from Word/Scrivener` → [#54](https://github.com/freqkflag/openbook-author/issues/54)
 5. `feat: Print PDF presets — trim sizes, margins, and page numbers (Electron + web)`

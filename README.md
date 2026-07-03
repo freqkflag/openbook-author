@@ -189,7 +189,7 @@ my-book.openbook/   (zip archive)
 | [SECURITY.md](SECURITY.md) | Vulnerability reporting |
 | [docs/FUTURE_FEATURES.md](docs/FUTURE_FEATURES.md) | Roadmap and planned improvements |
 | [docs/COMPETITIVE_AUDIT.md](docs/COMPETITIVE_AUDIT.md) | Competitive landscape, gap matrix, and roadmap waves |
-| [docs/WAVE-A-STATUS.md](docs/WAVE-A-STATUS.md) | Wave A shipped vs remaining gaps and issue closure guidance |
+| [docs/WAVE-A-STATUS.md](docs/WAVE-A-STATUS.md) | Wave A.1 (shipped) vs A.2 (sprint) status, publish-readiness severity, issue closure |
 | [docs/guidebook-blocks.md](docs/guidebook-blocks.md) | Guidebook block types, HTML contract, seed helpers |
 | [docs/adr/](docs/adr/) | Architecture decision records |
 | [CHANGELOG.md](CHANGELOG.md) | User-facing release notes |

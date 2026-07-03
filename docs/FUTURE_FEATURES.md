@@ -1,6 +1,6 @@
 # Future Features
 
-Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave A product-lane completion status:** [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
+Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave A status (A.1 shipped · A.2 sprint):** [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
 
 **Status key:** ✅ Shipped · 🟡 Partial · ⬜ Planned
 
@@ -28,7 +28,7 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 20 | AI section generation | ✅ Generate section action in AI panel (#19) |
 | 21 | Style guide / voice profile | ✅ Voice profile + style guide in AI settings (#20) |
 | 22 | Auto-save indicator + recovery | ✅ Relative last-saved badge; sessionStorage crash buffer (#22) |
-| 23 | PWA / offline mode | ⬜ Planned |
+| 23 | PWA / offline mode | ✅ Service worker + offline indicator ([#27](https://github.com/freqkflag/openbook-author/issues/27)) |
 | 24 | Tests | 🟡 Vitest (114 tests): EPUB/guidebook export snapshots, IBA import fixture, store hydrate test — full suite still open ([#28](https://github.com/freqkflag/openbook-author/issues/28)) |
 | 25 | Accessibility | 🟡 Wave A: heading hierarchy warnings + missing alt blocks export; WCAG preview / axe CI remain ([#29](https://github.com/freqkflag/openbook-author/issues/29)) |
 | 26 | Docker deployment | ✅ Multi-stage Dockerfile + docker-compose (#26) |
@@ -127,8 +127,8 @@ Voice profile and style guide fields in AI Settings; injected into the `/api/ai`
 **22. Auto-save indicator + recovery** ✅  
 Save badge shows relative last-saved time; `sessionStorage` crash buffer when `localStorage.setItem` fails.
 
-**23. PWA / offline mode** ⬜  
-Service worker + cached app shell so the web version works on a plane.
+**23. PWA / offline mode** ✅  
+Service worker (`public/sw.js`) caches the app shell and static assets; offline indicator when `navigator.onLine` is false. Books in `localStorage` and `.openbook` packages work offline; AI requires a connection.
 
 **24. Tests** 🟡  
 Wave A shipped: guidebook block/chapter/CSS export snapshots (`epub-export.snapshots.test.ts`), guidebook seed integration tests, IBA import fixture test, store hydrate test (`book-store.hydrate.test.ts`), plus KBP, PDF, publish-readiness, and orchestrator coverage (114 tests total). Broader export/import matrix tracked in [#28](https://github.com/freqkflag/openbook-author/issues/28).
@@ -159,8 +159,8 @@ See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue c
 | Export/import test suite | [#28](https://github.com/freqkflag/openbook-author/issues/28) | 🟡 Partial — keep open |
 | Accessibility (WCAG preview) | [#29](https://github.com/freqkflag/openbook-author/issues/29) | 🟡 Partial — keep open |
 | Agent orchestration / merge lanes | [#37](https://github.com/freqkflag/openbook-author/issues/37) | ✅ Shipped — close |
-| PWA / offline mode | [#27](https://github.com/freqkflag/openbook-author/issues/27) | Wave A gap — open |
-| Tables, footnotes, endnotes | [#8](https://github.com/freqkflag/openbook-author/issues/8) | Wave A gap — open (v0.4) |
-| Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | Wave A gap — open |
-| DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | Wave A gap — open |
-| EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | Wave A gap — open |
+| PWA / offline mode | [#27](https://github.com/freqkflag/openbook-author/issues/27) | ✅ Shipped — close |
+| Tables, footnotes, endnotes | [#8](https://github.com/freqkflag/openbook-author/issues/8) | ✅ Shipped Wave A.1 — close |
+| Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | Wave A.2 sprint — in progress |
+| DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | Wave A.2 sprint — in progress |
+| EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | Wave A.2 sprint — in progress |
