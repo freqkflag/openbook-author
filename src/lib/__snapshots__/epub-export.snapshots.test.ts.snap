@@ -4,6 +4,7 @@ exports[`EPUB package export snapshots > snapshots KBP guidebook package files 1
 [
   "META-INF/container.xml",
   "content.opf",
+  "images/hero.jpg",
   "mimetype",
   "nav.xhtml",
   "styles/main.css",
@@ -30,6 +31,7 @@ exports[`EPUB package export snapshots > snapshots KBP guidebook package files 2
     <item id="ncx" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="style" href="styles/main.css" media-type="text/css"/>
 
+    <item id="img-hero-jpg" href="images/hero.jpg" media-type="image/jpeg"/>
     <item id="chapter0" href="text/chapter0.xhtml" media-type="application/xhtml+xml"/>
   </manifest>
   <spine>
@@ -92,6 +94,7 @@ exports[`EPUB package export snapshots > snapshots KBP guidebook package files 2
   </div>
 </aside>
 <div class="kbp-tip">Edit any block inline, or insert new ones from the Guidebook section of the toolbar.</div>
+<p class="kbp-body"><img src="../images/hero.jpg" alt="Trail overlook"/></p>
   </section>
 </body>
 </html>",
