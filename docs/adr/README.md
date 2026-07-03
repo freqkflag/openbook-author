@@ -10,6 +10,8 @@ OpenBook Author agents consult this directory before proposing architectural cha
 | [ADR-0002](ADR-0002-widget-plugin-api.md) | Widget plugin API | Accepted | popup, gallery, widget, tiptap |
 | [ADR-0003](ADR-0003-epub-export-pipeline.md) | EPUB export pipeline | Accepted | epub, export, kbp, zip |
 | [ADR-0004](ADR-0004-agent-handoff-contract.md) | Agent handoff contract | Accepted | agent, handoff, router, workflow |
+| [ADR-0005](ADR-0005-git-native-project-mode.md) | Git-native project mode | Proposed | git, folder, electron, storage, diff |
+| [ADR-0006](ADR-0006-self-hosted-sync.md) | Self-hosted sync and backup | Proposed | sync, backup, webdav, s3, conflict |
 
 ## Conventions
 
@@ -33,3 +35,5 @@ OpenBook Author agents consult this directory before proposing architectural cha
 | 0002 | `src/components/extensions/PopupWidget.tsx`, `GalleryWidget.tsx` |
 | 0003 | `src/lib/epub.ts`, `src/lib/kbp.ts` |
 | 0004 | `.cursor/rules/handoff-contract.mdc`, `.cursor/rules/issue-router.mdc`, `docs/agent-router.md` |
+| 0005 | `src/lib/package-io.ts`, `src/store/book-store.ts`, `src/types/electron.d.ts` (future: `folder-io.ts`) |
+| 0006 | `src/lib/package-io.ts`, `src/store/book-store.ts` (future: `src/lib/backup-sync/`) |

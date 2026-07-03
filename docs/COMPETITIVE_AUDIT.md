@@ -3,7 +3,7 @@
 **Branch:** `main` · **Version:** 0.2.0 + unreleased wave  
 **Audit date:** July 2026  
 **Scope:** Inventory from `README.md`, `CHANGELOG.md`, `docs/FUTURE_FEATURES.md`, and `src/` scan  
-**Related:** [FUTURE_FEATURES.md](FUTURE_FEATURES.md) · [WAVE-A-STATUS.md](WAVE-A-STATUS.md) · [ADR index](adr/README.md)
+**Related:** [FUTURE_FEATURES.md](FUTURE_FEATURES.md) · [WAVE-A-STATUS.md](WAVE-A-STATUS.md) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) · [ADR index](adr/README.md)
 
 ---
 
@@ -234,6 +234,8 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 
 **Goal:** Features paid tools can't or won't ship.
 
+**Status (July 2026):** 🟡 **In progress** — kickoff tracking in [WAVE-B-STATUS.md](WAVE-B-STATUS.md); ADR-0005 (git-native project mode) and ADR-0006 (self-hosted backup/sync) drafted; implementation tracks not started.
+
 1. **Deepen IBA import** — hierarchy report, more `sl:tag` semantics, import diagnostics UI — [#19](https://github.com/freqkflag/openbook-author/issues/19)
 2. **Hierarchical TOC / parts** ([#49](https://github.com/freqkflag/openbook-author/issues/49)) — nested spine + nav
 3. **Git-for-books workflow** — “Open folder” project mode, diff-friendly saves, optional Git panel in Electron
@@ -279,9 +281,10 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | **Plugin/extension marketplace** | Sandboxing, versioning, EPUB transform contract (extends ADR-0002) |
 | **Cloud sync / self-hosted backend** | Identity, encryption, offline merge, FOSS hosting story |
 | **Fixed-layout canvas** | New editor paradigm, export pipeline split (extends ADR-0003) |
-| **Git-native project mode** | Dual storage model vs localStorage cache + `.openbook` |
+| **Git-native project mode** | Dual storage model vs localStorage cache + `.openbook` — [ADR-0005](adr/ADR-0005-git-native-project-mode.md) (Proposed) |
+| **Self-hosted backup / sync** | Credentials, conflict model, opt-in FOSS hosting — [ADR-0006](adr/ADR-0006-self-hosted-sync.md) (Proposed) |
 
-Existing ADRs: guidebook blocks (0001), widgets (0002), EPUB pipeline (0003), agent handoff (0004).
+Existing ADRs: guidebook blocks (0001), widgets (0002), EPUB pipeline (0003), agent handoff (0004), git-native mode (0005), self-hosted sync (0006).
 
 ---
 
