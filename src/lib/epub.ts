@@ -1,5 +1,11 @@
 import JSZip from "jszip";
 import type { Book, Chapter } from "@/types/book";
+import type {
+  GuidebookBlockType,
+  TrailStopPayload,
+  WorkshopPayload,
+  CheatSheetPayload,
+} from "@/types/guidebook";
 import { applyKbpToHtml, isKbpEnabled, KBP_CSS } from "@/lib/kbp";
 import { getAssetByFilename } from "@/lib/asset-store";
 
@@ -10,6 +16,82 @@ function escapeXml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function decodePayload(raw: string): unknown {
+  try {
+    return JSON.parse(raw.replace(/&quot;/g, '"'));
+  } catch {
+    return null;
+  }
+}
+
+function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: string): string {
+  const data = decodePayload(payloadRaw);
+  const typeClass = `guidebook-${blockType.replace("_", "-")}`;
+
+  if (blockType === "trail_stop") {
+    const d = (data || {}) as Partial<TrailStopPayload>;
+    const amenities = (d.amenities || [])
+      .filter(Boolean)
+      .map((a) => `<li>${escapeHtml(a)}</li>`)
+      .join("");
+    const amenitiesHtml = amenities
+      ? `<ul class="trail-amenities">${amenities}</ul>`
+      : "";
+    const meta = [d.mileMarker ? `Mile ${escapeHtml(d.mileMarker)}` : "", d.elevation ? escapeHtml(d.elevation) : ""]
+      .filter(Boolean)
+      .join(" · ");
+    return `<aside class="guidebook-block ${typeClass}">
+  <header class="guidebook-block-header">Trail Stop</header>
+  <div class="guidebook-block-body">
+    <h3>${escapeHtml(d.name || "Trail Stop")}</h3>
+    ${meta ? `<p class="trail-meta">${meta}</p>` : ""}
+    ${d.notes ? `<p>${escapeHtml(d.notes)}</p>` : ""}
+    ${amenitiesHtml}
+  </div>
+</aside>`;
+  }
+
+  if (blockType === "workshop") {
+    const d = (data || {}) as Partial<WorkshopPayload>;
+    const exercises = (d.exercises || [])
+      .map(
+        (ex, i) =>
+          `<div class="workshop-exercise"><strong>${i + 1}.</strong> ${escapeHtml(ex.prompt || "")}<span class="response-hint"> (${ex.responseType === "long" ? "long answer" : "short answer"})</span></div>`
+      )
+      .join("");
+    return `<aside class="guidebook-block ${typeClass}">
+  <header class="guidebook-block-header">Workshop</header>
+  <div class="guidebook-block-body">
+    <h3>${escapeHtml(d.title || "Workshop")}</h3>
+    ${exercises}
+  </div>
+</aside>`;
+  }
+
+  const d = (data || {}) as Partial<CheatSheetPayload>;
+  const cols = d.columns === 3 ? 3 : 2;
+  const items = (d.items || [])
+    .map(
+      (item) =>
+        `<span class="cheat-label">${escapeHtml(item.label || "")}</span><span>${escapeHtml(item.value || "")}</span>`
+    )
+    .join("");
+  return `<aside class="guidebook-block ${typeClass}">
+  <header class="guidebook-block-header">Cheat Sheet</header>
+  <div class="guidebook-block-body">
+    <h3>${escapeHtml(d.title || "Quick Reference")}</h3>
+    <div class="cheat-grid cols-${cols}">${items}</div>
+  </div>
+</aside>`;
 }
 
 function transformWidgetsForEpub(html: string): string {
@@ -63,6 +145,16 @@ function transformWidgetsForEpub(html: string): string {
     '<div class="kbp-step"><span class="step-number">$1</span>$2</div>'
   );
   result = result.replace(/<hr[^>]*data-kbp="scene-break"[^>]*\/?>/gi, '<p class="scene-break">* * *</p>');
+
+  result = result.replace(
+    /<(?:aside|div)[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*data-payload="([^"]*)"[^>]*>\s*<\/(?:aside|div)>/gi,
+    (_, blockType, payload) => serializeGuidebookBlock(blockType as GuidebookBlockType, payload)
+  );
+
+  result = result.replace(
+    /<(?:aside|div)[^>]*data-payload="([^"]*)"[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*>\s*<\/(?:aside|div)>/gi,
+    (_, payload, blockType) => serializeGuidebookBlock(blockType as GuidebookBlockType, payload)
+  );
 
   return result;
 }
@@ -209,6 +301,35 @@ details.popup-widget > div { padding: 1em; }
   margin-top: 0.5em;
   font-style: italic;
 }
+
+.guidebook-block {
+  margin: 1.5em 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+}
+.guidebook-block-header {
+  padding: 0.6em 1em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.guidebook-block-body { padding: 1em; }
+.guidebook-trail-stop { border-left: 4px solid #00a86b; }
+.guidebook-trail-stop .guidebook-block-header { background: #f0faf5; color: #007a4d; }
+.guidebook-workshop { border-left: 4px solid #c026d3; }
+.guidebook-workshop .guidebook-block-header { background: #fdf4ff; color: #a21caf; }
+.guidebook-cheat-sheet { border-left: 4px solid #0891b2; }
+.guidebook-cheat-sheet .guidebook-block-header { background: #ecfeff; color: #0e7490; }
+.cheat-grid { display: grid; gap: 0.35em 1em; }
+.cheat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.cheat-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cheat-label { font-weight: 600; color: #0e7490; }
+.workshop-exercise { margin: 0.6em 0; padding: 0.5em 0.75em; background: #faf5ff; border-radius: 4px; }
+.response-hint { font-size: 0.85em; color: #888; font-style: italic; }
+.trail-meta { font-size: 0.9em; color: #666; }
+.trail-amenities { margin: 0.5em 0; padding-left: 1.25em; }
 `;
 
 export async function exportToEpub(

@@ -36,15 +36,20 @@ import {
   Lightbulb,
   AlertTriangle,
   Minus,
+  MapPin,
+  ClipboardList,
+  FileText,
 } from "lucide-react";
 import { PopupWidget } from "@/components/extensions/PopupWidget";
 import { GalleryWidget } from "@/components/extensions/GalleryWidget";
+import { GuidebookBlock } from "@/components/extensions/GuidebookBlock";
 import {
   TipCallout,
   WarningCallout,
   StepBlock,
   SceneBreak,
 } from "@/components/extensions/KBPCallouts";
+import type { GuidebookBlockType } from "@/types/guidebook";
 
 interface RichEditorProps {
   book: Book;
@@ -107,6 +112,7 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
       WarningCallout,
       StepBlock,
       SceneBreak,
+      GuidebookBlock,
     ],
     content,
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
@@ -125,6 +131,12 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
   }, [content, editor]);
 
   if (!editor) return null;
+
+  const guidebookBlocksEnabled = kbpMode || book.template === "guidebook";
+
+  const insertGuidebookBlock = (blockType: GuidebookBlockType) => {
+    editor.chain().focus().setGuidebookBlock({ blockType }).run();
+  };
 
   const addImage = () => {
     openAssetPicker((src, alt) => {
@@ -334,6 +346,29 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
               title="Insert scene break"
             >
               <Minus size={16} />
+            </ToolbarButton>
+          </>
+        )}
+        {guidebookBlocksEnabled && (
+          <>
+            <div className="w-px h-5 bg-white/10 mx-1" />
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("trail_stop")}
+              title="Insert trail stop"
+            >
+              <MapPin size={16} />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("workshop")}
+              title="Insert workshop block"
+            >
+              <ClipboardList size={16} />
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => insertGuidebookBlock("cheat_sheet")}
+              title="Insert cheat sheet"
+            >
+              <FileText size={16} />
             </ToolbarButton>
           </>
         )}
