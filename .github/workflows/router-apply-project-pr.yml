@@ -1,0 +1,44 @@
+# Applies Project Manager subtask YAML from `.openbook/project/issue-<n>.yaml` PRs.
+# Project Manager automations cannot comment on issues directly. They should commit
+# the plan YAML and open a PR; this workflow comments the plan on the epic issue.
+# Child issues are created only when the YAML carries `approve_subtasks: true`.
+
+name: Apply Project Manager Plan
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - ".openbook/project/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Apply project manager plans
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for file in .openbook/project/*.yaml .openbook/project/*.yml; do
+            npm run studio -- apply-project --file "$file" --repo "$GITHUB_REPOSITORY"
+          done

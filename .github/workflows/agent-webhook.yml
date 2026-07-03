@@ -150,6 +150,7 @@ jobs:
               action: context.payload.action,
               label,
               labels: entityLabels,
+              approve_subtasks: context.payload.approve_subtasks === true,
               repository: context.repo,
               issue,
               pull_request: pr,
