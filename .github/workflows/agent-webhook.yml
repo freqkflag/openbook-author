@@ -1,0 +1,228 @@
+# Forwards GitHub label events to OpenBook Author Cursor Automations webhooks.
+# Each automation needs two secrets after saving in Cursor (Webhook URL + Bearer token).
+#
+# Required secrets (Settings → Secrets → Actions):
+#   OPENBOOK_WEBHOOK_DISPATCH       + OPENBOOK_WEBHOOK_DISPATCH_AUTH       — router-ready
+#   OPENBOOK_WEBHOOK_RESEARCH       + OPENBOOK_WEBHOOK_RESEARCH_AUTH       — needs-research
+#   OPENBOOK_WEBHOOK_PROJECT        + OPENBOOK_WEBHOOK_PROJECT_AUTH        — epic
+#   OPENBOOK_WEBHOOK_FEATURE        + OPENBOOK_WEBHOOK_FEATURE_AUTH        — ready-for-execution + agent:feature
+#   OPENBOOK_WEBHOOK_BUG            + OPENBOOK_WEBHOOK_BUG_AUTH            — ready-for-execution + agent:bug
+#   OPENBOOK_WEBHOOK_DOCS           + OPENBOOK_WEBHOOK_DOCS_AUTH           — ready-for-execution + agent:docs
+#   OPENBOOK_WEBHOOK_TEST           + OPENBOOK_WEBHOOK_TEST_AUTH           — ready-for-execution + agent:test
+#   OPENBOOK_WEBHOOK_UI             + OPENBOOK_WEBHOOK_UI_AUTH             — ready-for-execution + agent:design
+#   OPENBOOK_WEBHOOK_REVIEW         + OPENBOOK_WEBHOOK_REVIEW_AUTH         — ready-for-review
+#   OPENBOOK_WEBHOOK_MERGE          + OPENBOOK_WEBHOOK_MERGE_AUTH          — approved-for-merge
+#   OPENBOOK_WEBHOOK_AUTHOR         + OPENBOOK_WEBHOOK_AUTHOR_AUTH         — needs-human
+#
+# AUTH values are the crsr_… token from Cursor (no "Bearer" prefix in the secret).
+
+name: OpenBook Agent Webhooks
+
+on:
+  issues:
+    types: [labeled]
+  pull_request:
+    types: [labeled]
+
+# Serialize webhook dispatches. Max concurrent cloud agents: repo variable
+# OPENBOOK_MAX_CONCURRENT_AGENTS (default 1; Pro plan uses 8).
+concurrency:
+  group: openbook-cloud-agent-pipeline
+  cancel-in-progress: false
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Forward label to Cursor automation webhook
+        uses: actions/github-script@v7
+        env:
+          OPENBOOK_MAX_CONCURRENT_AGENTS: ${{ vars.OPENBOOK_MAX_CONCURRENT_AGENTS || '1' }}
+          WEBHOOK_DISPATCH: ${{ secrets.OPENBOOK_WEBHOOK_DISPATCH }}
+          WEBHOOK_DISPATCH_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_DISPATCH_AUTH }}
+          WEBHOOK_RESEARCH: ${{ secrets.OPENBOOK_WEBHOOK_RESEARCH }}
+          WEBHOOK_RESEARCH_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_RESEARCH_AUTH }}
+          WEBHOOK_PROJECT: ${{ secrets.OPENBOOK_WEBHOOK_PROJECT }}
+          WEBHOOK_PROJECT_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_PROJECT_AUTH }}
+          WEBHOOK_FEATURE: ${{ secrets.OPENBOOK_WEBHOOK_FEATURE }}
+          WEBHOOK_FEATURE_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_FEATURE_AUTH }}
+          WEBHOOK_BUG: ${{ secrets.OPENBOOK_WEBHOOK_BUG }}
+          WEBHOOK_BUG_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_BUG_AUTH }}
+          WEBHOOK_DOCS: ${{ secrets.OPENBOOK_WEBHOOK_DOCS }}
+          WEBHOOK_DOCS_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_DOCS_AUTH }}
+          WEBHOOK_TEST: ${{ secrets.OPENBOOK_WEBHOOK_TEST }}
+          WEBHOOK_TEST_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_TEST_AUTH }}
+          WEBHOOK_UI: ${{ secrets.OPENBOOK_WEBHOOK_UI }}
+          WEBHOOK_UI_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_UI_AUTH }}
+          WEBHOOK_REVIEW: ${{ secrets.OPENBOOK_WEBHOOK_REVIEW }}
+          WEBHOOK_REVIEW_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_REVIEW_AUTH }}
+          WEBHOOK_MERGE: ${{ secrets.OPENBOOK_WEBHOOK_MERGE }}
+          WEBHOOK_MERGE_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_MERGE_AUTH }}
+          WEBHOOK_AUTHOR: ${{ secrets.OPENBOOK_WEBHOOK_AUTHOR }}
+          WEBHOOK_AUTHOR_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_AUTHOR_AUTH }}
+        with:
+          script: |
+            const label = context.payload.label?.name;
+            if (!label) {
+              core.info("No label on payload — skipping.");
+              return;
+            }
+
+            const issue = context.payload.issue ?? null;
+            const pr = context.payload.pull_request ?? null;
+            const entityLabels = (issue?.labels ?? pr?.labels ?? []).map((l) => l.name);
+
+            const routes = {
+              "router-ready": {
+                url: process.env.WEBHOOK_DISPATCH,
+                auth: process.env.WEBHOOK_DISPATCH_AUTH,
+              },
+              "needs-research": {
+                url: process.env.WEBHOOK_RESEARCH,
+                auth: process.env.WEBHOOK_RESEARCH_AUTH,
+              },
+              epic: {
+                url: process.env.WEBHOOK_PROJECT,
+                auth: process.env.WEBHOOK_PROJECT_AUTH,
+              },
+              "ready-for-review": {
+                url: process.env.WEBHOOK_REVIEW,
+                auth: process.env.WEBHOOK_REVIEW_AUTH,
+              },
+              "approved-for-merge": {
+                url: process.env.WEBHOOK_MERGE,
+                auth: process.env.WEBHOOK_MERGE_AUTH,
+              },
+              "needs-human": {
+                url: process.env.WEBHOOK_AUTHOR,
+                auth: process.env.WEBHOOK_AUTHOR_AUTH,
+              },
+            };
+
+            const agentRoutes = {
+              "agent:feature": {
+                url: process.env.WEBHOOK_FEATURE,
+                auth: process.env.WEBHOOK_FEATURE_AUTH,
+              },
+              "agent:bug": {
+                url: process.env.WEBHOOK_BUG,
+                auth: process.env.WEBHOOK_BUG_AUTH,
+              },
+              "agent:docs": {
+                url: process.env.WEBHOOK_DOCS,
+                auth: process.env.WEBHOOK_DOCS_AUTH,
+              },
+              "agent:test": {
+                url: process.env.WEBHOOK_TEST,
+                auth: process.env.WEBHOOK_TEST_AUTH,
+              },
+              "agent:design": {
+                url: process.env.WEBHOOK_UI,
+                auth: process.env.WEBHOOK_UI_AUTH,
+              },
+            };
+
+            let route = routes[label];
+
+            if (label === "ready-for-execution") {
+              const agentLabel = entityLabels.find((name) => name.startsWith("agent:"));
+              if (agentLabel && agentRoutes[agentLabel]) {
+                route = agentRoutes[agentLabel];
+              } else {
+                core.info(
+                  `ready-for-execution without a matching agent:* label (${entityLabels.join(", ")}) — skipping.`
+                );
+                return;
+              }
+            }
+
+            if (!route?.url) {
+              core.info(`No webhook secret configured for label "${label}" — skipping.`);
+              return;
+            }
+
+            if (!route.auth) {
+              core.warning(
+                `Webhook URL set for "${label}" but OPENBOOK_WEBHOOK_*_AUTH secret is missing — Cursor will reject the request.`
+              );
+            }
+
+            const maxConcurrent = Math.max(
+              1,
+              Number.parseInt(process.env.OPENBOOK_MAX_CONCURRENT_AGENTS || "1", 10) || 1
+            );
+
+            const { data: busyIssues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: "open",
+              labels: "agent-running",
+              per_page: 100,
+            });
+
+            const targetIssueNumber = issue?.number ?? pr?.number ?? null;
+
+            if (busyIssues.length >= maxConcurrent) {
+              const busyNums = busyIssues.map((i) => `#${i.number}`).join(", ");
+              core.warning(
+                `Pipeline busy (${busyIssues.length}/${maxConcurrent} slots): ${busyNums}. Skipping webhook for label "${label}".`
+              );
+              if (targetIssueNumber) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: targetIssueNumber,
+                  body: [
+                    "<!-- openbook-author:agent-busy -->",
+                    `Cloud agent pipeline is busy (${busyIssues.length}/${maxConcurrent} running).`,
+                    `Queued label \`${label}\` was not dispatched. Re-add the label when the current agent finishes.`,
+                    busyIssues.length
+                      ? `Active: ${busyIssues.map((i) => `#${i.number}`).join(", ")}`
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n"),
+                });
+              }
+              return;
+            }
+
+            const payload = {
+              delivery: "openbook-author-agent-webhook",
+              event: context.eventName,
+              action: context.payload.action,
+              label,
+              labels: entityLabels,
+              repository: context.repo,
+              issue,
+              pull_request: pr,
+              sender: context.payload.sender,
+            };
+
+            const headers = { "Content-Type": "application/json" };
+            if (route.auth) {
+              headers.Authorization = `Bearer ${route.auth}`;
+            }
+
+            const response = await fetch(route.url, {
+              method: "POST",
+              headers,
+              body: JSON.stringify(payload),
+            });
+
+            if (!response.ok) {
+              const body = await response.text();
+              throw new Error(`Webhook ${label} failed: ${response.status} ${body}`);
+            }
+
+            core.info(`Dispatched label "${label}" to OpenBook automation webhook.`);
+
+            if (targetIssueNumber) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: targetIssueNumber,
+                labels: ["agent-running"],
+              });
+            }

@@ -1,0 +1,79 @@
+# Applies Review Handoff from PR comments to issue labels.
+
+name: Apply Review Handoff
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  issues: write
+  pull-requests: read
+
+jobs:
+  apply:
+    if: contains(github.event.comment.body, '<!-- openbook-author:review -->')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Parse review handoff and update labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const body = context.payload.comment.body ?? "";
+            const yamlMatch = body.match(/```ya?ml\s*([\s\S]*?)```/);
+            const raw = yamlMatch?.[1] ?? body;
+            const issueNumber = context.payload.issue?.number;
+            if (!issueNumber) return;
+
+            const verdict = raw.match(/^verdict:\s*(\S+)/m)?.[1] ?? "";
+            const nextAgent = raw.match(/^next_agent:\s*(\S+)/m)?.[1] ?? "";
+
+            const AGENT_LABEL = {
+              "debug-agent": "agent:bug",
+              "feature-agent": "agent:feature",
+              "docs-agent": "agent:docs",
+              "test-agent": "agent:test",
+              "ui-agent": "agent:design",
+            };
+
+            const labelsToAdd = [];
+            const labelsToRemove = ["ready-for-review"];
+
+            if (verdict === "approved") {
+              labelsToAdd.push("approved-for-merge");
+            } else if (verdict === "changes_requested" || verdict === "blocked") {
+              labelsToAdd.push("needs-rework");
+              if (AGENT_LABEL[nextAgent]) {
+                labelsToAdd.push(AGENT_LABEL[nextAgent], "ready-for-execution");
+              }
+            }
+
+            if (labelsToAdd.length > 0) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: issueNumber,
+                labels: labelsToAdd,
+              });
+            }
+
+            for (const name of labelsToRemove) {
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: issueNumber,
+                  name,
+                });
+              } catch {
+                // optional
+              }
+            }
+
+            try {
+              await github.rest.issues.removeLabel({
+                ...context.repo,
+                issue_number: issueNumber,
+                name: "agent-running",
+              });
+            } catch {
+              // optional
+            }

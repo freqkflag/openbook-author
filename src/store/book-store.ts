@@ -86,16 +86,21 @@ function normalizeBook(b: Book): Book {
   };
 }
 
-async function writeBookPackage(book: Book, blobs: Map<string, Blob>, filePath?: string | null) {
+async function writeBookPackage(
+  book: Book,
+  blobs: Map<string, Blob>,
+  options: { saveAs?: boolean; path?: string } = {}
+) {
   const zipBlob = await buildPackageZip(book, blobs);
   const buffer = await zipBlob.arrayBuffer();
 
-  if (window.openBook?.isElectron) {
-    let targetPath: string | null | undefined = filePath ?? book.packagePath;
+  if (typeof window !== "undefined" && window.openBook?.writePackage) {
+    let targetPath = options.saveAs ? undefined : options.path ?? book.packagePath;
     if (!targetPath) {
       const slug = (book.metadata.title || "book").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-      targetPath = await window.openBook.saveDialog(`${slug}.openbook`);
-      if (!targetPath) return null;
+      const chosen = await window.openBook.saveDialog(`${slug}.openbook`);
+      if (!chosen) return null;
+      targetPath = chosen;
     }
     await window.openBook.writePackage(targetPath, buffer);
     return targetPath;
@@ -127,6 +132,7 @@ export const useBookStore = create<BookStore>((set, get) => {
     saveError: null,
 
     hydrate: () => {
+      if (get().hydrated) return;
       const rawBooks = loadBooks();
       const books = rawBooks.map(normalizeBook);
       const savedAI = loadAISettings();
@@ -396,11 +402,10 @@ export const useBookStore = create<BookStore>((set, get) => {
       set({ saveStatus: "saving", saveError: null });
       try {
         const blobs = getBookAssetBlobs(bookId);
-        const filePath = await writeBookPackage(
-          book,
-          blobs,
-          saveAs ? null : book.packagePath ?? null
-        );
+        const filePath = await writeBookPackage(book, blobs, {
+          saveAs,
+          path: book.packagePath,
+        });
         if (!filePath) {
           set({ saveStatus: "idle" });
           return null;
@@ -409,9 +414,11 @@ export const useBookStore = create<BookStore>((set, get) => {
           const books = get().books.map((b) =>
             b.id === bookId ? { ...b, packagePath: filePath, updatedAt: new Date().toISOString() } : b
           );
-          persistBooks(books);
+          saveBooks(books);
+          set({ books, saveStatus: "saved" });
+        } else {
+          set({ saveStatus: "saved" });
         }
-        set({ saveStatus: "saved" });
         setTimeout(() => set({ saveStatus: "idle" }), 2000);
         return filePath;
       } catch (err) {
@@ -466,7 +473,7 @@ export const useBookStore = create<BookStore>((set, get) => {
 
     autoSave: (bookId) => {
       const book = get().books.find((b) => b.id === bookId);
-      if (!book?.packagePath || !window.openBook?.isElectron) return;
+      if (!book?.packagePath || !window.openBook?.writePackage) return;
 
       const existing = autoSaveTimers.get(bookId);
       if (existing) clearTimeout(existing);

@@ -121,7 +121,7 @@ workflow:
 
 Agents within a lane coordinate. Agents across lanes only meet at `@merge-manager-agent`. Product never waits for infrastructure without an explicit dependency.
 
-### Orchestration fields
+### Overlap signals
 
 | Signal | Meaning |
 |--------|---------|
@@ -231,6 +231,55 @@ When `architecture_change: true` in the execution handoff:
 | `adr_missing` | Architectural change with no ADR coverage |
 | `adr_conflict` | Contradicts Accepted ADR without supersede proposal |
 
+## Studio CLI
+
+The **Studio Orchestrator** CLI mirrors the Cursor `@issue-router` rules and produces YAML handoffs that execution agents consume. Install dependencies (`npm install`), then:
+
+### Route an issue
+
+```bash
+npm run studio -- route \
+  --title "Fix export crash on large guidebooks" \
+  --body "Steps to reproduce: ..." \
+  --issue 6
+```
+
+Prints Router Handoff YAML plus `NEXT:` and `WORKFLOW:` lines.
+
+If [GitHub CLI](https://cli.github.com/) is installed and authenticated, fetch issue metadata automatically:
+
+```bash
+npm run studio -- route --issue 6
+```
+
+You can still override title/body with explicit flags.
+
+### Get next agent from a handoff file
+
+```bash
+npm run studio -- next --file handoff.yaml
+```
+
+Reads a YAML handoff (fenced or raw) and prints the next agent instruction.
+
+### Validate a handoff
+
+```bash
+npm run studio -- validate --file handoff.yaml
+```
+
+Exits `0` when valid, `1` with field errors when invalid.
+
+### Library modules
+
+| Module | Purpose |
+|--------|---------|
+| `src/studio/orchestrator/types.ts` | Handoff TypeScript types |
+| `src/studio/orchestrator/parse-handoff.ts` | Parse and validate YAML handoffs |
+| `src/studio/orchestrator/route-issue.ts` | Rule-based issue classification |
+| `src/studio/orchestrator/workflow.ts` | State machine for next-agent routing |
+| `src/studio/orchestrator/prompts.ts` | `NEXT:` / `WORKFLOW:` line generation |
+
 ## GitHub automation
 
 | Path | Purpose |
@@ -241,6 +290,16 @@ When `architecture_change: true` in the execution handoff:
 | `.github/workflows/issue-router.yml` | Posts one deduped `@issue-router` comment per issue when `router-ready` is applied |
 
 The router workflow comment includes issue number, title, labels, and body. It does **not** re-post if a router comment already exists (marker: `<!-- openbook-author:issue-router -->`). Editing the issue body after routing does not refresh the comment.
+
+### GitHub automation flow
+
+1. Author opens an issue via a structured template (`feature.yml`, `bug.yml`, etc.).
+2. [`issue-labeler.yml`](../.github/workflows/issue-labeler.yml) applies keyword labels and the `router-ready` signal.
+3. [`issue-router.yml`](../.github/workflows/issue-router.yml) posts one deduped `@issue-router` comment with copy-paste instructions for Cursor.
+4. In Cursor, attach `@issue-router` (or run `npm run studio route`) to produce the Router Handoff.
+5. Attach the routed execution agent (`@debug-agent`, `@feature-agent`, etc.) with the handoff YAML.
+6. Execution agent completes work and emits an Execution Handoff → `@merge-manager-agent` (parallel batches) → `@review-agent`.
+7. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
 
 ## Batch routing example
 

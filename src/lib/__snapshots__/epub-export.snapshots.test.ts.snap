@@ -1,0 +1,138 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`guidebook block export snapshots > cheat_sheet seed block 1`] = `
+"<aside class="guidebook-block guidebook-cheat-sheet">
+  <header class="guidebook-block-header">Cheat Sheet</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Quick Reference</h3>
+    <div class="cheat-grid cols-2"><span class="cheat-label">Difficulty</span><span>Moderate (steep final 0.5 mi)</span><span class="cheat-label">Typical time</span><span>3–4 hours round trip</span><span class="cheat-label">Permit</span><span>Day-use pass required</span><span class="cheat-label">Best season</span><span>May–October</span></div>
+  </div>
+</aside>"
+`;
+
+exports[`guidebook block export snapshots > trail_stop seed block 1`] = `
+"<aside class="guidebook-block guidebook-trail-stop">
+  <header class="guidebook-block-header">Trail Stop</header>
+  <div class="guidebook-block-body">
+    <h3>Summit Vista Overlook</h3>
+    <p class="trail-meta">Mile 4.2 · 3,840 ft</p>
+    <p>Panoramic views of the valley below. Best visited at sunrise when the ridgeline catches golden light.</p>
+    <ul class="trail-amenities"><li>Seasonal stream (filter required)</li><li>360° observation deck</li><li>Stone windbreak</li></ul>
+  </div>
+</aside>"
+`;
+
+exports[`guidebook block export snapshots > workshop seed block 1`] = `
+"<aside class="guidebook-block guidebook-workshop">
+  <header class="guidebook-block-header">Workshop</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Reflection Workshop</h3>
+    <div class="workshop-exercise"><strong>1.</strong> What surprised you most on the approach to this overlook?<span class="response-hint"> (long answer)</span></div><div class="workshop-exercise"><strong>2.</strong> List one skill you want to practice on your next hike.<span class="response-hint"> (short answer)</span></div>
+  </div>
+</aside>"
+`;
+
+exports[`guidebook chapter export snapshots > Getting Started via prepareChapterContent (KBP + widgets) 1`] = `
+"<h1>Chapter 1: Getting Started</h1>
+<p class="kbp-body">Begin your first topic here. Guidebook chapters work best with a short overview, then structured blocks that readers can scan at a glance.</p>
+<h2>Featured Trail Stop</h2>
+<p class="kbp-body">Use trail stop blocks to mark waypoints with mile markers, elevation, and amenities.</p>
+<aside class="guidebook-block guidebook-trail-stop">
+  <header class="guidebook-block-header">Trail Stop</header>
+  <div class="guidebook-block-body">
+    <h3>Summit Vista Overlook</h3>
+    <p class="trail-meta">Mile 4.2 · 3,840 ft</p>
+    <p class="kbp-body">Panoramic views of the valley below. Best visited at sunrise when the ridgeline catches golden light.</p>
+    <ul class="trail-amenities"><li>Seasonal stream (filter required)</li><li>360° observation deck</li><li>Stone windbreak</li></ul>
+  </div>
+</aside>
+<h2>Reflection Workshop</h2>
+<p class="kbp-body">Workshop blocks give readers space to reflect with guided prompts — great for field journals and training manuals.</p>
+<aside class="guidebook-block guidebook-workshop">
+  <header class="guidebook-block-header">Workshop</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Reflection Workshop</h3>
+    <div class="workshop-exercise"><strong>1.</strong> What surprised you most on the approach to this overlook?<span class="response-hint"> (long answer)</span></div><div class="workshop-exercise"><strong>2.</strong> List one skill you want to practice on your next hike.<span class="response-hint"> (short answer)</span></div>
+  </div>
+</aside>
+<h2>Quick Reference</h2>
+<p class="kbp-body">Cheat sheet blocks pack label/value pairs into a compact grid for at-a-glance facts.</p>
+<aside class="guidebook-block guidebook-cheat-sheet">
+  <header class="guidebook-block-header">Cheat Sheet</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Quick Reference</h3>
+    <div class="cheat-grid cols-2"><span class="cheat-label">Difficulty</span><span>Moderate (steep final 0.5 mi)</span><span class="cheat-label">Typical time</span><span>3–4 hours round trip</span><span class="cheat-label">Permit</span><span>Day-use pass required</span><span class="cheat-label">Best season</span><span>May–October</span></div>
+  </div>
+</aside>
+<div class="kbp-tip">Edit any block inline, or insert new ones from the Guidebook section of the toolbar.</div>"
+`;
+
+exports[`guidebook chapter export snapshots > Trail Reference via transformWidgetsForEpub 1`] = `
+"<h1>Trail Reference</h1>
+<p class="no-indent">This chapter demonstrates all three guidebook block types side by side. Use it as a layout reference when building your own trail sections.</p>
+<aside class="guidebook-block guidebook-trail-stop">
+  <header class="guidebook-block-header">Trail Stop</header>
+  <div class="guidebook-block-body">
+    <h3>Creek Crossing Junction</h3>
+    <p class="trail-meta">Mile 1.8 · 2,100 ft</p>
+    <p>Last reliable water source before the climb. Check flow after dry spells.</p>
+    <ul class="trail-amenities"><li>Footbridge and fill station</li></ul>
+  </div>
+</aside>
+<aside class="guidebook-block guidebook-workshop">
+  <header class="guidebook-block-header">Workshop</header>
+  <div class="guidebook-block-body">
+    <h3>Navigation Check</h3>
+    <div class="workshop-exercise"><strong>1.</strong> Confirm your map bearing matches the trail marker here.<span class="response-hint"> (short answer)</span></div>
+  </div>
+</aside>
+<aside class="guidebook-block guidebook-cheat-sheet">
+  <header class="guidebook-block-header">Cheat Sheet</header>
+  <div class="guidebook-block-body">
+    <h3>Trail Quick Reference</h3>
+    <div class="cheat-grid cols-2"><span class="cheat-label">Difficulty</span><span>Moderate (steep final 0.5 mi)</span><span class="cheat-label">Typical time</span><span>3–4 hours round trip</span><span class="cheat-label">Permit</span><span>Day-use pass required</span><span class="cheat-label">Best season</span><span>May–October</span></div>
+  </div>
+</aside>"
+`;
+
+exports[`guidebook export CSS snapshot > GUIDEBOOK_EXPORT_CSS 1`] = `
+".guidebook-block {
+  margin: 1.5em 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  text-indent: 0;
+}
+.guidebook-block-header {
+  padding: 0.6em 1em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.guidebook-block-body { padding: 1em; }
+.guidebook-block-body h3 { margin: 0 0 0.5em; font-size: 1.1em; }
+.guidebook-trail-stop {
+  border-color: #00a86b;
+  border-left-width: 4px;
+}
+.guidebook-trail-stop .guidebook-block-header { background: #f0faf5; color: #007a4d; }
+.guidebook-workshop {
+  border-color: #c026d3;
+  border-left-width: 4px;
+}
+.guidebook-workshop .guidebook-block-header { background: #fdf4ff; color: #a21caf; }
+.guidebook-cheat-sheet {
+  border-color: #0891b2;
+  border-left-width: 4px;
+}
+.guidebook-cheat-sheet .guidebook-block-header { background: #ecfeff; color: #0e7490; }
+.cheat-grid { display: grid; gap: 0.35em 1em; }
+.cheat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.cheat-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cheat-label { font-weight: 600; color: #0e7490; }
+.workshop-exercise { margin: 0.6em 0; padding: 0.5em 0.75em; background: #faf5ff; border-radius: 4px; }
+.response-hint { font-size: 0.85em; color: #888; font-style: italic; }
+.trail-meta { font-size: 0.9em; color: #666; margin: 0.25em 0 0.5em; }
+.trail-amenities { margin: 0.5em 0 0; padding-left: 1.25em; font-size: 0.9em; }"
+`;

@@ -1,0 +1,84 @@
+# Applies Research enrichment from `.openbook/research/issue-<n>.yaml` PRs.
+
+name: Apply Research Handoff
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - ".openbook/research/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Apply research handoff to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const researchDir = ".openbook/research";
+            if (!fs.existsSync(researchDir)) return;
+
+            const files = fs
+              .readdirSync(researchDir)
+              .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"));
+
+            for (const file of files) {
+              const raw = fs.readFileSync(`${researchDir}/${file}`, "utf8");
+              const issueNumber =
+                file.match(/issue-(\d+)/)?.[1] ?? raw.match(/^issue:\s*(\d+)/m)?.[1];
+              if (!issueNumber) continue;
+
+              const marker = "<!-- openbook-author:research -->";
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                body: [marker, raw.trim()].join("\n"),
+              });
+
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                labels: ["ready-for-execution"],
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  name: "needs-research",
+                });
+              } catch {
+                // optional
+              }
+
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  name: "agent-running",
+                });
+              } catch {
+                // optional
+              }
+            }
+
+      - name: Close research PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_request_number: context.payload.pull_request.number,
+              state: "closed",
+            });

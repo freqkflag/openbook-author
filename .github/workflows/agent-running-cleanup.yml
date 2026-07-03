@@ -1,0 +1,49 @@
+# Clears stale agent-running locks if a cloud agent crashes without finishing.
+
+name: Clear Stale Agent Running Locks
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Remove stale agent-running labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const STALE_MS = 6 * 60 * 60 * 1000;
+            const { data: busyIssues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: "open",
+              labels: "agent-running",
+              per_page: 100,
+            });
+
+            for (const issue of busyIssues) {
+              const ageMs = Date.now() - new Date(issue.updated_at).getTime();
+              if (ageMs < STALE_MS) continue;
+
+              await github.rest.issues.removeLabel({
+                ...context.repo,
+                issue_number: issue.number,
+                name: "agent-running",
+              });
+
+              await github.rest.issues.createComment({
+                ...context.repo,
+                issue_number: issue.number,
+                body: [
+                  "<!-- openbook-author:agent-busy-cleared -->",
+                  "Cleared stale `agent-running` lock (>6h). Re-add the routing label to retry.",
+                ].join("\n"),
+              });
+
+              core.info(`Cleared stale agent-running on #${issue.number}`);
+            }

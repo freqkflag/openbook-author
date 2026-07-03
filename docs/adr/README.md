@@ -29,7 +29,7 @@ OpenBook Author agents consult this directory before proposing architectural cha
 
 | ADR | Primary code |
 |-----|--------------|
-| 0001 | `src/types/guidebook.ts`, `src/components/extensions/GuidebookBlock.tsx` |
+| 0001 | `src/types/guidebook.ts`, `src/lib/guidebook-seed.ts`, `src/components/extensions/GuidebookBlock.tsx` |
 | 0002 | `src/components/extensions/PopupWidget.tsx`, `GalleryWidget.tsx` |
 | 0003 | `src/lib/epub.ts`, `src/lib/kbp.ts` |
-| 0004 | `.cursor/rules/handoff-contract.mdc`, `.github/workflows/` |
+| 0004 | `.cursor/rules/handoff-contract.mdc`, `.cursor/rules/issue-router.mdc`, `docs/agent-router.md` |
