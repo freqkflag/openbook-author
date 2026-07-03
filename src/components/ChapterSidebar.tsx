@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type DragEvent } from "react";
 import {
   Plus,
   Trash2,
@@ -38,6 +38,7 @@ interface ChapterSidebarProps {
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onReorder: (id: string, direction: "up" | "down") => void;
+  onReorderChapters?: (fromIndex: number, toIndex: number) => void;
 }
 
 export default function ChapterSidebar({
@@ -48,9 +49,41 @@ export default function ChapterSidebar({
   onDelete,
   onRename,
   onReorder,
+  onReorderChapters,
 }: ChapterSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showPicker, setShowPicker] = useState(false);
+  const [dragIndex, setDragIndex] = useState<number | null>(null);
+  const [dropIndex, setDropIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: DragEvent<HTMLDivElement>, index: number) => {
+    setDragIndex(index);
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("text/plain", String(index));
+  };
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    if (dragIndex !== null && dragIndex !== index) {
+      setDropIndex(index);
+    }
+  };
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>, index: number) => {
+    e.preventDefault();
+    const from = dragIndex ?? parseInt(e.dataTransfer.getData("text/plain"), 10);
+    if (!Number.isNaN(from) && from !== index && onReorderChapters) {
+      onReorderChapters(from, index);
+    }
+    setDragIndex(null);
+    setDropIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDragIndex(null);
+    setDropIndex(null);
+  };
 
   return (
     <>
@@ -74,18 +107,35 @@ export default function ChapterSidebar({
             const sectionType = chapter.sectionType ?? "chapter";
             const badge = SECTION_SHORT_LABELS[sectionType] ?? "Sec";
             const isSpecial = sectionType !== "chapter";
+            const isDragging = dragIndex === idx;
+            const isDropTarget = dropIndex === idx && dragIndex !== idx;
 
             return (
               <div
                 key={chapter.id}
+                draggable={Boolean(onReorderChapters)}
+                onDragStart={(e) => handleDragStart(e, idx)}
+                onDragOver={(e) => handleDragOver(e, idx)}
+                onDrop={(e) => handleDrop(e, idx)}
+                onDragEnd={handleDragEnd}
                 className={`group mx-2 mb-1 rounded-lg transition-all ${
                   activeChapterId === chapter.id
                     ? "bg-cyan-500/10 border border-cyan-500/30"
                     : "hover:bg-white/5 border border-transparent"
+                } ${isDragging ? "opacity-40" : ""} ${
+                  isDropTarget ? "ring-1 ring-cyan-400/50 bg-cyan-500/5" : ""
                 }`}
               >
                 <div className="flex items-center gap-1 px-2 py-2">
-                  <GripVertical size={12} className="text-slate-600 shrink-0" />
+                  <span
+                    className={`shrink-0 p-0.5 text-slate-600 ${
+                      onReorderChapters ? "cursor-grab active:cursor-grabbing hover:text-cyan-400" : ""
+                    }`}
+                    title={onReorderChapters ? "Drag to reorder" : undefined}
+                    aria-hidden
+                  >
+                    <GripVertical size={12} />
+                  </span>
                   {isSpecial && (
                     <span
                       className="shrink-0 text-[10px] font-medium px-1 py-0.5 rounded bg-purple-500/20 text-purple-300"
@@ -124,6 +174,7 @@ export default function ChapterSidebar({
                       onClick={() => onReorder(chapter.id, "up")}
                       disabled={idx === 0}
                       className="p-0.5 text-slate-500 hover:text-cyan-400 disabled:opacity-30"
+                      title="Move up"
                     >
                       <ChevronUp size={12} />
                     </button>
@@ -131,6 +182,7 @@ export default function ChapterSidebar({
                       onClick={() => onReorder(chapter.id, "down")}
                       disabled={idx === chapters.length - 1}
                       className="p-0.5 text-slate-500 hover:text-cyan-400 disabled:opacity-30"
+                      title="Move down"
                     >
                       <ChevronDown size={12} />
                     </button>
@@ -141,6 +193,7 @@ export default function ChapterSidebar({
                         }
                       }}
                       className="p-0.5 text-slate-500 hover:text-red-400"
+                      title="Delete section"
                     >
                       <Trash2 size={12} />
                     </button>

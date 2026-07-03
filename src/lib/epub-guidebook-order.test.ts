@@ -3,6 +3,8 @@ import type { GuidebookBlockType } from "@/types/guidebook";
 import {
   getGuidebookBlockExportOrder,
   transformWidgetsForEpub,
+  buildExportCss,
+  GUIDEBOOK_EXPORT_CSS,
 } from "@/lib/epub";
 
 function editorGuidebookBlock(
@@ -91,5 +93,38 @@ describe("guidebook block EPUB export order", () => {
     expect(result).toContain("Fish &amp; chips at the lodge");
     expect(result).toContain("Water &amp; restrooms");
     expect(result).not.toContain("Trail Stop</h3>");
+  });
+
+  it("serializes trail stop blocks with inner editor markup", () => {
+    const payload = JSON.stringify({
+      name: "Summit Rest",
+      mileMarker: "5.0",
+      elevation: "2000 ft",
+      notes: "Great view",
+      amenities: [],
+    }).replace(/"/g, "&quot;");
+    const html = `<aside data-guidebook="trail_stop" data-payload="${payload}" class="guidebook-block guidebook-trail-stop"><header>Trail Stop</header><div>editor chrome</div></aside>`;
+    const result = transformWidgetsForEpub(html);
+
+    expect(result).toContain('class="guidebook-block guidebook-trail-stop"');
+    expect(result).toContain("Summit Rest");
+    expect(result).toContain('class="guidebook-block-header"');
+    expect(result).toContain('class="trail-meta"');
+    expect(result).not.toContain("editor chrome");
+  });
+
+  it("includes guidebook CSS in KBP export stylesheet", () => {
+    const css = buildExportCss(true);
+    expect(css).toContain(".guidebook-trail-stop");
+    expect(css).toContain("border-color: #00a86b");
+    expect(css).toContain(".trail-amenities");
+    expect(css).toContain(GUIDEBOOK_EXPORT_CSS.trim().slice(0, 40));
+  });
+
+  it("includes guidebook CSS in standard export stylesheet", () => {
+    const css = buildExportCss(false);
+    expect(css).toContain(".guidebook-trail-stop");
+    expect(css).toContain(".guidebook-workshop");
+    expect(css).toContain(".guidebook-cheat-sheet");
   });
 });

@@ -6,7 +6,6 @@ import {
   ArrowLeft,
   Download,
   Sparkles,
-  PanelRight,
   PanelRightClose,
   Settings2,
   Save,
@@ -14,6 +13,8 @@ import {
   Eye,
   BookOpen,
   Image,
+  FileDown,
+  Keyboard,
 } from "lucide-react";
 import { useBookStore } from "@/store/book-store";
 import ChapterSidebar from "@/components/ChapterSidebar";
@@ -23,7 +24,10 @@ import FullBookPreview from "@/components/FullBookPreview";
 import AIAssistant from "@/components/AIAssistant";
 import MetadataPanel from "@/components/MetadataPanel";
 import AssetPanel from "@/components/AssetPanel";
+import SaveStatusBadge from "@/components/SaveStatusBadge";
+import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import { downloadEpub } from "@/lib/epub";
+import { downloadPdf } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
 
@@ -46,6 +50,7 @@ export default function EditorPage() {
     updateChapter,
     deleteChapter,
     reorderChapter,
+    reorderChapters,
     saveBookToDisk,
     openBookFromDisk,
     saveStatus,
@@ -58,6 +63,7 @@ export default function EditorPage() {
   const [showAI, setShowAI] = useState(false);
   const [showProperties, setShowProperties] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -89,11 +95,21 @@ export default function EditorPage() {
       if ((e.metaKey || e.ctrlKey) && e.key === "s") {
         e.preventDefault();
         handleSave(false);
+        return;
+      }
+      const target = e.target as HTMLElement;
+      const isTyping =
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.isContentEditable;
+      if (e.key === "?" && !isTyping && viewMode === "edit") {
+        e.preventDefault();
+        setShowShortcuts(true);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleSave]);
+  }, [handleSave, viewMode]);
 
   useEffect(() => {
     if (!window.openBook?.isElectron) return;
@@ -126,17 +142,6 @@ export default function EditorPage() {
   };
 
   const kbpMode = book ? isKbpEnabled(book) || book.template === "guidebook" : false;
-
-  const saveLabel = () => {
-    if (saveStatus === "saving") return "Saving…";
-    if (saveStatus === "error") return saveError || "Save failed";
-    if (saveStatus === "saved") return "Saved";
-    if (book?.packagePath) {
-      const name = book.packagePath.split(/[/\\]/).pop();
-      return name || "Saved to disk";
-    }
-    return "Unsaved";
-  };
 
   if (!hydrated) {
     return (
@@ -171,23 +176,22 @@ export default function EditorPage() {
             <ArrowLeft size={18} />
           </button>
           <div>
-            <h1 className="text-sm font-semibold text-white">{book.metadata.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-sm font-semibold text-white">{book.metadata.title}</h1>
+              <SaveStatusBadge
+                status={saveStatus}
+                error={saveError}
+                hasPackagePath={Boolean(book.packagePath)}
+              />
+            </div>
             <p className="text-xs text-slate-500">
-              <span
-                className={
-                  saveStatus === "error"
-                    ? "text-red-400"
-                    : saveStatus === "saved"
-                      ? "text-green-400"
-                      : book.packagePath
-                        ? "text-cyan-400/80"
-                        : "text-amber-400/80"
-                }
-              >
-                {saveLabel()}
-              </span>
-              {" · "}
               {book.chapters.length} chapters
+              {book.packagePath && (
+                <span className="text-slate-600">
+                  {" · "}
+                  {book.packagePath.split(/[/\\]/).pop()}
+                </span>
+              )}
               {viewMode !== "edit" && (
                 <span className="ml-2 text-amber-400/80">
                   · {viewMode === "full" ? "Full preview" : "Preview"}
@@ -270,6 +274,14 @@ export default function EditorPage() {
             <Download size={14} />
             EPUB
           </button>
+          <button
+            onClick={() => downloadPdf(book, getAssetBlobs(book.id))}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-purple-500/20 border border-purple-500/30 text-purple-300 hover:bg-purple-500/30"
+            title="Export PDF via print dialog"
+          >
+            <FileDown size={14} />
+            PDF
+          </button>
           {kbpMode && (
             <button
               onClick={() => downloadKBP(book, getAssetBlobs(book.id))}
@@ -278,6 +290,15 @@ export default function EditorPage() {
             >
               <Download size={14} />
               KBP
+            </button>
+          )}
+          {viewMode === "edit" && (
+            <button
+              onClick={() => setShowShortcuts(true)}
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard size={18} />
             </button>
           )}
           <button
@@ -336,6 +357,7 @@ export default function EditorPage() {
             }}
             onRename={(id, title) => updateChapter(book.id, id, { title })}
             onReorder={(id, dir) => reorderChapter(book.id, id, dir)}
+            onReorderChapters={(from, to) => reorderChapters(book.id, from, to)}
           />
         </div>
 
@@ -417,6 +439,7 @@ export default function EditorPage() {
           </div>
         )}
       </div>
+      <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
   );
 }

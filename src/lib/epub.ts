@@ -158,12 +158,12 @@ function transformWidgetsForEpub(html: string): string {
   result = result.replace(/<hr[^>]*data-kbp="scene-break"[^>]*\/?>/gi, '<p class="scene-break">* * *</p>');
 
   result = result.replace(
-    /<(?:aside|div)[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*data-payload="([^"]*)"[^>]*>\s*<\/(?:aside|div)>/gi,
+    /<(?:aside|div)[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*data-payload="([^"]*)"[^>]*>[\s\S]*?<\/(?:aside|div)>/gi,
     (_, blockType, payload) => serializeGuidebookBlock(blockType as GuidebookBlockType, payload)
   );
 
   result = result.replace(
-    /<(?:aside|div)[^>]*data-payload="([^"]*)"[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*>\s*<\/(?:aside|div)>/gi,
+    /<(?:aside|div)[^>]*data-payload="([^"]*)"[^>]*data-guidebook="(trail_stop|workshop|cheat_sheet)"[^>]*>[\s\S]*?<\/(?:aside|div)>/gi,
     (_, payload, blockType) => serializeGuidebookBlock(blockType as GuidebookBlockType, payload)
   );
 
@@ -269,26 +269,50 @@ function chapterXhtml(book: Book, chapter: Chapter, index: number): string {
 
 export { prepareChapterContent, transformWidgetsForEpub };
 
-const MAIN_CSS = `body {
-  font-family: Georgia, "Times New Roman", serif;
-  line-height: 1.6;
-  margin: 1em;
-  color: #1a1a1a;
+/** Guidebook block export CSS — kept in sync with print-preview rules in globals.css */
+export const GUIDEBOOK_EXPORT_CSS = `
+.guidebook-block {
+  margin: 1.5em 0;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  overflow: hidden;
+  text-indent: 0;
 }
-h1 { font-size: 2em; margin-bottom: 0.5em; }
-h2 { font-size: 1.5em; margin-top: 1.5em; }
-h3 { font-size: 1.25em; }
-p { margin: 0.8em 0; }
-blockquote {
-  border-left: 3px solid #00e5ff;
-  margin: 1em 0;
-  padding-left: 1em;
-  color: #444;
+.guidebook-block-header {
+  padding: 0.6em 1em;
+  font-size: 0.75em;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
 }
-img { max-width: 100%; height: auto; }
-ul, ol { margin: 0.8em 0; padding-left: 1.5em; }
+.guidebook-block-body { padding: 1em; }
+.guidebook-block-body h3 { margin: 0 0 0.5em; font-size: 1.1em; }
+.guidebook-trail-stop {
+  border-color: #00a86b;
+  border-left-width: 4px;
+}
+.guidebook-trail-stop .guidebook-block-header { background: #f0faf5; color: #007a4d; }
+.guidebook-workshop {
+  border-color: #c026d3;
+  border-left-width: 4px;
+}
+.guidebook-workshop .guidebook-block-header { background: #fdf4ff; color: #a21caf; }
+.guidebook-cheat-sheet {
+  border-color: #0891b2;
+  border-left-width: 4px;
+}
+.guidebook-cheat-sheet .guidebook-block-header { background: #ecfeff; color: #0e7490; }
+.cheat-grid { display: grid; gap: 0.35em 1em; }
+.cheat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+.cheat-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cheat-label { font-weight: 600; color: #0e7490; }
+.workshop-exercise { margin: 0.6em 0; padding: 0.5em 0.75em; background: #faf5ff; border-radius: 4px; }
+.response-hint { font-size: 0.85em; color: #888; font-style: italic; }
+.trail-meta { font-size: 0.9em; color: #666; margin: 0.25em 0 0.5em; }
+.trail-amenities { margin: 0.5em 0 0; padding-left: 1.25em; font-size: 0.9em; }
+`;
 
-/* Interactive widgets */
+const WIDGET_EXPORT_CSS = `/* Interactive widgets */
 details.popup-widget {
   margin: 1.5em 0;
   border: 1px solid #00e5ff;
@@ -329,36 +353,35 @@ details.popup-widget > div { padding: 1em; }
   margin-top: 0.5em;
   font-style: italic;
 }
-
-.guidebook-block {
-  margin: 1.5em 0;
-  border: 1px solid #ccc;
-  border-radius: 8px;
-  overflow: hidden;
-}
-.guidebook-block-header {
-  padding: 0.6em 1em;
-  font-size: 0.75em;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.guidebook-block-body { padding: 1em; }
-.guidebook-trail-stop { border-left: 4px solid #00a86b; }
-.guidebook-trail-stop .guidebook-block-header { background: #f0faf5; color: #007a4d; }
-.guidebook-workshop { border-left: 4px solid #c026d3; }
-.guidebook-workshop .guidebook-block-header { background: #fdf4ff; color: #a21caf; }
-.guidebook-cheat-sheet { border-left: 4px solid #0891b2; }
-.guidebook-cheat-sheet .guidebook-block-header { background: #ecfeff; color: #0e7490; }
-.cheat-grid { display: grid; gap: 0.35em 1em; }
-.cheat-grid.cols-2 { grid-template-columns: 1fr 1fr; }
-.cheat-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
-.cheat-label { font-weight: 600; color: #0e7490; }
-.workshop-exercise { margin: 0.6em 0; padding: 0.5em 0.75em; background: #faf5ff; border-radius: 4px; }
-.response-hint { font-size: 0.85em; color: #888; font-style: italic; }
-.trail-meta { font-size: 0.9em; color: #666; }
-.trail-amenities { margin: 0.5em 0; padding-left: 1.25em; }
 `;
+
+const MAIN_CSS = `body {
+  font-family: Georgia, "Times New Roman", serif;
+  line-height: 1.6;
+  margin: 1em;
+  color: #1a1a1a;
+}
+h1 { font-size: 2em; margin-bottom: 0.5em; }
+h2 { font-size: 1.5em; margin-top: 1.5em; }
+h3 { font-size: 1.25em; }
+p { margin: 0.8em 0; }
+blockquote {
+  border-left: 3px solid #00e5ff;
+  margin: 1em 0;
+  padding-left: 1em;
+  color: #444;
+}
+img { max-width: 100%; height: auto; }
+ul, ol { margin: 0.8em 0; padding-left: 1.5em; }
+`;
+
+/** Assembled export stylesheet — guidebook CSS is always included (KBP path previously dropped it). */
+export function buildExportCss(useKbp: boolean): string {
+  if (useKbp) {
+    return `${KBP_CSS}\n${WIDGET_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+  }
+  return `${MAIN_CSS}\n${WIDGET_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+}
 
 export async function exportToEpub(
   book: Book,
@@ -368,7 +391,7 @@ export async function exportToEpub(
   const { metadata, chapters } = book;
   const isFixed = book.layoutMode === "landscape";
   const useKbp = isKbpEnabled(book);
-  const css = useKbp ? KBP_CSS + "\n" + MAIN_CSS.split("/* Interactive")[0] : MAIN_CSS;
+  const css = buildExportCss(useKbp);
 
   const coverFilename = book.metadata.coverImage?.startsWith("assets/")
     ? book.metadata.coverImage.replace("assets/", "")
