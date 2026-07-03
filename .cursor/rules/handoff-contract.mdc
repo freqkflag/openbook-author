@@ -1,0 +1,60 @@
+---
+description: Shared YAML contract for OpenBook Author agent orchestration
+alwaysApply: false
+---
+
+# Agent Handoff Contract
+
+All agents in the OpenBook Author studio accept and produce this schema.
+
+## Router Handoff (input to execution agents)
+
+```yaml
+issue: <number>
+title: <string>
+classification: bug | feature | docs | refactor | test | design | unknown
+confidence: <0.00–1.00>
+agent: debug-agent | feature-agent | docs-agent | refactor-agent | test-agent | ui-agent
+priority: low | medium | high | critical
+estimated_scope: small | medium | large | epic
+escalate: true | false
+recommendation: <string | null>  # required when escalate is true
+deliverables:
+  - <item>
+success_criteria:
+  - <criterion>
+context:
+  labels: []
+  linked_files: []
+  summary: <1–3 sentences>
+workflow:
+  - <current-agent>
+  - review-agent
+  - pr-creator-agent
+```
+
+## Execution Handoff (output from execution agents → review-agent)
+
+```yaml
+issue: <number>
+source_agent: <agent-id>
+status: complete | blocked | needs_human
+changes_summary: <what was done>
+files_touched: []
+deliverables_completed: []
+success_criteria_met: []
+open_questions: []
+next_agent: review-agent
+```
+
+## Review Handoff (output from review-agent → pr-creator-agent)
+
+```yaml
+issue: <number>
+source_agent: review-agent
+verdict: approved | changes_requested | blocked
+findings: []
+security_flags: []
+a11y_flags: []
+next_agent: pr-creator-agent
+```
