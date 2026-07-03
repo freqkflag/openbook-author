@@ -1,5 +1,9 @@
 import type { BookTemplate, LayoutMode } from "@/types/book";
 import { DEFAULT_KBP_SETTINGS } from "@/types/book";
+import {
+  buildGettingStartedChapterContent,
+  buildTrailReferenceChapterContent,
+} from "@/lib/guidebook-seed";
 
 export interface TemplateInfo {
   id: BookTemplate;
@@ -82,6 +86,7 @@ export const TEMPLATES: TemplateInfo[] = [
 <ul>
 <li>Structured chapters with clear headings</li>
 <li>Tip and warning callout boxes</li>
+<li>Trail stop, workshop, and cheat sheet blocks</li>
 <li>Numbered step blocks for procedures</li>
 <li>KBP export ready for Kindle Direct Publishing</li>
 </ul>`,
@@ -99,17 +104,11 @@ export const TEMPLATES: TemplateInfo[] = [
       },
       {
         title: "Chapter 1: Getting Started",
-        content: `<h1>Chapter 1: Getting Started</h1>
-<p>Begin your first topic here. Guidebook chapters work best with a short overview, then detailed sections broken into scannable parts.</p>
-<h2>Overview</h2>
-<p>Summarize what the reader will learn or accomplish in this chapter.</p>
-<h2>Before You Begin</h2>
-<div data-callout="warning" data-text="List any requirements, tools, or conditions the reader needs before proceeding."></div>
-<h2>Step-by-Step</h2>
-<div data-callout="step" data-number="1" data-text="Describe the first action clearly and concisely."></div>
-<div data-callout="step" data-number="2" data-text="Continue with the next step. Keep each step focused on one action."></div>
-<div data-callout="step" data-number="3" data-text="Conclude with the expected outcome or result."></div>
-<div data-callout="tip" data-text="Add pro tips, alternatives, or local insights here."></div>`,
+        content: buildGettingStartedChapterContent(),
+      },
+      {
+        title: "Trail Reference",
+        content: buildTrailReferenceChapterContent(),
       },
     ],
   },

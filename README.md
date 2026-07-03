@@ -33,8 +33,14 @@ Create beautiful EPUB books with rich text editing, chapter management, template
 ### KBP — Kindle Book Publishing
 - **KBP profile** — First-line indents, drop caps, scene breaks, chapter numbering
 - **Guidebook callouts** — Tip boxes, warning notes, numbered step blocks
+- **Guidebook blocks** — Structured content atoms for reference-style books:
+  - **Trail stop** — Waypoints with mile marker, elevation, notes, and amenities
+  - **Workshop** — Reflective exercises with short or long response prompts
+  - **Cheat sheet** — Label/value pairs in a 2- or 3-column quick-reference grid
 - **KBP export** — `.kbp` zip package with KDP-ready EPUB, HTML chapters, and stylesheet
-- Enable in Book Properties or use the Guidebook template (KBP on by default)
+- Enable in Book Properties or use the **Guidebook** template (KBP on by default)
+
+The Guidebook template includes four sample chapters. **Chapter 1: Getting Started** and **Trail Reference** ship with live examples of all three block types — insert more from the Guidebook section of the editor toolbar. See [docs/guidebook-blocks.md](docs/guidebook-blocks.md) for the block HTML contract and seed helpers.
 
 ### Interactive Widgets
 - **Popup widgets** — Tap-to-reveal content blocks (like iBooks Author pop-ups)
@@ -155,6 +161,14 @@ my-book.openbook/   (zip archive)
     ├── cover.jpg
     └── ...
 ```
+
+## Developer documentation
+
+| Doc | Description |
+|-----|-------------|
+| [docs/guidebook-blocks.md](docs/guidebook-blocks.md) | Guidebook block types, HTML contract, seed helpers |
+| [docs/adr/](docs/adr/) | Architecture decision records |
+| [CHANGELOG.md](CHANGELOG.md) | User-facing release notes |
 
 ## License
 

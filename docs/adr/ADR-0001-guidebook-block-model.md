@@ -29,6 +29,8 @@ Payload types and normalization live in `src/types/guidebook.ts`. The editor use
 
 List items inside payloads use stable `id` fields for React keys and survive save/load via `normalize*Payload()` helpers.
 
+The **Guidebook** template ships sample chapters built from `src/lib/guidebook-seed.ts` — deterministic seed payloads and `serializeGuidebookBlockToHtml()` for TipTap-compatible markup. Template wiring lives in `src/lib/templates.ts` (chapters **Chapter 1: Getting Started** and **Trail Reference**).
+
 ## Consequences
 
 ### Positive
@@ -51,8 +53,11 @@ List items inside payloads use stable `id` fields for React keys and survive sav
 ## Related code
 
 - `src/types/guidebook.ts`
+- `src/lib/guidebook-seed.ts` — template seed payloads and HTML serialization
+- `src/lib/templates.ts` — Guidebook template sample chapters
 - `src/components/extensions/GuidebookBlock.tsx`
 - `src/components/RichEditor.tsx`
 - `src/lib/epub.ts`
 - `src/app/globals.css`
 - `src/app/prototype/guidebook/page.tsx`
+- `docs/guidebook-blocks.md` — developer reference
