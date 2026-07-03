@@ -129,6 +129,6 @@ jobs:
           script: |
             await github.rest.pulls.update({
               ...context.repo,
-              pull_request_number: context.payload.pull_request.number,
+              pull_number: context.payload.pull_request.number,
               state: "closed",
             });
