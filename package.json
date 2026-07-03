@@ -71,11 +71,12 @@
     "electron-builder": "^26.15.3",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
+    "happy-dom": "^20.10.6",
     "tailwindcss": "^4",
     "tsx": "^4.20.3",
     "typescript": "^5",
     "vitest": "^3.2.4",
-    "yaml": "^2.8.0",
-    "wait-on": "^9.0.10"
+    "wait-on": "^9.0.10",
+    "yaml": "^2.8.0"
   }
 }

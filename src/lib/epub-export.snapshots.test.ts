@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import JSZip from "jszip";
+import { describe, expect, it, vi } from "vitest";
 import {
+  exportToEpub,
   prepareChapterContent,
   transformWidgetsForEpub,
   GUIDEBOOK_EXPORT_CSS,
@@ -46,6 +48,12 @@ function normalizeExportHtml(html: string): string {
     .trim();
 }
 
+async function readZipText(zip: JSZip, path: string): Promise<string> {
+  const file = zip.file(path);
+  expect(file).toBeDefined();
+  return normalizeExportHtml(await file!.async("string"));
+}
+
 describe("guidebook block export snapshots", () => {
   it("trail_stop seed block", () => {
     const html = transformWidgetsForEpub(
@@ -86,5 +94,48 @@ describe("guidebook chapter export snapshots", () => {
 describe("guidebook export CSS snapshot", () => {
   it("GUIDEBOOK_EXPORT_CSS", () => {
     expect(GUIDEBOOK_EXPORT_CSS.trim()).toMatchSnapshot();
+  });
+});
+
+describe("EPUB package export snapshots", () => {
+  it("snapshots KBP guidebook package files", async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-02T03:04:05.000Z"));
+
+    try {
+      const book: Book = {
+        ...createGuidebookMockBook(),
+        id: "snapshot-epub-book",
+        kbpSettings: {
+          ...DEFAULT_KBP_SETTINGS,
+          enabled: true,
+          dropCaps: true,
+          sceneBreakStyle: "ornament",
+        },
+        chapters: [
+          {
+            id: "chapter-1",
+            title: "Getting Started",
+            content: buildGettingStartedChapterContent(),
+            order: 0,
+            sectionType: "chapter",
+          },
+        ],
+      };
+
+      const zip = await JSZip.loadAsync(await exportToEpub(book));
+      const files = Object.keys(zip.files)
+        .filter((path) => !zip.files[path].dir)
+        .sort();
+
+      expect(files).toMatchSnapshot();
+      expect({
+        "content.opf": await readZipText(zip, "content.opf"),
+        "nav.xhtml": await readZipText(zip, "nav.xhtml"),
+        "text/chapter0.xhtml": await readZipText(zip, "text/chapter0.xhtml"),
+      }).toMatchSnapshot();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
