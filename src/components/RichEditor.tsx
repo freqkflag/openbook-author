@@ -8,6 +8,10 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
+import Table from "@tiptap/extension-table";
+import TableRow from "@tiptap/extension-table-row";
+import TableCell from "@tiptap/extension-table-cell";
+import TableHeader from "@tiptap/extension-table-header";
 import { useEffect, useState, useRef } from "react";
 import type { Editor } from "@tiptap/react";
 import type { Book } from "@/types/book";
@@ -43,10 +47,15 @@ import {
   ClipboardList,
   FileText,
   Keyboard,
+  Table2,
+  Superscript,
+  BookOpen,
 } from "lucide-react";
 import { PopupWidget } from "@/components/extensions/PopupWidget";
 import { GalleryWidget } from "@/components/extensions/GalleryWidget";
 import { GuidebookBlock } from "@/components/extensions/GuidebookBlock";
+import { NoteReference, type NoteType } from "@/components/extensions/NoteReference";
+import EditorNoteModal from "@/components/EditorNoteModal";
 import {
   TipCallout,
   WarningCallout,
@@ -107,6 +116,9 @@ export default function RichEditor({
   const [linkModalInitial, setLinkModalInitial] = useState({ url: "", label: "" });
   const [popupModalOpen, setPopupModalOpen] = useState(false);
   const [popupModalKey, setPopupModalKey] = useState(0);
+  const [noteModalOpen, setNoteModalOpen] = useState(false);
+  const [noteModalKey, setNoteModalKey] = useState(0);
+  const [noteModalType, setNoteModalType] = useState<NoteType>("footnote");
   const editorRef = useRef<Editor | null>(null);
 
   const openAssetPicker = (onSelect: (src: string, alt?: string) => void, title?: string) => {
@@ -124,6 +136,10 @@ export default function RichEditor({
       Link.configure({ openOnClick: false }),
       Placeholder.configure({ placeholder: placeholder || "Start writing..." }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
       PopupWidget,
       GalleryWidget,
       TipCallout,
@@ -131,6 +147,7 @@ export default function RichEditor({
       StepBlock,
       SceneBreak,
       GuidebookBlock,
+      NoteReference,
     ],
     content,
     onUpdate: ({ editor: e }) => onChange(e.getHTML()),
@@ -309,6 +326,28 @@ export default function RichEditor({
     }, "Choose Gallery Image");
   };
 
+  const openNoteModal = (noteType: NoteType) => {
+    setNoteModalType(noteType);
+    setNoteModalKey((k) => k + 1);
+    setNoteModalOpen(true);
+  };
+
+  const applyNote = (content: string) => {
+    editor
+      .chain()
+      .focus()
+      .insertNoteReference({ noteType: noteModalType, content })
+      .run();
+  };
+
+  const insertTable = () => {
+    editor
+      .chain()
+      .focus()
+      .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+      .run();
+  };
+
   const nextStepNumber = () => {
     const html = editor.getHTML();
     const matches = html.match(/data-number="(\d+)"/g) || [];
@@ -452,6 +491,54 @@ export default function RichEditor({
         <ToolbarButton onClick={addGallery} title="Insert image gallery">
           <Images size={16} />
         </ToolbarButton>
+        <div className="w-px h-5 bg-white/10 mx-1" />
+        <ToolbarButton onClick={insertTable} title="Insert table (3×3)">
+          <Table2 size={16} />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => openNoteModal("footnote")} title="Insert footnote">
+          <Superscript size={16} />
+        </ToolbarButton>
+        <ToolbarButton
+          onClick={() => openNoteModal("endnote")}
+          title="Insert endnote"
+        >
+          <BookOpen size={16} className="w-4 h-4" />
+        </ToolbarButton>
+        {editor.isActive("table") && (
+          <>
+            <div className="w-px h-5 bg-white/10 mx-1" />
+            <ToolbarButton
+              onClick={() => editor.chain().focus().addRowAfter().run()}
+              title="Add row below"
+            >
+              <span className="text-[10px] font-mono px-0.5">+R</span>
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().addColumnAfter().run()}
+              title="Add column right"
+            >
+              <span className="text-[10px] font-mono px-0.5">+C</span>
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().deleteRow().run()}
+              title="Delete row"
+            >
+              <span className="text-[10px] font-mono px-0.5">−R</span>
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().deleteColumn().run()}
+              title="Delete column"
+            >
+              <span className="text-[10px] font-mono px-0.5">−C</span>
+            </ToolbarButton>
+            <ToolbarButton
+              onClick={() => editor.chain().focus().deleteTable().run()}
+              title="Delete table"
+            >
+              <span className="text-[10px] font-mono px-0.5 text-red-400">⊠</span>
+            </ToolbarButton>
+          </>
+        )}
         {(kbpMode) && (
           <>
             <div className="w-px h-5 bg-white/10 mx-1" />
@@ -545,6 +632,13 @@ export default function RichEditor({
         open={popupModalOpen}
         onClose={() => setPopupModalOpen(false)}
         onSubmit={applyPopup}
+      />
+      <EditorNoteModal
+        key={noteModalKey}
+        open={noteModalOpen}
+        noteType={noteModalType}
+        onClose={() => setNoteModalOpen(false)}
+        onSubmit={applyNote}
       />
     </div>
     </EditorAssetContext.Provider>

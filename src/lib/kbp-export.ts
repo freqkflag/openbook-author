@@ -1,7 +1,7 @@
 import JSZip from "jszip";
 import type { Book } from "@/types/book";
-import { applyKbpToHtml, isKbpEnabled, kbpManifest, KBP_CSS } from "@/lib/kbp";
-import { exportToEpub, hasTitlePage } from "@/lib/epub";
+import { kbpManifest, KBP_CSS } from "@/lib/kbp";
+import { exportToEpub, hasTitlePage, prepareChapterContent } from "@/lib/epub";
 import { getAssetByFilename } from "@/lib/asset-store";
 
 function escapeHtml(text: string): string {
@@ -18,10 +18,7 @@ function rewriteAssetPaths(html: string): string {
 
 function chapterHtml(book: Book, chapterIndex: number): string {
   const chapter = book.chapters[chapterIndex];
-  const raw = isKbpEnabled(book)
-    ? applyKbpToHtml(chapter.content, book.kbpSettings)
-    : chapter.content;
-  const content = rewriteAssetPaths(raw);
+  const content = rewriteAssetPaths(prepareChapterContent(book, chapter.content));
 
   return `<!DOCTYPE html>
 <html lang="${book.metadata.language || "en"}">

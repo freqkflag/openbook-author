@@ -40,7 +40,7 @@ From [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §5 — goal: *authors can fin
 
 | # | Item | Status | Tracking |
 |---|------|--------|----------|
-| 1 | Footnotes/endnotes + tables | ⬜ Not shipped | Deferred v0.4 · [#8](https://github.com/freqkflag/openbook-author/issues/8) |
+| 1 | Footnotes/endnotes + tables | ✅ Shipped | [#8](https://github.com/freqkflag/openbook-author/issues/8) |
 | 2 | Export theme system (3–5 themes + CSS hook) | ⬜ Not shipped | [#51](https://github.com/freqkflag/openbook-author/issues/51), [#55](https://github.com/freqkflag/openbook-author/issues/55) |
 | 3 | DOCX import | ⬜ Not shipped | [#52](https://github.com/freqkflag/openbook-author/issues/52), [#54](https://github.com/freqkflag/openbook-author/issues/54) |
 | 4 | Print PDF hardening (trim, margins, TOC leaders) | 🟡 Partial | Basic PDF + section print CSS shipped ([#7](https://github.com/freqkflag/openbook-author/issues/7)); bleed/trim presets remain |

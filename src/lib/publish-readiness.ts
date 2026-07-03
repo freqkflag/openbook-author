@@ -386,6 +386,49 @@ function checkKbpStructure(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function checkNoteReferences(book: Book, issues: ReadinessIssue[]): void {
+  for (const chapter of book.chapters) {
+    const spans = chapter.content.matchAll(/<span[^>]*\bdata-note="(footnote|endnote)"[^>]*>/gi);
+    for (const match of spans) {
+      const start = match.index ?? 0;
+      const spanHtml =
+        chapter.content.slice(start).match(/^<span[^>]*>[\s\S]*?<\/span>/i)?.[0] ?? match[0];
+      const contentMatch = spanHtml.match(/\bdata-content="([^"]*)"/i);
+      const content =
+        contentMatch?.[1]?.replace(/&quot;/g, '"').replace(/&amp;/g, "&").trim() ?? "";
+      if (!content) {
+        issues.push(
+          issue(
+            `empty-note-${chapter.id}-${start}`,
+            "warning",
+            `Chapter "${chapter.title}" has an empty ${match[1]}`,
+            chapter
+          )
+        );
+      }
+    }
+  }
+}
+
+function checkTables(book: Book, issues: ReadinessIssue[]): void {
+  for (const chapter of book.chapters) {
+    const tables = chapter.content.match(/<table[\s>][\s\S]*?<\/table>/gi) ?? [];
+    for (const table of tables) {
+      if (!/<th[\s>]/i.test(table)) {
+        issues.push(
+          issue(
+            `table-no-header-${chapter.id}`,
+            "warning",
+            `Chapter "${chapter.title}" has a table without header cells (<th>)`,
+            chapter
+          )
+        );
+        break;
+      }
+    }
+  }
+}
+
 function checkKbpStoreMetadata(book: Book, issues: ReadinessIssue[]): void {
   if (!isKbpEnabled(book)) return;
 
@@ -466,6 +509,8 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
   checkMissingAltText(book, issues);
   checkHeadingHierarchy(book, issues);
   checkGuidebookBlocks(book, issues);
+  checkNoteReferences(book, issues);
+  checkTables(book, issues);
   checkTocIssues(book, issues);
   checkKbpStructure(book, issues);
   checkKbpStoreMetadata(book, issues);

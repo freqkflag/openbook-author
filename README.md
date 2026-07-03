@@ -11,7 +11,7 @@ Create beautiful EPUB books with rich text editing, chapter management, template
 ### Book Authoring (iBooks Author-inspired)
 - **Templates** — Portrait, Landscape, Textbook, **Guidebook**, and Blank
 - **KBP formatting** — Kindle Book Publishing profile with KDP-optimized typography
-- **Rich text editor** — Headings, lists, quotes, images, links, alignment, highlights
+- **Rich text editor** — Headings, lists, quotes, images, links, alignment, highlights, **tables**, **footnotes**, and **endnotes**
 - **Chapter management** — Add, rename, reorder, and delete chapters
 - **Book metadata** — Title, author, publisher, language, description
 - **EPUB export** — Standard EPUB 3 with table of contents, cover page, and embedded assets

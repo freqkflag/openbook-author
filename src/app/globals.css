@@ -104,6 +104,35 @@ body::before {
   text-decoration: underline;
 }
 
+.ProseMirror table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1rem 0;
+  font-size: 0.9rem;
+}
+
+.ProseMirror th,
+.ProseMirror td {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 0.5rem 0.75rem;
+  vertical-align: top;
+}
+
+.ProseMirror th {
+  background: rgba(0, 229, 255, 0.08);
+  color: #e2e8f0;
+  font-weight: 600;
+}
+
+.ProseMirror .selectedCell {
+  background: rgba(0, 229, 255, 0.12);
+}
+
+.ProseMirror .note-ref {
+  color: #00e5ff;
+  cursor: pointer;
+}
+
 .ProseMirror hr.kbp-scene-break {
   border: none;
   text-align: center;

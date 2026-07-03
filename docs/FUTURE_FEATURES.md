@@ -11,7 +11,7 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 3 | Full-book preview | ✅ Edit / Preview / Full toggle (v0.2) |
 | 4 | EPUB import | ✅ Dashboard import with widget reverse-transform |
 | 5 | File-based projects | ✅ `.openbook` packages + Electron save/open (v0.2); localStorage remains library cache |
-| 6 | Tables, footnotes, and endnotes | ⬜ Planned v0.4 |
+| 6 | Tables, footnotes, and endnotes | ✅ TipTap tables + note refs; EPUB/KBP export (#8) |
 | 7 | Keyboard shortcuts | ✅ Cmd+S, Cmd+P, Cmd+Shift+P, Cmd+Shift+F, Cmd+/ cheat sheet (v0.2+) |
 | 8 | Spell check & readability | ✅ Browser spellcheck + AI Clarity pass |
 | 9 | Search across the book | ✅ Find/replace modal (Cmd+Shift+F) |
@@ -56,8 +56,8 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 
 ## Authoring & editor polish
 
-**6. Tables, footnotes, and endnotes** ⬜ *Planned v0.4*  
-Standard for textbooks and guidebooks. TipTap has extensions for both.
+**6. Tables, footnotes, and endnotes** ✅  
+TipTap table extension (insert 3×3 with header row, row/column controls). Footnote and endnote inline references with EPUB 3 `noteref` export and endnotes section. Publish readiness warns on empty notes and headerless tables ([#8](https://github.com/freqkflag/openbook-author/issues/8)).
 
 **7. Keyboard shortcuts** ✅  
 `Cmd+S` (save), `Cmd+P` (chapter preview), `Cmd+Shift+P` (full-book preview), `Cmd+Shift+F` (find/replace), `Cmd+/` and `?` shortcut cheat sheet, plus formatting shortcuts in the editor.

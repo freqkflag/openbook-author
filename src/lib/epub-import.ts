@@ -11,6 +11,7 @@ import type {
   WorkshopPayload,
 } from "@/types/guidebook";
 import { createListId } from "@/types/guidebook";
+import { reverseNotesFromEpub } from "@/lib/note-export";
 
 export interface EpubImportResult {
   book: Omit<Book, "id" | "createdAt" | "updatedAt">;
@@ -389,6 +390,7 @@ export function reverseTransformWidgetsFromEpub(html: string): string {
   result = reverseGuidebookBlockExportMarkup(result);
   result = reversePopupWidgetExportMarkup(result);
   result = reverseGalleryWidgetExportMarkup(result);
+  result = reverseNotesFromEpub(result);
   return result;
 }
 

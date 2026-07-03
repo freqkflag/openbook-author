@@ -9,6 +9,7 @@ import type {
 } from "@/types/guidebook";
 import { applyKbpToHtml, isKbpEnabled, KBP_CSS } from "@/lib/kbp";
 import { getAssetByFilename } from "@/lib/asset-store";
+import { transformNotesForEpub, TABLE_EXPORT_CSS } from "@/lib/note-export";
 
 function escapeXml(text: string): string {
   return text
@@ -231,6 +232,7 @@ export function getGuidebookBlockExportOrder(html: string): GuidebookBlockType[]
 
 function prepareChapterContent(book: Book, content: string): string {
   let result = transformWidgetsForEpub(content);
+  result = transformNotesForEpub(result);
   if (isKbpEnabled(book)) {
     result = applyKbpToHtml(result, book.kbpSettings);
   }
@@ -498,9 +500,9 @@ ul, ol { margin: 0.8em 0; padding-left: 1.5em; }
 /** Assembled export stylesheet — guidebook CSS is always included (KBP path previously dropped it). */
 export function buildExportCss(useKbp: boolean): string {
   if (useKbp) {
-    return `${KBP_CSS}\n${WIDGET_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+    return `${KBP_CSS}\n${WIDGET_EXPORT_CSS}\n${TABLE_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
   }
-  return `${MAIN_CSS}\n${WIDGET_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
+  return `${MAIN_CSS}\n${WIDGET_EXPORT_CSS}\n${TABLE_EXPORT_CSS}\n${GUIDEBOOK_EXPORT_CSS}`;
 }
 
 export async function exportToEpub(
