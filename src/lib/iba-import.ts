@@ -22,6 +22,41 @@ function getTextContent(el: Element | null): string {
   return el.textContent?.trim() || "";
 }
 
+function queryFirst(root: ParentNode, selectors: string[]): Element | null {
+  for (const selector of selectors) {
+    try {
+      const match = root.querySelector(selector);
+      if (match) return match;
+    } catch {
+      // Some DOM implementations reject namespace-escaped selectors; try fallbacks.
+    }
+  }
+  return null;
+}
+
+function queryAll(root: ParentNode, selectors: string[]): Element[] {
+  const matches: Element[] = [];
+  const seen = new Set<Element>();
+
+  for (const selector of selectors) {
+    let elements: NodeListOf<Element>;
+    try {
+      elements = root.querySelectorAll(selector);
+    } catch {
+      continue;
+    }
+
+    elements.forEach((element) => {
+      if (!seen.has(element)) {
+        seen.add(element);
+        matches.push(element);
+      }
+    });
+  }
+
+  return matches;
+}
+
 function extractMetadata(doc: Document): Partial<Book["metadata"]> {
   const metadata: Partial<Book["metadata"]> = {
     title: "Imported from iBooks Author",
@@ -32,16 +67,19 @@ function extractMetadata(doc: Document): Partial<Book["metadata"]> {
     description: "",
   };
 
-  const titleEl = doc.querySelector("sf\\:title sf\\:string, title string");
+  const titleEl = queryFirst(doc, ["sf\\:title sf\\:string", "title string"]);
   if (titleEl) metadata.title = getTextContent(titleEl) || metadata.title;
 
-  const authorEl = doc.querySelector("sf\\:authors sf\\:string, authors string");
+  const authorEl = queryFirst(doc, [
+    "sf\\:authors sf\\:string",
+    "authors string",
+  ]);
   if (authorEl) metadata.author = getTextContent(authorEl);
 
-  const langEl = doc.querySelector("sf\\:language, language");
+  const langEl = queryFirst(doc, ["sf\\:language", "language"]);
   if (langEl) metadata.language = getTextContent(langEl) || "en";
 
-  const copyrightEl = doc.querySelector("sf\\:copyright, copyright");
+  const copyrightEl = queryFirst(doc, ["sf\\:copyright", "copyright"]);
   if (copyrightEl) metadata.description = getTextContent(copyrightEl);
 
   return metadata;
@@ -57,9 +95,12 @@ interface ContentNode {
 
 function extractContentNodes(doc: Document): ContentNode[] {
   const nodes: ContentNode[] = [];
-  const elements = doc.querySelectorAll(
-    "sl\\:content-node, content-node, [sl\\:node-type], [node-type]"
-  );
+  const elements = queryAll(doc, [
+    "sl\\:content-node",
+    "content-node",
+    "[sl\\:node-type]",
+    "[node-type]",
+  ]);
 
   elements.forEach((el) => {
     const nodeType =
@@ -82,18 +123,16 @@ function extractContentNodes(doc: Document): ContentNode[] {
 function paragraphsToHtml(sectionDoc: Document, assetMap: Map<string, string>): string {
   const parts: string[] = [];
 
-  const shapes = sectionDoc.querySelectorAll(
-    "sf\\:drawable-shape, drawable-shape"
-  );
+  const shapes = queryAll(sectionDoc, ["sf\\:drawable-shape", "drawable-shape"]);
 
   shapes.forEach((shape) => {
     const tag = shape.getAttribute("sl:tag") || shape.getAttribute("tag") || "";
-    const paragraphs = shape.querySelectorAll("sf\\:p, p");
+    const paragraphs = queryAll(shape, ["sf\\:p", "p"]);
 
-  paragraphs.forEach((p) => {
+    paragraphs.forEach((p) => {
       const text =
-        getTextContent(p.querySelector("sf\\:ghost-text, ghost-text")) ||
-        getTextContent(p.querySelector("sf\\:title-name, title-name")) ||
+        getTextContent(queryFirst(p, ["sf\\:ghost-text", "ghost-text"])) ||
+        getTextContent(queryFirst(p, ["sf\\:title-name", "title-name"])) ||
         getTextContent(p);
 
       if (!text) return;
@@ -107,9 +146,11 @@ function paragraphsToHtml(sectionDoc: Document, assetMap: Map<string, string>): 
       }
     });
 
-    const mediaEls = shape.querySelectorAll(
-      "sf\\:media sf\\:image-media, media image-media, SFEData"
-    );
+    const mediaEls = queryAll(shape, [
+      "sf\\:media sf\\:image-media",
+      "media image-media",
+      "SFEData",
+    ]);
     mediaEls.forEach((media) => {
       const path =
         media.getAttribute("sf:path") ||
@@ -123,7 +164,12 @@ function paragraphsToHtml(sectionDoc: Document, assetMap: Map<string, string>): 
   });
 
   if (parts.length === 0) {
-    const allText = sectionDoc.querySelectorAll("sf\\:ghost-text, ghost-text, sf\\:p, p");
+    const allText = queryAll(sectionDoc, [
+      "sf\\:ghost-text",
+      "ghost-text",
+      "sf\\:p",
+      "p",
+    ]);
     allText.forEach((el) => {
       const text = getTextContent(el);
       if (text && text.length > 10) {
@@ -257,7 +303,10 @@ export async function importIBAFile(file: File): Promise<IBAImportResult> {
     const sectionDoc = parser.parseFromString(sectionXml, "text/xml");
     const html = paragraphsToHtml(sectionDoc, assetMap);
 
-    const titleFromContent = sectionDoc.querySelector("sf\\:title-name, title-name");
+    const titleFromContent = queryFirst(sectionDoc, [
+      "sf\\:title-name",
+      "title-name",
+    ]);
     const chapterTitle =
       node.title && node.title !== "Untitled"
         ? node.title
