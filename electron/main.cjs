@@ -89,7 +89,7 @@ function setupIpc() {
     return { buffer: data.buffer, filePath };
   });
 
-  ipcMain.handle("openbook:print-to-pdf", async (_event, { html, defaultName }) => {
+  ipcMain.handle("openbook:print-to-pdf", async (_event, { html, defaultName, printOptions }) => {
     const result = await dialog.showSaveDialog(mainWindow, {
       title: "Save PDF",
       defaultPath: defaultName || "book.pdf",
@@ -113,10 +113,17 @@ function setupIpc() {
 
     try {
       await printWin.loadFile(tempPath);
-      const pdfBuffer = await printWin.webContents.printToPDF({
+      const pdfOptions = {
         printBackground: true,
-        marginsType: 0,
-      });
+        preferCSSPageSize: printOptions?.preferCSSPageSize ?? true,
+        displayHeaderFooter: printOptions?.displayHeaderFooter ?? false,
+        footerTemplate:
+          printOptions?.footerTemplate ??
+          '<div style="font-size:9px;width:100%;text-align:center;color:#666;"><span class="pageNumber"></span></div>',
+        marginsType: printOptions?.marginsType ?? 1,
+        ...(printOptions?.pageSize ? { pageSize: printOptions.pageSize } : {}),
+      };
+      const pdfBuffer = await printWin.webContents.printToPDF(pdfOptions);
       await fs.writeFile(filePath, pdfBuffer);
       return filePath;
     } finally {

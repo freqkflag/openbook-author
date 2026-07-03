@@ -1,7 +1,22 @@
-import type { Book } from "@/types/book";
+import type { Book, Chapter } from "@/types/book";
 import { getPreviewHtml, getPreviewMode } from "@/lib/preview";
 import { resolveAssetUrl, resolveHtmlAssets } from "@/lib/asset-store";
 import { GUIDEBOOK_EXPORT_CSS } from "@/lib/epub";
+import { buildPrintBodyThemeCss } from "@/lib/export-themes";
+import {
+  type PrintPdfOptions,
+  buildPrintPresetCss,
+  resolvePrintPreset,
+  toElectronPrintOptions,
+} from "@/lib/print-presets";
+
+export type { PrintPdfOptions, PrintPresetId, PrintMargins } from "@/lib/print-presets";
+export {
+  DEFAULT_PRINT_PDF_OPTIONS,
+  PRINT_PRESETS,
+  listPrintPresets,
+  toElectronPrintOptions,
+} from "@/lib/print-presets";
 
 /** Section page print styles aligned with globals.css print-preview section rules */
 const SECTION_PRINT_CSS = `
@@ -163,19 +178,17 @@ const SECTION_PRINT_CSS = `
 `;
 
 /** Print-oriented CSS aligned with globals.css print-preview rules */
-const PRINT_BASE_CSS = `
-@page { margin: 0.75in; }
+const PRINT_BODY_CSS = `
 * { box-sizing: border-box; }
 body {
   margin: 0;
   padding: 0;
-  font-family: Georgia, "Times New Roman", serif;
   color: #1a1a1a;
   background: #fff;
 }
 .print-page {
   page-break-after: always;
-  padding: 0.5in 0.65in;
+  padding: 0;
 }
 .print-page:last-child { page-break-after: auto; }
 .print-masthead {
@@ -258,17 +271,83 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 9in;
   padding: 0;
 }
 .cover-page img {
   max-width: 100%;
-  max-height: 9in;
+  max-height: 100%;
   object-fit: contain;
 }
 ${GUIDEBOOK_EXPORT_CSS.replace(/\.guidebook/g, ".print-body .guidebook")}
 ${SECTION_PRINT_CSS}
 `;
+
+function buildPrintCss(book: Book, options: PrintPdfOptions = {}): string {
+  const { preset, margins, showPageNumbers } = resolvePrintPreset(options);
+  return `${buildPrintPresetCss(preset, margins, showPageNumbers)}${PRINT_BODY_CSS}${buildPrintBodyThemeCss(book)}`;
+}
+
+function sortedChapters(book: Book): Chapter[] {
+  return [...book.chapters].sort((a, b) => a.order - b.order);
+}
+
+function titledChapters(chapters: Chapter[]): Chapter[] {
+  return chapters.filter((ch) => ch.title.trim());
+}
+
+/** Computes starting page number per chapter for TOC leaders */
+export function computeChapterStartPages(
+  book: Book,
+  options: PrintPdfOptions = {}
+): Map<string, number> {
+  const { includeToc } = resolvePrintPreset(options);
+  const chapters = sortedChapters(book);
+  const titled = titledChapters(chapters);
+  let page = 1;
+  if (book.metadata.coverImage) page += 1;
+  if (includeToc && titled.length > 1) page += 1;
+
+  const starts = new Map<string, number>();
+  for (const chapter of chapters) {
+    if (chapter.title.trim()) {
+      starts.set(chapter.id, page);
+      page += 1;
+    }
+  }
+  return starts;
+}
+
+function buildTocPageHtml(book: Book, options: PrintPdfOptions = {}): string {
+  const { includeToc, showPageNumbers } = resolvePrintPreset(options);
+  const chapters = sortedChapters(book);
+  const titled = titledChapters(chapters);
+  if (!includeToc || titled.length <= 1) return "";
+
+  const pageStarts = computeChapterStartPages(book, options);
+  const footer = showPageNumbers ? '<div class="print-page-footer" aria-hidden="true"></div>' : "";
+  const entries = titled
+    .map((chapter) => {
+      const pageNum = pageStarts.get(chapter.id) ?? "";
+      return `<li class="print-toc-entry">
+  <span class="print-toc-title-text">${escapeHtml(chapter.title.trim())}</span>
+  <span class="print-toc-leader" aria-hidden="true"></span>
+  <span class="print-toc-page-num">${pageNum}</span>
+</li>`;
+    })
+    .join("\n");
+
+  return `<section class="print-page print-toc-page">
+  <nav class="print-toc" aria-label="Table of contents">
+    <h1 class="print-toc-title">Contents</h1>
+    <ol class="print-toc-list">${entries}</ol>
+  </nav>
+  ${footer}
+</section>`;
+}
+
+function pageFooterHtml(showPageNumbers: boolean): string {
+  return showPageNumbers ? '<div class="print-page-footer" aria-hidden="true"></div>' : "";
+}
 
 function escapeHtml(text: string): string {
   return text
@@ -279,50 +358,60 @@ function escapeHtml(text: string): string {
 }
 
 /** Builds a complete print-ready HTML document for PDF export. */
-export function buildPrintDocument(book: Book, assetBlobs?: Map<string, Blob>): string {
+export function buildPrintDocument(
+  book: Book,
+  assetBlobs?: Map<string, Blob>,
+  options: PrintPdfOptions = {}
+): string {
+  const { showPageNumbers } = resolvePrintPreset(options);
   const mode = getPreviewMode(book);
   const kbpClass = mode === "kbp" ? "print-kbp" : "";
   const coverSrc = book.metadata.coverImage
     ? resolveAssetUrl(book, book.metadata.coverImage, assetBlobs)
     : null;
 
-  const chapters = [...book.chapters]
-    .sort((a, b) => a.order - b.order)
-    .map((chapter) => ({
-      html: resolveHtmlAssets(
-        book,
-        getPreviewHtml(book, chapter.content, chapter.title),
-        assetBlobs
-      ),
-    }));
+  const chapters = sortedChapters(book).map((chapter) => ({
+    chapter,
+    html: resolveHtmlAssets(
+      book,
+      getPreviewHtml(book, chapter.content, chapter.title),
+      assetBlobs
+    ),
+  }));
 
+  const footer = pageFooterHtml(showPageNumbers);
   const coverPage = coverSrc
-    ? `<section class="print-page cover-page"><img src="${coverSrc}" alt="${escapeHtml(book.metadata.title)}"/></section>`
+    ? `<section class="print-page cover-page"><img src="${coverSrc}" alt="${escapeHtml(book.metadata.title)}"/>${footer}</section>`
     : "";
 
+  const tocPage = buildTocPageHtml(book, options);
+
   const chapterPages = chapters
-    .map((chapter, idx) => {
+    .map(({ chapter, html }, idx) => {
       const masthead =
-        !coverSrc && idx === 0
+        !coverSrc && idx === 0 && !tocPage
           ? `<header class="print-masthead">
               <p class="print-publisher">${escapeHtml(book.metadata.publisher || "OpenBook Author")}</p>
               <h2 class="print-book-title">${escapeHtml(book.metadata.title)}</h2>
               ${book.metadata.author ? `<p class="print-author">by ${escapeHtml(book.metadata.author)}</p>` : ""}
             </header>`
           : "";
-      return `<section class="print-page ${kbpClass}">${masthead}<div class="print-body">${chapter.html}</div></section>`;
+      return `<section class="print-page ${kbpClass}">${masthead}<div class="print-body">${html}</div>${footer}</section>`;
     })
     .join("\n");
+
+  const printCss = buildPrintCss(book, options);
 
   return `<!DOCTYPE html>
 <html lang="${escapeHtml(book.metadata.language || "en")}">
 <head>
   <meta charset="utf-8"/>
   <title>${escapeHtml(book.metadata.title)}</title>
-  <style>${PRINT_BASE_CSS}</style>
+  <style>${printCss}</style>
 </head>
 <body>
   ${coverPage}
+  ${tocPage}
   ${chapterPages}
 </body>
 </html>`;
@@ -358,11 +447,16 @@ function defaultPdfFilename(book: Book): string {
  * Exports the book as PDF.
  * Electron: native save dialog + printToPDF. Web: browser print dialog.
  */
-export async function downloadPdf(book: Book, assetBlobs?: Map<string, Blob>): Promise<void> {
-  const html = buildPrintDocument(book, assetBlobs);
+export async function downloadPdf(
+  book: Book,
+  assetBlobs?: Map<string, Blob>,
+  options: PrintPdfOptions = {}
+): Promise<void> {
+  const html = buildPrintDocument(book, assetBlobs, options);
 
   if (typeof window !== "undefined" && window.openBook?.printToPdf) {
-    await window.openBook.printToPdf(html, defaultPdfFilename(book));
+    const electronOptions = toElectronPrintOptions(options);
+    await window.openBook.printToPdf(html, defaultPdfFilename(book), electronOptions);
     return;
   }
 

@@ -8,10 +8,11 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **DOCX import** — Dashboard **Import DOCX** for Word/Scrivener migration; mammoth HTML conversion, heading-based chapter split, inline images to `assets/`, import report for tables and footnotes ([#54](https://github.com/freqkflag/openbook-author/issues/54))
 - **Tables, footnotes, and endnotes** — TipTap table kit (3×3 insert, row/column controls); footnote/endnote inline refs with EPUB 3 noteref export, endnotes section, EPUB import reverse transform, and publish readiness checks ([#8](https://github.com/freqkflag/openbook-author/issues/8))
 - **Wave A completion:** axe-core accessibility tests on export HTML fixtures (`a11y-export.test.ts`); EPUB structural validation in publish readiness (`epub-validation.ts`); Wave A status doc
 - **AI + Platform Wave 1:** voice profile and style guide in AI settings (injected into `/api/ai` system prompt); book-aware AI context (TOC + prior chapter excerpts); **Generate section** AI action; relative last-saved badge with sessionStorage crash buffer on localStorage failure; heading hierarchy warnings and missing alt text as export-blocking errors; IBA import fixture test; production Docker + docker-compose (#18–#26)
-- PDF export hardening: unit tests for print HTML, section print CSS (workbook/journal/checklist/reflection/practice-quiz), Electron native print-to-PDF with web print fallback (#7)
+- **Print PDF presets** — US Letter, 6×9 trim, and A5 with margin options, page numbers, and TOC dot leaders; `PrintPdfModal` in export flow; Electron `printToPDF` uses CSS `@page` presets
 - Store metadata fields: ISBN, BISAC, keywords, age rating, series — in Book Properties, EPUB OPF, and KBP manifest (#18)
 - Extended publish readiness: duplicate TOC titles, empty TOC, KBP H1 checks, KBP store metadata warnings (#17)
 - KBP export now runs through the same readiness gate as EPUB/PDF (#17)

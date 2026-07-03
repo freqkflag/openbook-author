@@ -87,14 +87,24 @@ describe("buildPrintDocument", () => {
     expect(body).not.toContain('<header class="print-masthead"');
   });
 
-  it("renders masthead on first chapter when no cover", () => {
+  it("renders masthead on first chapter when no cover and no TOC", () => {
     const html = buildPrintDocument(
       baseBook({
         metadata: {
           ...baseBook().metadata,
           coverImage: undefined,
         },
-      })
+        chapters: [
+          {
+            id: "ch-1",
+            title: "Introduction",
+            content: "<p>First chapter body.</p>",
+            order: 0,
+          },
+        ],
+      }),
+      undefined,
+      { includeToc: false }
     );
     const body = bodyHtml(html);
     expect(body).toContain('<header class="print-masthead"');
@@ -103,12 +113,13 @@ describe("buildPrintDocument", () => {
     expect(body).toContain("Test Press");
     expect(body).toContain("by Jane Author");
     expect(body).not.toContain('class="print-page cover-page"');
+    expect(body).not.toContain("print-toc-page");
   });
 
-  it("renders one print-page section per chapter plus cover", () => {
+  it("renders one print-page section per chapter plus cover and TOC", () => {
     const html = buildPrintDocument(baseBook());
     const pageCount = countMatches(bodyHtml(html), /<section class="print-page/g);
-    expect(pageCount).toBe(3);
+    expect(pageCount).toBe(4);
   });
 
   it("orders chapters by order field", () => {
@@ -173,7 +184,17 @@ describe("buildPrintDocument", () => {
           author: "O'Brien & Co",
           coverImage: undefined,
         },
-      })
+        chapters: [
+          {
+            id: "ch-1",
+            title: "Introduction",
+            content: "<p>First chapter body.</p>",
+            order: 0,
+          },
+        ],
+      }),
+      undefined,
+      { includeToc: false }
     );
     expect(html).toContain("Book &lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt;");
     expect(html).toContain("O'Brien &amp; Co");
@@ -197,6 +218,11 @@ describe("buildPrintDocument", () => {
     expect(html).toContain('class="print-page print-kbp"');
   });
 
+  it("includes US Letter @page size by default", () => {
+    const html = buildPrintDocument(baseBook());
+    expect(html).toContain("size: letter");
+  });
+
   it("includes journal section markup from template", () => {
     const journalContent = getSectionTemplate("journal").content;
     const html = buildPrintDocument(
@@ -205,7 +231,9 @@ describe("buildPrintDocument", () => {
           { id: "ch-j", title: "Journal", content: journalContent, order: 0 },
         ],
         metadata: { ...baseBook().metadata, coverImage: undefined },
-      })
+      }),
+      undefined,
+      { includeToc: false }
     );
     expect(html).toContain('class="section-journal"');
     expect(html).toContain("journal-prompt");

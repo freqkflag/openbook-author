@@ -28,7 +28,10 @@ import SaveStatusBadge from "@/components/SaveStatusBadge";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import BookSearchModal from "@/components/BookSearchModal";
 import PrintPdfModal from "@/components/PrintPdfModal";
-import { downloadEpub } from "@/lib/epub";
+import {
+  downloadEpubWithValidation,
+  formatPostExportValidationMessage,
+} from "@/lib/epub-validation";
 import { downloadPdf, type PrintPdfOptions } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
@@ -54,6 +57,7 @@ export default function EditorPage() {
     setCurrentBook,
     updateMetadata,
     updateKBPSettings,
+    updateExportTheme,
     setFormatProfile,
     addSection,
     addSectionFromTemplate,
@@ -250,9 +254,18 @@ export default function EditorPage() {
     return window.confirm(formatReadinessExportWarning(report));
   }, []);
 
-  const handleExportEpub = useCallback(() => {
+  const handleExportEpub = useCallback(async () => {
     if (!book || !confirmExportIfNeeded(book)) return;
-    downloadEpub(book, getAssetBlobs(book.id));
+    const filename = `${book.metadata.title || "book"}.epub`;
+    try {
+      const result = await downloadEpubWithValidation(book, getAssetBlobs(book.id));
+      const message = formatPostExportValidationMessage(result, filename);
+      if (result.issues.length > 0) {
+        window.alert(message);
+      }
+    } catch {
+      window.alert(`EPUB export failed for "${filename}". Try again or check Publish Readiness.`);
+    }
   }, [book, confirmExportIfNeeded, getAssetBlobs]);
 
   const handleExportPdf = useCallback(
@@ -542,6 +555,7 @@ export default function EditorPage() {
               book={book}
               onUpdate={(metadata) => updateMetadata(book.id, metadata)}
               onUpdateKBP={(settings) => updateKBPSettings(book.id, settings)}
+              onUpdateExportTheme={(settings) => updateExportTheme(book.id, settings)}
               onSetFormatProfile={(profile) => setFormatProfile(book.id, profile)}
               onNavigateToChapter={(chapterId) => {
                 setSelectedChapterId(chapterId);

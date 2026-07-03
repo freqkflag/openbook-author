@@ -7,8 +7,8 @@ contextBridge.exposeInMainWorld("openBook", {
   openDialog: () => ipcRenderer.invoke("openbook:open-dialog"),
   writePackage: (filePath, buffer) => ipcRenderer.invoke("openbook:write-package", filePath, buffer),
   readPackage: (filePath) => ipcRenderer.invoke("openbook:read-package", filePath),
-  printToPdf: (html, defaultName) =>
-    ipcRenderer.invoke("openbook:print-to-pdf", { html, defaultName }),
+  printToPdf: (html, defaultName, printOptions) =>
+    ipcRenderer.invoke("openbook:print-to-pdf", { html, defaultName, printOptions }),
   onMenuOpen: (cb) => {
     ipcRenderer.on("openbook:menu-open", cb);
     return () => ipcRenderer.removeListener("openbook:menu-open", cb);

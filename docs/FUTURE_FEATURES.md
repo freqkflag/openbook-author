@@ -21,7 +21,7 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 13 | More interactive widgets | ⬜ Next (iBooks Author parity) |
 | 14 | Fixed-layout (landscape) editor | ⬜ Next (iBooks Author parity) |
 | 15 | Better IBA import | ⬜ Next (iBooks Author parity) |
-| 16 | PDF export | ✅ Print dialog (web) + native save (Electron); print-ready presets pending |
+| 16 | PDF export | ✅ Print presets (US Letter, 6×9, A5), margins, page numbers, TOC leaders; web print + Electron native save |
 | 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate (Wave A); EPUBCheck / Kindle Previewer hooks remain ([#53](https://github.com/freqkflag/openbook-author/issues/53)) |
 | 18 | Metadata for stores | ✅ ISBN, BISAC, keywords, age rating, series fields |
 | 19 | Book-aware AI context | ✅ TOC + prior chapter excerpts in `/api/ai` (#18) |
@@ -99,7 +99,7 @@ Current import gets text + images only. Next step: preserve nested chapter hiera
 ## Publishing & distribution
 
 **16. PDF export** ✅  
-Print-ready HTML export from the editor. **Web:** browser print dialog (Save as PDF). **Electron:** native save dialog with `printToPDF` — no pop-up required. Workbook, journal, checklist, reflection, and practice-quiz sections include print CSS aligned with preview. Unit tests cover document structure, cover/masthead, asset resolution, and section styles. Print-ready presets (bleed, trim, CMYK) remain planned.
+Print-ready HTML export from the editor. **Web:** browser print dialog (Save as PDF). **Electron:** native save dialog with `printToPDF` — no pop-up required. **Presets:** US Letter, 6×9 trim, and A5 with margin options, page numbers, and TOC dot leaders via `PrintPdfModal`. Workbook, journal, checklist, reflection, and practice-quiz sections include print CSS aligned with preview. Unit tests cover document structure, presets, cover/masthead, asset resolution, and section styles. Bleed/CMYK remain out of scope.
 
 **17. Apple Books / KDP validation** 🟡  
 Publish readiness panel checks empty chapters, broken assets, TOC issues, duplicate TOC titles, KBP H1 checks, and KBP store metadata warnings before export (Wave A). Heading hierarchy and missing alt text are export-blocking errors. Platform-specific validators (EPUBCheck, Kindle Previewer) remain planned — [#53](https://github.com/freqkflag/openbook-author/issues/53).
@@ -161,6 +161,6 @@ See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue c
 | Agent orchestration / merge lanes | [#37](https://github.com/freqkflag/openbook-author/issues/37) | ✅ Shipped — close |
 | PWA / offline mode | [#27](https://github.com/freqkflag/openbook-author/issues/27) | ✅ Shipped — close |
 | Tables, footnotes, endnotes | [#8](https://github.com/freqkflag/openbook-author/issues/8) | ✅ Shipped Wave A.1 — close |
-| Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | Wave A.2 sprint — in progress |
-| DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | Wave A.2 sprint — in progress |
+| Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | ✅ Shipped Wave A.2 — close |
+| DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | ✅ Shipped Wave A.2 — close |
 | EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | Wave A.2 sprint — in progress |
