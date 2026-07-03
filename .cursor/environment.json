@@ -1,8 +1,7 @@
 {
-  "name": "openbook-author",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "install": "bash .cursor/scripts/agent-bootstrap.sh"
+  "install": "npm ci"
 }

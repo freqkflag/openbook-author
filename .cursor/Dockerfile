@@ -13,6 +13,11 @@ RUN apt-get update \
     python-is-python3 \
   && rm -rf /var/lib/apt/lists/*
 
+# Node.js 22 — required for npm ci / Next.js / Vitest in automations
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+  && apt-get install -y --no-install-recommends nodejs \
+  && rm -rf /var/lib/apt/lists/*
+
 # GitHub CLI for read-only issue/PR operations in automations
 RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
     | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
