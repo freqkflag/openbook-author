@@ -1,18 +1,32 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { X } from "lucide-react";
 import type { ChapterSectionType } from "@/types/book";
 import { getSectionsByCategory } from "@/lib/chapter-sections";
+import {
+  loadUserSectionTemplates,
+  type UserSectionTemplate,
+} from "@/lib/section-template-store";
 
 interface AddSectionPickerProps {
   open: boolean;
   onClose: () => void;
   onSelect: (type: ChapterSectionType) => void;
+  onSelectCustomTemplate?: (template: UserSectionTemplate) => void;
 }
 
-export default function AddSectionPicker({ open, onClose, onSelect }: AddSectionPickerProps) {
+export default function AddSectionPicker({
+  open,
+  onClose,
+  onSelect,
+  onSelectCustomTemplate,
+}: AddSectionPickerProps) {
   const panelRef = useRef<HTMLDivElement>(null);
+  const userTemplates = useMemo(
+    () => (open ? loadUserSectionTemplates() : []),
+    [open]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +55,7 @@ export default function AddSectionPicker({ open, onClose, onSelect }: AddSection
             </p>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
           >
@@ -49,6 +64,34 @@ export default function AddSectionPicker({ open, onClose, onSelect }: AddSection
         </div>
 
         <div className="max-h-[60vh] overflow-y-auto p-3 space-y-4">
+          {userTemplates.length > 0 && (
+            <div>
+              <h3 className="text-xs font-medium text-fuchsia-400 uppercase tracking-wider px-2 mb-2">
+                My templates
+              </h3>
+              <div className="grid grid-cols-1 gap-1">
+                {userTemplates.map((template) => (
+                  <button
+                    key={template.id}
+                    type="button"
+                    onClick={() => {
+                      onSelectCustomTemplate?.(template);
+                      onClose();
+                    }}
+                    className="text-left px-3 py-2.5 rounded-xl border border-transparent hover:border-fuchsia-500/30 hover:bg-fuchsia-500/5 transition-all group"
+                  >
+                    <span className="block text-sm font-medium text-white group-hover:text-fuchsia-300">
+                      {template.name}
+                    </span>
+                    <span className="block text-xs text-slate-500 mt-0.5 leading-snug">
+                      {template.description}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
           {categories.map(({ key, label, sections }) => (
             <div key={key}>
               <h3 className="text-xs font-medium text-cyan-400 uppercase tracking-wider px-2 mb-2">
@@ -58,6 +101,7 @@ export default function AddSectionPicker({ open, onClose, onSelect }: AddSection
                 {sections.map((section) => (
                   <button
                     key={section.id}
+                    type="button"
                     onClick={() => {
                       onSelect(section.id);
                       onClose();

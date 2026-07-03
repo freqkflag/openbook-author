@@ -8,10 +8,12 @@ import {
   ChevronDown,
   BookOpen,
   GripVertical,
+  BookmarkPlus,
 } from "lucide-react";
 import type { Chapter, ChapterSectionType } from "@/types/book";
 import { getSectionTemplate } from "@/lib/chapter-sections";
 import AddSectionPicker from "@/components/AddSectionPicker";
+import type { UserSectionTemplate } from "@/lib/section-template-store";
 
 const SECTION_SHORT_LABELS: Partial<Record<ChapterSectionType, string>> = {
   chapter: "Ch",
@@ -30,6 +32,10 @@ const SECTION_SHORT_LABELS: Partial<Record<ChapterSectionType, string>> = {
   glossary: "Gloss",
   interview: "Q&A",
   takeaways: "Keys",
+  resources: "Res",
+  "learning-objectives": "Obj",
+  "practice-quiz": "Quiz",
+  bibliography: "Bib",
 };
 
 interface ChapterSidebarProps {
@@ -37,6 +43,8 @@ interface ChapterSidebarProps {
   activeChapterId: string;
   onSelect: (id: string) => void;
   onAddSection: (type: ChapterSectionType) => void;
+  onAddCustomTemplate?: (template: UserSectionTemplate) => void;
+  onSaveAsTemplate?: (chapter: Chapter) => void;
   onDelete: (id: string) => void;
   onRename: (id: string, title: string) => void;
   onReorder: (id: string, direction: "up" | "down") => void;
@@ -48,6 +56,8 @@ export default function ChapterSidebar({
   activeChapterId,
   onSelect,
   onAddSection,
+  onAddCustomTemplate,
+  onSaveAsTemplate,
   onDelete,
   onRename,
   onReorder,
@@ -58,7 +68,7 @@ export default function ChapterSidebar({
   const [dragIndex, setDragIndex] = useState<number | null>(null);
   const [dropIndex, setDropIndex] = useState<number | null>(null);
 
-  const handleDragStart = (e: DragEvent<HTMLDivElement>, index: number) => {
+  const handleDragStart = (e: DragEvent<HTMLButtonElement>, index: number) => {
     setDragIndex(index);
     e.dataTransfer.effectAllowed = "move";
     e.dataTransfer.setData("text/plain", String(index));
@@ -87,6 +97,8 @@ export default function ChapterSidebar({
     setDropIndex(null);
   };
 
+  const activeChapter = chapters.find((chapter) => chapter.id === activeChapterId);
+
   return (
     <>
       <div className="flex flex-col h-full bg-[#121A2B]/60 border-r border-white/10">
@@ -95,13 +107,26 @@ export default function ChapterSidebar({
             <BookOpen size={16} className="text-cyan-400" />
             Sections
           </div>
-          <button
-            onClick={() => setShowPicker(true)}
-            className="p-1.5 rounded-md text-cyan-400 hover:bg-cyan-500/10 transition-colors"
-            title="Add section"
-          >
-            <Plus size={16} />
-          </button>
+          <div className="flex items-center gap-1">
+            {onSaveAsTemplate && activeChapter && (
+              <button
+                type="button"
+                onClick={() => onSaveAsTemplate(activeChapter)}
+                className="p-1.5 rounded-md text-purple-400 hover:bg-purple-500/10 transition-colors"
+                title="Save current section as template"
+              >
+                <BookmarkPlus size={16} />
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setShowPicker(true)}
+              className="p-1.5 rounded-md text-cyan-400 hover:bg-cyan-500/10 transition-colors"
+              title="Add section"
+            >
+              <Plus size={16} />
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto py-2">
@@ -115,11 +140,8 @@ export default function ChapterSidebar({
             return (
               <div
                 key={chapter.id}
-                draggable={Boolean(onReorderChapters)}
-                onDragStart={(e) => handleDragStart(e, idx)}
                 onDragOver={(e) => handleDragOver(e, idx)}
                 onDrop={(e) => handleDrop(e, idx)}
-                onDragEnd={handleDragEnd}
                 className={`group mx-2 mb-1 rounded-lg transition-all ${
                   activeChapterId === chapter.id
                     ? "bg-cyan-500/10 border border-cyan-500/30"
@@ -129,15 +151,24 @@ export default function ChapterSidebar({
                 }`}
               >
                 <div className="flex items-center gap-1 px-2 py-2">
-                  <span
-                    className={`shrink-0 p-0.5 text-slate-600 ${
-                      onReorderChapters ? "cursor-grab active:cursor-grabbing hover:text-cyan-400" : ""
-                    }`}
-                    title={onReorderChapters ? "Drag to reorder" : undefined}
-                    aria-hidden
-                  >
-                    <GripVertical size={12} />
-                  </span>
+                  {onReorderChapters ? (
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(e) => handleDragStart(e, idx)}
+                      onDragEnd={handleDragEnd}
+                      aria-grabbed={isDragging}
+                      aria-label={`Drag to reorder ${chapter.title}`}
+                      className="shrink-0 p-0.5 text-slate-600 cursor-grab active:cursor-grabbing hover:text-cyan-400"
+                      title="Drag to reorder"
+                    >
+                      <GripVertical size={12} />
+                    </button>
+                  ) : (
+                    <span className="shrink-0 p-0.5 text-slate-600" aria-hidden>
+                      <GripVertical size={12} />
+                    </span>
+                  )}
                   {isSpecial && (
                     <span
                       className="shrink-0 text-[10px] font-medium px-1 py-0.5 rounded bg-purple-500/20 text-purple-300"
@@ -164,6 +195,7 @@ export default function ChapterSidebar({
                     />
                   ) : (
                     <button
+                      type="button"
                       onClick={() => onSelect(chapter.id)}
                       onDoubleClick={() => setEditingId(chapter.id)}
                       className="flex-1 text-left text-sm text-slate-300 truncate"
@@ -173,6 +205,7 @@ export default function ChapterSidebar({
                   )}
                   <div className="flex items-center opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
+                      type="button"
                       onClick={() => onReorder(chapter.id, "up")}
                       disabled={idx === 0}
                       className="p-0.5 text-slate-500 hover:text-cyan-400 disabled:opacity-30"
@@ -181,6 +214,7 @@ export default function ChapterSidebar({
                       <ChevronUp size={12} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => onReorder(chapter.id, "down")}
                       disabled={idx === chapters.length - 1}
                       className="p-0.5 text-slate-500 hover:text-cyan-400 disabled:opacity-30"
@@ -189,6 +223,7 @@ export default function ChapterSidebar({
                       <ChevronDown size={12} />
                     </button>
                     <button
+                      type="button"
                       onClick={() => {
                         if (chapters.length > 1 && confirm("Delete this section?")) {
                           onDelete(chapter.id);
@@ -211,6 +246,7 @@ export default function ChapterSidebar({
         open={showPicker}
         onClose={() => setShowPicker(false)}
         onSelect={onAddSection}
+        onSelectCustomTemplate={onAddCustomTemplate}
       />
     </>
   );

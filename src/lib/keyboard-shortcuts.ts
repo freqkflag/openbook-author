@@ -22,6 +22,8 @@ export const FORMATTING_SHORTCUTS: ShortcutEntry[] = [
 export const APP_SHORTCUTS: ShortcutEntry[] = [
   { keys: "⌘/Ctrl + S", description: "Save book" },
   { keys: "⌘/Ctrl + P", description: "Toggle chapter preview" },
+  { keys: "⌘/Ctrl + Shift + P", description: "Toggle full-book preview" },
+  { keys: "⌘/Ctrl + Shift + F", description: "Find & replace across book" },
   { keys: "⌘/Ctrl + Alt + ↑", description: "Previous section" },
   { keys: "⌘/Ctrl + Alt + ↓", description: "Next section" },
   { keys: "⌘/Ctrl + /", description: "Show keyboard shortcuts" },

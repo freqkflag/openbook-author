@@ -8,6 +8,12 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- Keyboard shortcuts cheat sheet documents shipped bindings; `Cmd+Shift+P` toggles full-book preview (#7)
+- Grip-handle chapter reorder in sidebar with `aria-grabbed` (#10)
+- Section templates: Resources, Learning Objectives, Practice Quiz, Bibliography (#12)
+- Book-wide find/replace modal (`Cmd+Shift+F`) with `book-search` utilities (#9)
+- Custom section templates saved to localStorage; **My templates** in Add Section picker (#11)
+- Browser spellcheck on editor using book language metadata; AI **Clarity pass** label (#8)
 - Copyright, dedication, and title page front matter sections with EPUB/KBP export support (#5)
 - EPUB import from dashboard (metadata, spine chapters, embedded images)
 - EPUB widget reverse-transform on import (popups, galleries, guidebook blocks)
@@ -19,6 +25,10 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Trail Reference** sample chapter in the Guidebook template — demonstrates trail stop, workshop, and cheat sheet blocks side by side
 - `serializeGuidebookBlockToHtml()` helper for generating TipTap-compatible `<aside data-guidebook="…">` markup
 - Developer reference: [docs/guidebook-blocks.md](docs/guidebook-blocks.md)
+
+### Planned
+
+- Tables, footnotes, and endnotes (TipTap extensions) — deferred from this wave (#6)
 
 ### Changed
 

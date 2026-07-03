@@ -26,6 +26,7 @@ import MetadataPanel from "@/components/MetadataPanel";
 import AssetPanel from "@/components/AssetPanel";
 import SaveStatusBadge from "@/components/SaveStatusBadge";
 import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
+import BookSearchModal from "@/components/BookSearchModal";
 import { downloadEpub } from "@/lib/epub";
 import { downloadPdf } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
@@ -35,6 +36,8 @@ import {
   assessPublishReadiness,
   formatReadinessExportWarning,
 } from "@/lib/publish-readiness";
+import { saveUserSectionTemplate } from "@/lib/section-template-store";
+import type { UserSectionTemplate } from "@/lib/section-template-store";
 
 type ViewMode = "edit" | "preview" | "full";
 
@@ -52,6 +55,7 @@ export default function EditorPage() {
     updateKBPSettings,
     setFormatProfile,
     addSection,
+    addSectionFromTemplate,
     updateChapter,
     deleteChapter,
     reorderChapter,
@@ -69,6 +73,7 @@ export default function EditorPage() {
   const [showProperties, setShowProperties] = useState(false);
   const [showAssets, setShowAssets] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [showSearch, setShowSearch] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -103,10 +108,23 @@ export default function EditorPage() {
         return;
       }
 
+      if (mod && e.key.toLowerCase() === "p" && e.shiftKey) {
+        e.preventDefault();
+        setViewMode((mode) => (mode === "full" ? "edit" : "full"));
+        setShowAI(false);
+        return;
+      }
+
       if (mod && e.key.toLowerCase() === "p" && !e.shiftKey) {
         e.preventDefault();
         setViewMode((mode) => (mode === "edit" ? "preview" : "edit"));
         setShowAI(false);
+        return;
+      }
+
+      if (mod && e.key.toLowerCase() === "f" && e.shiftKey) {
+        e.preventDefault();
+        setShowSearch(true);
         return;
       }
 
@@ -164,6 +182,45 @@ export default function EditorPage() {
       updateChapter(book.id, activeChapterId, { content: html });
     },
     [book, activeChapterId, updateChapter]
+  );
+
+  const handleSaveAsTemplate = useCallback((chapter: NonNullable<typeof activeChapter>) => {
+    const name = window.prompt("Template name", chapter.title);
+    if (!name?.trim()) return;
+
+    saveUserSectionTemplate({
+      name: name.trim(),
+      description: `Saved from “${chapter.title}”`,
+      defaultTitle: chapter.title,
+      content: chapter.content,
+      sectionType: chapter.sectionType ?? "chapter",
+    });
+    window.alert("Section saved to My templates.");
+  }, []);
+
+  const handleAddCustomTemplate = useCallback(
+    (template: UserSectionTemplate) => {
+      if (!book) return;
+      const newId = addSectionFromTemplate(
+        book.id,
+        template.defaultTitle,
+        template.content,
+        template.sectionType
+      );
+      setSelectedChapterId(newId);
+      setViewMode("edit");
+    },
+    [book, addSectionFromTemplate]
+  );
+
+  const handleApplySearchReplacements = useCallback(
+    (updates: { chapterId: string; content: string }[]) => {
+      if (!book) return;
+      for (const update of updates) {
+        updateChapter(book.id, update.chapterId, { content: update.content });
+      }
+    },
+    [book, updateChapter]
   );
 
   const handleAIApply = (html: string, mode: "replace" | "append") => {
@@ -291,7 +348,7 @@ export default function EditorPage() {
                   ? "bg-purple-500/20 text-purple-300"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Full book preview"
+              title="Full book preview (⌘⇧P)"
             >
               <BookOpen size={14} />
               Full
@@ -396,6 +453,8 @@ export default function EditorPage() {
               setSelectedChapterId(newId);
               setViewMode("edit");
             }}
+            onAddCustomTemplate={handleAddCustomTemplate}
+            onSaveAsTemplate={handleSaveAsTemplate}
             onDelete={(id) => {
               deleteChapter(book.id, id);
               if (activeChapterId === id && book.chapters.length > 1) {
@@ -489,6 +548,17 @@ export default function EditorPage() {
         )}
       </div>
       <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
+      <BookSearchModal
+        open={showSearch}
+        chapters={book.chapters}
+        activeChapterId={activeChapterId}
+        onClose={() => setShowSearch(false)}
+        onSelectChapter={(chapterId) => {
+          setSelectedChapterId(chapterId);
+          setViewMode("edit");
+        }}
+        onApplyReplacements={handleApplySearchReplacements}
+      />
     </div>
   );
 }

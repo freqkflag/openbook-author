@@ -234,6 +234,8 @@ export default function RichEditor({
       attributes: {
         class:
           "prose prose-invert max-w-none min-h-[400px] focus:outline-none px-6 py-4 text-slate-200",
+        spellcheck: "true",
+        lang: book.metadata.language || "en",
       },
     },
   });

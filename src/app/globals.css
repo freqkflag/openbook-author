@@ -620,6 +620,65 @@ body::before {
   border: 1px solid #ddd;
 }
 
+.print-preview-body .section-resources,
+.ProseMirror .section-resources {
+  padding: 1.25em;
+  border: 1px solid #ddd;
+  background: #fafafa;
+}
+.print-preview-body .section-resources ul,
+.ProseMirror .section-resources ul {
+  margin: 0.75em 0;
+}
+
+.print-preview-body .section-learning-objectives,
+.ProseMirror .section-learning-objectives {
+  padding: 1.25em;
+  border-left: 4px solid #4d7dff;
+  background: #f8faff;
+}
+.print-preview-body .section-learning-objectives ol,
+.ProseMirror .section-learning-objectives ol {
+  margin: 0.75em 0;
+}
+
+.print-preview-body .section-practice-quiz,
+.ProseMirror .section-practice-quiz {
+  padding: 1.25em;
+  border: 2px solid #333;
+  background: #fff;
+}
+.print-preview-body .section-practice-quiz .quiz-question,
+.ProseMirror .section-practice-quiz .quiz-question {
+  margin: 1.25em 0;
+  padding-bottom: 1em;
+  border-bottom: 1px dotted #ccc;
+}
+.print-preview-body .quiz-answer-line,
+.ProseMirror .quiz-answer-line {
+  border-bottom: 1px solid #999;
+  min-height: 1.4em;
+  margin-top: 0.5em;
+  color: #666;
+}
+
+.print-preview-body .section-bibliography,
+.ProseMirror .section-bibliography {
+  padding: 1.25em;
+  font-size: 0.95em;
+}
+.print-preview-body .bibliography-entries,
+.ProseMirror .bibliography-entries {
+  list-style: none;
+  padding-left: 0;
+}
+.print-preview-body .bibliography-entries li,
+.ProseMirror .bibliography-entries li {
+  margin-bottom: 0.75em;
+  padding-left: 1.5em;
+  text-indent: -1.5em;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar {
   width: 6px;

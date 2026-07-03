@@ -34,7 +34,11 @@ export type ChapterSectionType =
   | "timeline"
   | "glossary"
   | "interview"
-  | "takeaways";
+  | "takeaways"
+  | "resources"
+  | "learning-objectives"
+  | "practice-quiz"
+  | "bibliography";
 
 export interface Chapter {
   id: string;

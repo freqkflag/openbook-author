@@ -31,4 +31,19 @@ describe("chapter section templates", () => {
     expect(categories[0]?.sections.some((s) => s.id === "copyright")).toBe(true);
     expect(categories[0]?.sections.some((s) => s.id === "dedication")).toBe(true);
   });
+
+  it("includes new reference and activity section templates", () => {
+    const ids = SECTION_TEMPLATES.map((t) => t.id);
+    expect(ids).toContain("resources");
+    expect(ids).toContain("learning-objectives");
+    expect(ids).toContain("practice-quiz");
+    expect(ids).toContain("bibliography");
+
+    expect(getSectionTemplate("resources").content).toContain("section-resources");
+    expect(getSectionTemplate("learning-objectives").content).toContain(
+      "section-learning-objectives"
+    );
+    expect(getSectionTemplate("practice-quiz").content).toContain("section-practice-quiz");
+    expect(getSectionTemplate("bibliography").content).toContain("section-bibliography");
+  });
 });

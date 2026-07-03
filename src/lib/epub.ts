@@ -315,6 +315,10 @@ export function getSectionEpubType(sectionType?: ChapterSectionType): string {
     case "glossary":
     case "interview":
     case "takeaways":
+    case "resources":
+    case "learning-objectives":
+    case "practice-quiz":
+    case "bibliography":
       return "chapter";
     default: {
       const _exhaustive: never = sectionType;

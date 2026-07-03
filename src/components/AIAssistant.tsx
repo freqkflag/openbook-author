@@ -25,7 +25,7 @@ interface AIAssistantProps {
 
 const ACTIONS: { id: AIAction; label: string; icon: React.ReactNode; description: string }[] = [
   { id: "continue", label: "Continue", icon: <Sparkles size={14} />, description: "Keep writing from here" },
-  { id: "improve", label: "Improve", icon: <Wand2 size={14} />, description: "Polish clarity & flow" },
+  { id: "improve", label: "Clarity pass", icon: <Wand2 size={14} />, description: "Polish clarity & flow" },
   { id: "expand", label: "Expand", icon: <Expand size={14} />, description: "Add more detail" },
   { id: "rewrite", label: "Rewrite", icon: <RefreshCw size={14} />, description: "Fresh take, same meaning" },
   { id: "summarize", label: "Summarize", icon: <FileText size={14} />, description: "Condense content" },

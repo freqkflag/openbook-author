@@ -279,6 +279,86 @@ export const SECTION_TEMPLATES: SectionTemplate[] = [
 </ul>
 </div>`,
   },
+  {
+    id: "resources",
+    name: "Resources",
+    description: "Curated links, tools, and further reading.",
+    category: "reference",
+    defaultTitle: "Resources",
+    content: `<div class="section-resources">
+<h2>Resources</h2>
+<p>Recommended tools, links, and references for going deeper:</p>
+<ul>
+<li><strong>Resource 1:</strong> <a href="#">Title or link</a> — brief description</li>
+<li><strong>Resource 2:</strong> <a href="#">Title or link</a> — brief description</li>
+<li><strong>Resource 3:</strong> <a href="#">Title or link</a> — brief description</li>
+</ul>
+<h3>Downloads &amp; Templates</h3>
+<ul>
+<li>☐ Worksheet or checklist (add link)</li>
+<li>☐ Companion file or template (add link)</li>
+</ul>
+</div>`,
+  },
+  {
+    id: "learning-objectives",
+    name: "Learning Objectives",
+    description: "What readers should know or be able to do after this section.",
+    category: "activity",
+    defaultTitle: "Learning Objectives",
+    content: `<div class="section-learning-objectives">
+<h2>Learning Objectives</h2>
+<p>After completing this section, you will be able to:</p>
+<ol>
+<li>Describe or explain the first key concept</li>
+<li>Apply the second skill or technique in practice</li>
+<li>Evaluate or compare the third idea using examples</li>
+</ol>
+<h3>Prerequisites</h3>
+<ul>
+<li>Prior knowledge or section readers should have covered</li>
+</ul>
+</div>`,
+  },
+  {
+    id: "practice-quiz",
+    name: "Practice Quiz",
+    description: "Self-check questions with answer space.",
+    category: "activity",
+    defaultTitle: "Practice Quiz",
+    content: `<div class="section-practice-quiz">
+<h2>Practice Quiz</h2>
+<p>Test your understanding. Answers are for self-study — check your work before moving on.</p>
+<div class="quiz-question">
+<p><strong>1.</strong> What is the main idea of this section?</p>
+<p class="quiz-answer-line">Answer: _______________________________________________</p>
+</div>
+<div class="quiz-question">
+<p><strong>2.</strong> How would you apply this in a real situation?</p>
+<p class="quiz-answer-line">Answer: _______________________________________________</p>
+</div>
+<div class="quiz-question">
+<p><strong>3.</strong> What question do you still have?</p>
+<p class="quiz-answer-line">Answer: _______________________________________________</p>
+</div>
+</div>`,
+  },
+  {
+    id: "bibliography",
+    name: "Bibliography",
+    description: "Citations and works cited.",
+    category: "reference",
+    defaultTitle: "Bibliography",
+    content: `<div class="section-bibliography">
+<h2>Bibliography</h2>
+<p>Sources referenced in this book:</p>
+<ul class="bibliography-entries">
+<li>Author, A. (Year). <em>Title of work</em>. Publisher.</li>
+<li>Author, B. (Year). "Article title." <em>Journal Name</em>, volume(issue), pages.</li>
+<li>Organization. (Year). <em>Report or resource title</em>. Retrieved from URL</li>
+</ul>
+</div>`,
+  },
 ];
 
 const DEFAULT_SECTION_TEMPLATE = SECTION_TEMPLATES.find((t) => t.id === "chapter")!;

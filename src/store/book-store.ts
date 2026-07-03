@@ -48,6 +48,12 @@ interface BookStore {
   setFormatProfile: (id: string, profile: Book["formatProfile"]) => void;
   addChapter: (bookId: string, title?: string) => string;
   addSection: (bookId: string, sectionType: ChapterSectionType) => string;
+  addSectionFromTemplate: (
+    bookId: string,
+    title: string,
+    content: string,
+    sectionType?: ChapterSectionType
+  ) => string;
   updateChapter: (bookId: string, chapterId: string, updates: Partial<Chapter>) => void;
   deleteChapter: (bookId: string, chapterId: string) => void;
   reorderChapter: (bookId: string, chapterId: string, direction: "up" | "down") => void;
@@ -256,6 +262,25 @@ export const useBookStore = create<BookStore>((set, get) => {
             id: newId,
             title: tpl.defaultTitle,
             content: tpl.content,
+            order: b.chapters.length,
+            sectionType,
+          },
+        ],
+        updatedAt: new Date().toISOString(),
+      }));
+      return newId;
+    },
+
+    addSectionFromTemplate: (bookId, title, content, sectionType = "chapter") => {
+      const newId = uuidv4();
+      touchBook(bookId, (b) => ({
+        ...b,
+        chapters: [
+          ...b.chapters,
+          {
+            id: newId,
+            title,
+            content,
             order: b.chapters.length,
             sectionType,
           },
