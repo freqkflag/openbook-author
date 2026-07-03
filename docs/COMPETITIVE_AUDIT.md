@@ -11,7 +11,7 @@
 
 - **OpenBook Author is a credible FOSS reflowable book studio** — TipTap editing, 19 section types, EPUB 3 + KBP export, publish readiness, `.openbook` packages, Electron macOS app, and a multi-provider AI panel with book-aware context already ship. It competes with Atticus/Vellum on *formatting intent*, not polish.
 - **Biggest daily-author gaps** are professional print output (bleed/trim themes), import breadth (DOCX), PWA offline, and store validation (Kindle Previewer / EPUBCheck hooks) — footnotes/tables shipped in Wave A.1 ([#8](https://github.com/freqkflag/openbook-author/issues/8)).
-- **iBooks Author parity is partial:** popups + galleries exist; fixed-layout canvas, media widgets, quizzes, and deep IBA semantics do not. Landscape template sets EPUB `pre-paginated` metadata but the editor remains reflowable.
+- **iBooks Author parity is much closer:** popups, galleries, media/quiz widgets, and fixed-layout canvas MVP ship (Wave C); IBA import depth and hierarchical TOC ship (Wave B). Remaining gaps: interactive image hotspots, Keynote/Pages import, and production-grade multi-user collab.
 - **Differentiation moat is FOSS + local-first + AI:** Ollama support, open `.openbook` format, IBA import, guidebook/KBP blocks, and Docker self-host are rare in paid competitors. Lean into these rather than chasing Atticus cloud sync.
 - **Bleeding-edge pilots need ADRs first:** realtime collab (Yjs), plugin marketplace, cloud sync, and git-for-books all change storage, security, and export contracts — ADR-0002 covers TipTap widgets, not a marketplace.
 
@@ -83,7 +83,21 @@
 
 ### Explicitly not shipped
 
-Do not re-list these as gaps without noting status: PWA/offline, fixed-layout canvas, media widgets, quiz widgets, hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49) — ✅ shipped Wave B), platform validators (EPUBCheck CLI), print bleed/CMYK, DOCX/MOBI, collaboration, cloud sync, markdown mode, plugin marketplace, audiobook export, git-for-books, multi-step AI agents/RAG.
+Do not re-list these as gaps without noting Wave status:
+
+| Still out of scope | Notes |
+|--------------------|-------|
+| Print bleed / CMYK | Print presets ship; pro print color/bleed does not |
+| DOCX **export** | DOCX **import** ✅ Wave A.2 ([#54](https://github.com/freqkflag/openbook-author/issues/54)) |
+| MOBI export | KDP accepts EPUB; MOBI fixed-layout deprecated |
+| Interactive image hotspots | IBA parity gap |
+| Signed plugin **marketplace** | Plugin SDK **preview** ✅ Wave C ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)) |
+| Production collab backend | Yjs **prototype** ✅ Wave C; no hosted multi-user server |
+| Full EPUBCheck CLI | Structural validation in readiness panel ✅ Wave A.2; Java CLI remains optional local step |
+
+**Shipped Wave B** ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)): hierarchical TOC/parts ([#49](https://github.com/freqkflag/openbook-author/issues/49)), IBA import depth ([#19](https://github.com/freqkflag/openbook-author/issues/19)), git-for-books folder mode + Git panel ([#59](https://github.com/freqkflag/openbook-author/issues/59)), AI RAG consistency pass ([#60](https://github.com/freqkflag/openbook-author/issues/60)), Ollama presets + offline badge ([#61](https://github.com/freqkflag/openbook-author/issues/61)), EPUB 3.3 + a11y metadata ([#62](https://github.com/freqkflag/openbook-author/issues/62)), self-hosted backup WebDAV/S3 ([#63](https://github.com/freqkflag/openbook-author/issues/63)).
+
+**Shipped Wave C** ([c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32)): fixed-layout canvas MVP ([#20](https://github.com/freqkflag/openbook-author/issues/20)), media + quiz widgets ([#17](https://github.com/freqkflag/openbook-author/issues/17), [#15](https://github.com/freqkflag/openbook-author/issues/15)), Typst PDF pilot (Electron), Yjs collab prototype ([#22](https://github.com/freqkflag/openbook-author/issues/22)), plugin SDK preview ([#65](https://github.com/freqkflag/openbook-author/issues/65)), audiobook manifest export ([#66](https://github.com/freqkflag/openbook-author/issues/66)), markdown authoring mode ([#67](https://github.com/freqkflag/openbook-author/issues/67)).
 
 ---
 
@@ -185,13 +199,13 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | Tables | Pressbooks, textbooks | ✅ Shipped (Wave A.1) | — | — | Core |
 | DOCX import/export | Atticus, Ulysses, KC | Import ✅ / export ❌ | **P1** | L | High |
 | Store validation (KDP/Apple) | KC, Vellum ecosystem | 🟡 Readiness panel only | **P1** | M | High |
-| Fixed-layout editor | IBA, Canva, KC | 🟡 Metadata flag only | **P1** | XL | Medium (photo/comic niche) |
-| Media widgets (audio/video) | IBA, Pressbooks | ❌ | **P1** | L | Medium |
-| Quiz/review widgets | IBA, Pressbooks H5P | 🟡 practice-quiz section only | **P1** | L | Medium |
+| Fixed-layout editor | IBA, Canva, KC | ✅ Canvas MVP (Wave C); reflowable default | — | — | Medium (photo/comic niche) |
+| Media widgets (audio/video) | IBA, Pressbooks | ✅ `MediaWidget` + EPUB export (Wave C) | — | — | Medium |
+| Quiz/review widgets | IBA, Pressbooks H5P | ✅ `QuizWidget` + practice-quiz section (Wave C) | — | — | Medium |
 | Interactive image hotspots | IBA | ❌ | **P2** | L | Medium |
-| More IBA import fidelity | — | 🟡 Text+images | **P1** | L | **High (FOSS moat)** |
-| Real-time collaboration | Notion, GDocs, Pressbooks | ❌ | **P2** | XL | Medium — **ADR** |
-| Cloud sync | Atticus, Ulysses | ❌ | **P2** | XL | Medium — **ADR** |
+| More IBA import fidelity | — | ✅ Hierarchy + diagnostics (Wave B) | — | — | **High (FOSS moat)** |
+| Real-time collaboration | Notion, GDocs, Pressbooks | 🟡 Yjs prototype (Wave C); no hosted backend | **P2** | XL | Medium — **ADR** |
+| Cloud sync | Atticus, Ulysses | 🟡 Opt-in WebDAV/S3 backup (Wave B) | **P2** | L | Medium — **ADR** |
 | Writing goals / stats | Atticus, Ulysses | ❌ | **P2** | S | Medium |
 | Binder/corkboard | Scrivener | ❌ | **P2** | L | Low |
 | Hierarchical TOC | Scrivener, textbooks | ✅ Parts + nested EPUB/KBP nav ([#49](https://github.com/freqkflag/openbook-author/issues/49)) | — | — | High |
@@ -201,14 +215,14 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | KBP / guidebook blocks | None | ✅ | — | — | **Differentiator** |
 | Publish readiness gate | Partial (validators) | ✅ | — | — | **Differentiator** |
 | Open project format | Proprietary everywhere | ✅ `.openbook` | — | — | **Differentiator** |
-| PWA / offline | Atticus (partial) | ❌ Planned | **P1** | M | High |
+| PWA / offline | Atticus (partial) | ✅ Service worker + offline indicator (Wave A.2) | — | — | High |
 | Accessibility CI (axe) | Pressbooks (manual+) | 🟡 Export checks only | **P1** | S | High |
-| EPUB 3.3 compliance | Industry moving | 🟡 EPUB 3.0 package | **P2** | S | Medium |
-| Audiobook export | Emerging | ❌ | **P3** | L | Low |
-| WASM typst/pandoc PDF | Cambric, etc. | ❌ | **P2** | L | Medium |
-| AI agents / RAG | Emerging | 🟡 Single-shot API | **P2** | L | **High (FOSS moat)** |
-| Plugin marketplace | None in category | 🟡 TipTap extensions | **P3** | XL | Medium — **ADR** |
-| Git-for-books | None | 🟡 Format is git-friendly | **P2** | M | **High (FOSS moat)** |
+| EPUB 3.3 compliance | Industry moving | ✅ Metadata + a11y props (Wave B) | — | — | Medium |
+| Audiobook export | Emerging | ✅ W3C LPF manifest (Wave C) | — | — | Low |
+| WASM typst/pandoc PDF | Cambric, etc. | ✅ Typst pilot — Electron CLI (Wave C) | — | — | Medium |
+| AI agents / RAG | Emerging | ✅ Chapter RAG + consistency pass (Wave B) | — | — | **High (FOSS moat)** |
+| Plugin marketplace | None in category | 🟡 SDK preview + sample widget (Wave C) | **P3** | XL | Medium — **ADR** |
+| Git-for-books | None | ✅ Folder mode + Git panel (Wave B) | — | — | **High (FOSS moat)** |
 | POD API integration | Lulu, KDP dashboards | ❌ | **P3** | L | Low |
 | MOBI export | Legacy | ❌ | **P3** | S | Low (KDP deprecated MOBI FL) |
 
@@ -267,10 +281,10 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 3. **Print PDF presets (trim, margins, page numbers)** — completes the “publish ready” story beyond browser print. *(Wave A.2 sprint)*
 4. **PWA offline mode** — matches local-first brand; roadmap item #23. → [#27](https://github.com/freqkflag/openbook-author/issues/27) *(Wave A.2 sprint)*
 5. **EPUBCheck + Kindle Previewer hooks in publish readiness** — turns partial validation into trust. → [#56](https://github.com/freqkflag/openbook-author/issues/56) *(Wave A.2 sprint)*
-6. **Hierarchical TOC / parts ([#49](https://github.com/freqkflag/openbook-author/issues/49))** — Scrivener/textbook expectation.
-7. **Deepen IBA import with diagnostics** — unique FOSS moat no competitor matches.
-8. **AI RAG consistency pass (local-first, Ollama-friendly)** — differentiation beyond single-shot prompts.
-9. **ADR before collab/plugins/cloud** — avoid painting into proprietary corners; `.openbook` stays canonical.
+6. ~~**Hierarchical TOC / parts ([#49](https://github.com/freqkflag/openbook-author/issues/49))**~~ — ✅ shipped Wave B
+7. ~~**Deepen IBA import with diagnostics**~~ — ✅ shipped Wave B ([#19](https://github.com/freqkflag/openbook-author/issues/19))
+8. ~~**AI RAG consistency pass (local-first, Ollama-friendly)**~~ — ✅ shipped Wave B ([#60](https://github.com/freqkflag/openbook-author/issues/60))
+9. **ADR before production collab / signed marketplace** — Wave C pilots ship; scale-up needs ADR-0008/0009 follow-through; `.openbook` stays canonical.
 10. ~~Footnotes/endnotes + tables~~ — ✅ shipped Wave A.1 ([#8](https://github.com/freqkflag/openbook-author/issues/8) · close)
 
 ---
@@ -283,8 +297,8 @@ Do not re-list these as gaps without noting status: PWA/offline, fixed-layout ca
 | **Plugin/extension marketplace** | Sandboxing, versioning, EPUB transform contract (extends ADR-0002) |
 | **Cloud sync / self-hosted backend** | Identity, encryption, offline merge, FOSS hosting story |
 | **Fixed-layout canvas** | New editor paradigm, export pipeline split (extends ADR-0003) |
-| **Git-native project mode** | Dual storage model vs localStorage cache + `.openbook` — [ADR-0005](adr/ADR-0005-git-native-project-mode.md) (Proposed) |
-| **Self-hosted backup / sync** | Credentials, conflict model, opt-in FOSS hosting — [ADR-0006](adr/ADR-0006-self-hosted-sync.md) (Proposed) |
+| **Git-native project mode** | Dual storage model vs localStorage cache + `.openbook` — [ADR-0005](adr/ADR-0005-git-native-project-mode.md) (Accepted) |
+| **Self-hosted backup / sync** | Credentials, conflict model, opt-in FOSS hosting — [ADR-0006](adr/ADR-0006-self-hosted-sync.md) (Accepted) |
 
 Existing ADRs: guidebook blocks (0001), widgets (0002), EPUB pipeline (0003), agent handoff (0004), git-native mode (0005), self-hosted sync (0006).
 
@@ -312,19 +326,19 @@ Existing ADRs: guidebook blocks (0001), widgets (0002), EPUB pipeline (0003), ag
 5. `feat: Print PDF presets — trim sizes, margins, and page numbers (Electron + web)`
 6. `feat: PWA service worker and offline editor shell` → [#27](https://github.com/freqkflag/openbook-author/issues/27)
 7. `feat: Integrate EPUBCheck and Kindle Previewer into publish readiness flow` → [#56](https://github.com/freqkflag/openbook-author/issues/56)
-8. `feat: Hierarchical TOC — parts, volumes, and nested nav (#49)` → [#49](https://github.com/freqkflag/openbook-author/issues/49)
-9. `feat: IBA import diagnostics and nested chapter hierarchy preservation` → [#19](https://github.com/freqkflag/openbook-author/issues/19)
-10. `feat: AI RAG consistency pass with local chapter embeddings (Ollama)`
-11. `adr: Realtime collaboration architecture (Yjs + TipTap)`
-12. `adr: Plugin marketplace and third-party widget SDK`
-13. `feat: Media embed widgets — audio and video with EPUB 3 export` → [#17](https://github.com/freqkflag/openbook-author/issues/17)
-14. `feat: Interactive quiz widget for EPUB 3 (iBooks parity)` → [#15](https://github.com/freqkflag/openbook-author/issues/15)
-15. `feat: Fixed-layout canvas editor MVP for landscape template` → [#20](https://github.com/freqkflag/openbook-author/issues/20)
-16. `feat: Git-friendly project folder mode with save-to-directory`
+8. `feat: Hierarchical TOC — parts, volumes, and nested nav (#49)` → ✅ shipped Wave B
+9. `feat: IBA import diagnostics and nested chapter hierarchy preservation` → ✅ shipped Wave B ([#19](https://github.com/freqkflag/openbook-author/issues/19))
+10. `feat: AI RAG consistency pass with local chapter embeddings (Ollama)` → ✅ shipped Wave B ([#60](https://github.com/freqkflag/openbook-author/issues/60))
+11. `adr: Realtime collaboration architecture (Yjs + TipTap)` → ✅ ADR-0008 + Wave C prototype
+12. `adr: Plugin marketplace and third-party widget SDK` → ✅ ADR-0009 + Wave C SDK preview
+13. `feat: Media embed widgets — audio and video with EPUB 3 export` → ✅ shipped Wave C ([#17](https://github.com/freqkflag/openbook-author/issues/17))
+14. `feat: Interactive quiz widget for EPUB 3 (iBooks parity)` → ✅ shipped Wave C ([#15](https://github.com/freqkflag/openbook-author/issues/15))
+15. `feat: Fixed-layout canvas editor MVP for landscape template` → ✅ shipped Wave C ([#20](https://github.com/freqkflag/openbook-author/issues/20))
+16. `feat: Git-friendly project folder mode with save-to-directory` → ✅ shipped Wave B ([#59](https://github.com/freqkflag/openbook-author/issues/59))
 17. `chore: Add axe-core accessibility checks to CI pipeline`
-18. `feat: EPUB 3.3 package metadata and accessibility properties upgrade`
-19. `feat: WASM Typst PDF export pilot (Electron)`
-20. `feat: W3C Audiobook manifest export from chapter audio/TTS`
+18. `feat: EPUB 3.3 package metadata and accessibility properties upgrade` → ✅ shipped Wave B ([#62](https://github.com/freqkflag/openbook-author/issues/62))
+19. `feat: WASM Typst PDF export pilot (Electron)` → ✅ shipped Wave C ([#64](https://github.com/freqkflag/openbook-author/issues/64))
+20. `feat: W3C Audiobook manifest export from chapter audio/TTS` → ✅ shipped Wave C ([#66](https://github.com/freqkflag/openbook-author/issues/66))
 
 ---
 
@@ -365,8 +379,8 @@ New widgets follow the pattern: TipTap extension → editor toolbar insert → H
 Roadmap honesty (`docs/FUTURE_FEATURES.md`):
 
 ```82:95:docs/FUTURE_FEATURES.md
-## iBooks Author parity *(next up)*
-**13. More interactive widgets** ⬜
-**14. Fixed-layout (landscape) editor** ⬜
-**15. Better IBA import** ⬜
+## iBooks Author parity
+**13. More interactive widgets** ✅ *(Wave C)*
+**14. Fixed-layout (landscape) editor** ✅ *(Wave C MVP)*
+**15. Better IBA import** ✅ *(Wave B)*
 ```

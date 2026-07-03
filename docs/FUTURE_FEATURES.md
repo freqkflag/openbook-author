@@ -1,6 +1,6 @@
 # Future Features
 
-Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave A status (A.1 shipped · A.2 sprint):** [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
+Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave status:** [WAVE-A-STATUS.md](WAVE-A-STATUS.md) (✅ complete) · [WAVE-B-STATUS.md](WAVE-B-STATUS.md) (✅ complete) · [WAVE-C-STATUS.md](WAVE-C-STATUS.md) (✅ complete).
 
 **Status key:** ✅ Shipped · 🟡 Partial · ⬜ Planned
 
@@ -18,11 +18,11 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 10 | Drag-and-drop chapter reorder | ✅ Grip handle drag with aria-grabbed |
 | 11 | Custom section templates | ✅ Save from sidebar; My templates in picker |
 | 12 | More section templates | ✅ Resources, Learning Objectives, Practice Quiz, Bibliography |
-| 13 | More interactive widgets | ⬜ Next (iBooks Author parity) |
-| 14 | Fixed-layout (landscape) editor | ⬜ Next (iBooks Author parity) |
-| 15 | Better IBA import | ⬜ Next (iBooks Author parity) |
+| 13 | More interactive widgets | ✅ Media + quiz widgets (Wave C); hotspots remain |
+| 14 | Fixed-layout (landscape) editor | ✅ Canvas MVP + spread EPUB export (Wave C) |
+| 15 | Better IBA import | ✅ Hierarchy + diagnostics report (Wave B) |
 | 16 | PDF export | ✅ Print presets (US Letter, 6×9, A5), margins, page numbers, TOC leaders; web print + Electron native save |
-| 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate (Wave A); EPUBCheck / Kindle Previewer hooks remain ([#53](https://github.com/freqkflag/openbook-author/issues/53)) |
+| 17 | Apple Books / KDP validation | 🟡 Publish readiness + structural EPUB validation (Wave A.2); Kindle Previewer CLI docs in panel ([#56](https://github.com/freqkflag/openbook-author/issues/56)) |
 | 18 | Metadata for stores | ✅ ISBN, BISAC, keywords, age rating, series fields |
 | 19 | Book-aware AI context | ✅ TOC + prior chapter excerpts in `/api/ai` (#18) |
 | 20 | AI section generation | ✅ Generate section action in AI panel (#19) |
@@ -79,20 +79,16 @@ Resources, Learning Objectives, Practice Quiz, and Bibliography section types wi
 
 ---
 
-## iBooks Author parity *(next up)*
+## iBooks Author parity
 
-**13. More interactive widgets** ⬜  
-You have popups and galleries. The biggest gaps vs iBooks Author:
-- Quiz / review questions
-- Image hotspots
-- Audio/video embeds (not just images)
-- Keynote/Pages import
+**13. More interactive widgets** ✅ *(Wave C)*  
+Popups and galleries from v0.2+. Wave C adds **media** (`<audio>`/`<video>`) and **quiz/review** TipTap widgets with EPUB export transforms. Remaining gaps: interactive image hotspots, Keynote/Pages import.
 
-**14. Fixed-layout (landscape) editor** ⬜  
-Landscape template exists, but the editor is still reflowable. A true fixed-layout canvas with positioned elements would unlock photo books and comics.
+**14. Fixed-layout (landscape) editor** ✅ *(Wave C MVP)*  
+`FixedLayoutCanvas` spread editor for photo books and comics; EPUB fixed-layout export with viewport metadata (ADR-0007). Reflowable templates remain the default authoring path.
 
-**15. Better IBA import** ⬜  
-Current import gets text + images only. Next step: preserve nested chapter hierarchy, more `sl:tag` semantics, and a report of what couldn’t be imported.
+**15. Better IBA import** ✅ *(Wave B)*  
+Import preserves nested chapter hierarchy, maps more `sl:tag` semantics, and surfaces an import diagnostics report for unsupported layout/widgets ([#19](https://github.com/freqkflag/openbook-author/issues/19)).
 
 ---
 
@@ -102,7 +98,7 @@ Current import gets text + images only. Next step: preserve nested chapter hiera
 Print-ready HTML export from the editor. **Web:** browser print dialog (Save as PDF). **Electron:** native save dialog with `printToPDF` — no pop-up required. **Presets:** US Letter, 6×9 trim, and A5 with margin options, page numbers, and TOC dot leaders via `PrintPdfModal`. Workbook, journal, checklist, reflection, and practice-quiz sections include print CSS aligned with preview. Unit tests cover document structure, presets, cover/masthead, asset resolution, and section styles. Bleed/CMYK remain out of scope.
 
 **17. Apple Books / KDP validation** 🟡  
-Publish readiness panel checks empty chapters, broken assets, TOC issues, duplicate TOC titles, KBP H1 checks, and KBP store metadata warnings before export (Wave A). Heading hierarchy and missing alt text are export-blocking errors. Platform-specific validators (EPUBCheck, Kindle Previewer) remain planned — [#53](https://github.com/freqkflag/openbook-author/issues/53).
+Publish readiness panel checks empty chapters, broken assets, TOC issues, duplicate TOC titles, KBP H1 checks, and KBP store metadata warnings before export. Heading hierarchy and missing alt text are export-blocking errors. Wave A.2 adds post-export structural EPUB validation (`epub-validation.ts`) and documents optional EPUBCheck / Kindle Previewer CLI steps — [#56](https://github.com/freqkflag/openbook-author/issues/56).
 
 **18. Metadata for stores** ✅  
 ISBN, BISAC categories, keywords, age rating, and series fields in Book Properties — exported in EPUB OPF and KBP manifest.
@@ -141,13 +137,59 @@ Production multi-stage `Dockerfile` and `docker-compose.yml` for the standalone 
 
 ---
 
+## Wave B — FOSS differentiation *(✅ complete · [c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32))*
+
+| # | Item | Status |
+|---|------|--------|
+| B1 | Hierarchical TOC / parts ([#49](https://github.com/freqkflag/openbook-author/issues/49)) | ✅ Nested spine + nav |
+| B2 | Deepen IBA import ([#19](https://github.com/freqkflag/openbook-author/issues/19)) | ✅ Hierarchy + diagnostics |
+| B3 | Git-for-books workflow ([#59](https://github.com/freqkflag/openbook-author/issues/59)) | ✅ Folder mode + Git panel (Electron) |
+| B4 | AI RAG + consistency agent ([#60](https://github.com/freqkflag/openbook-author/issues/60)) | ✅ Chapter-scoped embeddings + fact check |
+| B5 | Expand Ollama ([#61](https://github.com/freqkflag/openbook-author/issues/61)) | ✅ Model presets, structured JSON, offline badge |
+| B6 | EPUB 3.3 metadata ([#62](https://github.com/freqkflag/openbook-author/issues/62)) | ✅ Package version + schema.org a11y |
+| B7 | Self-hosted backup ([#63](https://github.com/freqkflag/openbook-author/issues/63)) | ✅ WebDAV + S3-compatible panel |
+
+Detail: [WAVE-B-STATUS.md](WAVE-B-STATUS.md)
+
+---
+
+## Wave C — Experimental pilots *(✅ complete · [c8caf32](https://github.com/freqkflag/openbook-author/commit/c8caf32))*
+
+| # | Item | Status |
+|---|------|--------|
+| C1 | Fixed-layout canvas MVP ([#20](https://github.com/freqkflag/openbook-author/issues/20)) | ✅ `FixedLayoutCanvas` + spread export |
+| C2 | Media + quiz widgets ([#17](https://github.com/freqkflag/openbook-author/issues/17), [#15](https://github.com/freqkflag/openbook-author/issues/15)) | ✅ EPUB transforms |
+| C3 | WASM Typst PDF pilot ([#64](https://github.com/freqkflag/openbook-author/issues/64)) | ✅ Electron CLI compile hook |
+| C4 | Yjs collab prototype ([#22](https://github.com/freqkflag/openbook-author/issues/22)) | ✅ BroadcastChannel MVP |
+| C5 | Plugin SDK preview ([#65](https://github.com/freqkflag/openbook-author/issues/65)) | ✅ [plugin-sdk.md](plugin-sdk.md) + TimelineWidget |
+| C6 | Audiobook manifest export ([#66](https://github.com/freqkflag/openbook-author/issues/66)) | ✅ W3C Audiobook LPF |
+| C7 | Markdown authoring mode ([#67](https://github.com/freqkflag/openbook-author/issues/67)) | ✅ TipTap MD round-trip toggle |
+
+Detail: [WAVE-C-STATUS.md](WAVE-C-STATUS.md)
+
+---
+
 ## Related GitHub issues
 
-See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue closure guidance.
+See [WAVE-A-STATUS.md](WAVE-A-STATUS.md), [WAVE-B-STATUS.md](WAVE-B-STATUS.md), and [WAVE-C-STATUS.md](WAVE-C-STATUS.md) for issue closure guidance.
 
-| Topic | Issue | Wave A status |
-|-------|-------|---------------|
+| Topic | Issue | Status |
+|-------|-------|--------|
 | Hierarchical TOC structure mode | [#49](https://github.com/freqkflag/openbook-author/issues/49) | ✅ Shipped Wave B — close |
+| IBA import depth | [#19](https://github.com/freqkflag/openbook-author/issues/19) | ✅ Shipped Wave B — close |
+| Git-for-books folder mode | [#59](https://github.com/freqkflag/openbook-author/issues/59) | ✅ Shipped Wave B — close |
+| AI RAG consistency pass | [#60](https://github.com/freqkflag/openbook-author/issues/60) | ✅ Shipped Wave B — close |
+| Ollama presets / offline badge | [#61](https://github.com/freqkflag/openbook-author/issues/61) | ✅ Shipped Wave B — close |
+| EPUB 3.3 metadata | [#62](https://github.com/freqkflag/openbook-author/issues/62) | ✅ Shipped Wave B — close |
+| Self-hosted backup | [#63](https://github.com/freqkflag/openbook-author/issues/63) | ✅ Shipped Wave B — close |
+| Fixed-layout canvas | [#20](https://github.com/freqkflag/openbook-author/issues/20) | ✅ Shipped Wave C — close |
+| Media widgets | [#17](https://github.com/freqkflag/openbook-author/issues/17) | ✅ Shipped Wave C — close |
+| Quiz widget | [#15](https://github.com/freqkflag/openbook-author/issues/15) | ✅ Shipped Wave C — close |
+| Typst PDF pilot | [#64](https://github.com/freqkflag/openbook-author/issues/64) | ✅ Shipped Wave C — close |
+| Yjs collab prototype | [#22](https://github.com/freqkflag/openbook-author/issues/22) | ✅ Shipped Wave C — close |
+| Plugin SDK preview | [#65](https://github.com/freqkflag/openbook-author/issues/65) | ✅ Shipped Wave C — close |
+| Audiobook manifest | [#66](https://github.com/freqkflag/openbook-author/issues/66) | ✅ Shipped Wave C — close |
+| Markdown mode | [#67](https://github.com/freqkflag/openbook-author/issues/67) | ✅ Shipped Wave C — close |
 | EPUB import | [#6](https://github.com/freqkflag/openbook-author/issues/6) | ✅ Shipped — close |
 | Front matter (copyright & dedication) | [#5](https://github.com/freqkflag/openbook-author/issues/5) | ✅ Shipped — close |
 | PDF export | [#7](https://github.com/freqkflag/openbook-author/issues/7) | ✅ Shipped — closed |
@@ -163,4 +205,4 @@ See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue c
 | Tables, footnotes, endnotes | [#8](https://github.com/freqkflag/openbook-author/issues/8) | ✅ Shipped Wave A.1 — close |
 | Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | ✅ Shipped Wave A.2 — close |
 | DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | ✅ Shipped Wave A.2 — close |
-| EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | Wave A.2 sprint — in progress |
+| EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | ✅ Shipped Wave A.2 — close |
