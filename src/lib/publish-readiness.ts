@@ -7,6 +7,11 @@ import {
 } from "@/types/guidebook";
 import { getAssetByFilename } from "@/lib/asset-store";
 import { isKbpEnabled } from "@/lib/kbp";
+import {
+  epubValidationToReadinessIssues,
+  validateBookEpubExport,
+  type EpubValidationResult,
+} from "@/lib/epub-validation";
 
 const H1_RE = /<h1[\s>]/i;
 const HEADING_RE = /<h([1-6])[\s>]/gi;
@@ -427,6 +432,26 @@ function checkKbpStoreMetadata(book: Book, issues: ReadinessIssue[]): void {
   }
 }
 
+function mergeEpubValidationWarnings(
+  report: PublishReadinessReport,
+  epubResult: EpubValidationResult
+): PublishReadinessReport {
+  const epubIssues = epubValidationToReadinessIssues(epubResult);
+  if (epubIssues.length === 0) {
+    return report;
+  }
+
+  const issues = [...report.issues, ...epubIssues];
+  const warningCount = issues.filter((i) => i.severity === "warning").length;
+
+  return {
+    issues,
+    errorCount: report.errorCount,
+    warningCount,
+    ready: report.ready,
+  };
+}
+
 /** Pre-flight validation before export or publish */
 export function assessPublishReadiness(book: Book): PublishReadinessReport {
   const issues: ReadinessIssue[] = [];
@@ -454,6 +479,19 @@ export function assessPublishReadiness(book: Book): PublishReadinessReport {
     warningCount,
     ready: errorCount === 0,
   };
+}
+
+/**
+ * Pre-flight checks plus post-export EPUB structural validation.
+ * EPUB findings are warnings only (non-blocking) until EPUBCheck is wired in CI.
+ */
+export async function assessPublishReadinessWithEpub(
+  book: Book,
+  assetBlobs?: Map<string, Blob>
+): Promise<PublishReadinessReport> {
+  const report = assessPublishReadiness(book);
+  const epubResult = await validateBookEpubExport(book, assetBlobs);
+  return mergeEpubValidationWarnings(report, epubResult);
 }
 
 export function formatReadinessExportWarning(report: PublishReadinessReport): string {

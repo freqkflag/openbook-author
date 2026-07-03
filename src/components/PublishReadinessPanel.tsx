@@ -1,9 +1,19 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertCircle, AlertTriangle, CheckCircle2 } from "lucide-react";
 import type { Book } from "@/types/book";
-import { assessPublishReadiness } from "@/lib/publish-readiness";
+import {
+  assessPublishReadiness,
+  type PublishReadinessReport,
+  type ReadinessIssue,
+} from "@/lib/publish-readiness";
+import { useBookStore } from "@/store/book-store";
+import {
+  epubValidationToReadinessIssues,
+  getEpubCheckCliInstructions,
+  validateBookEpubExport,
+} from "@/lib/epub-validation";
 
 interface PublishReadinessPanelProps {
   book: Book;
@@ -47,14 +57,51 @@ function IssueRow({
   );
 }
 
+function mergeReport(
+  base: PublishReadinessReport,
+  epubWarnings: ReadinessIssue[]
+): PublishReadinessReport {
+  if (epubWarnings.length === 0) return base;
+  const issues = [...base.issues, ...epubWarnings];
+  return {
+    ...base,
+    issues,
+    warningCount: base.warningCount + epubWarnings.length,
+  };
+}
+
 export default function PublishReadinessPanel({
   book,
   onNavigateToChapter,
 }: PublishReadinessPanelProps) {
-  const report = useMemo(() => assessPublishReadiness(book), [book]);
+  const assetBlobs = useBookStore((s) => s.getAssetBlobs(book.id));
+  const baseReport = useMemo(() => assessPublishReadiness(book), [book]);
+  const [epubWarnings, setEpubWarnings] = useState<ReadinessIssue[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    validateBookEpubExport(book, assetBlobs)
+      .then((result) => {
+        if (!cancelled) {
+          setEpubWarnings(epubValidationToReadinessIssues(result));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setEpubWarnings([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [book, assetBlobs]);
+
+  const report = useMemo(
+    () => mergeReport(baseReport, epubWarnings),
+    [baseReport, epubWarnings]
+  );
 
   const errors = report.issues.filter((i) => i.severity === "error");
   const warnings = report.issues.filter((i) => i.severity === "warning");
+  const hasEpubWarnings = warnings.some((i) => i.id.startsWith("epub-"));
 
   return (
     <div className="pt-3 border-t border-white/10 space-y-2">
@@ -104,6 +151,12 @@ export default function PublishReadinessPanel({
         <p className="text-xs text-slate-500">
           {report.warningCount} warning{report.warningCount === 1 ? "" : "s"} — export is
           allowed but review recommended.
+        </p>
+      )}
+
+      {!hasEpubWarnings && report.ready && (
+        <p className="text-xs text-slate-600" title={getEpubCheckCliInstructions()}>
+          EPUB structure validated. For full store conformance, run W3C EPUBCheck after export.
         </p>
       )}
     </div>
