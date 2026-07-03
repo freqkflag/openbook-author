@@ -65,6 +65,14 @@ export interface Chapter {
   sectionType?: ChapterSectionType;
 }
 
+/** Volume/part grouping for hierarchical table of contents */
+export interface BookPart {
+  id: string;
+  title: string;
+  order: number;
+  chapterIds: string[];
+}
+
 export interface BookAsset {
   id: string;
   filename: string;
@@ -122,6 +130,8 @@ export interface Book {
   kbpSettings: KBPSettings;
   exportTheme?: ExportThemeSettings;
   chapters: Chapter[];
+  /** Optional parts/volumes — omitted in legacy flat .openbook files */
+  parts?: BookPart[];
   assets: BookAsset[];
   packagePath?: string;
   createdAt: string;
@@ -132,6 +142,7 @@ export type AIAction =
   | "continue"
   | "improve"
   | "outline"
+  | "consistency-check"
   | "summarize"
   | "expand"
   | "rewrite"

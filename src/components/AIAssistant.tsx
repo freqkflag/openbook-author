@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Sparkles,
   Wand2,
@@ -13,9 +13,18 @@ import {
   X,
   Settings,
   FilePlus2,
+  ShieldCheck,
+  Wifi,
+  WifiOff,
+  HardDrive,
 } from "lucide-react";
 import type { AIAction, Book } from "@/types/book";
 import { buildBookAIContext, parseGeneratedSectionHtml } from "@/lib/ai-context";
+import {
+  DEFAULT_OLLAMA_BASE_URL,
+  OLLAMA_MODEL_PRESETS,
+  resolveOllamaPresetId,
+} from "@/lib/ollama";
 import { useBookStore } from "@/store/book-store";
 
 interface AIAssistantProps {
@@ -33,7 +42,13 @@ const ACTIONS: { id: AIAction; label: string; icon: React.ReactNode; description
   { id: "expand", label: "Expand", icon: <Expand size={14} />, description: "Add more detail" },
   { id: "rewrite", label: "Rewrite", icon: <RefreshCw size={14} />, description: "Fresh take, same meaning" },
   { id: "summarize", label: "Summarize", icon: <FileText size={14} />, description: "Condense content" },
-  { id: "outline", label: "Outline", icon: <ListTree size={14} />, description: "Generate chapter structure" },
+  { id: "outline", label: "Outline", icon: <ListTree size={14} />, description: "Structured chapter outline (JSON)" },
+  {
+    id: "consistency-check",
+    label: "Consistency",
+    icon: <ShieldCheck size={14} />,
+    description: "Check tone, facts & continuity",
+  },
   {
     id: "generate-section",
     label: "Generate section",
@@ -41,6 +56,46 @@ const ACTIONS: { id: AIAction; label: string; icon: React.ReactNode; description
     description: "Create a new section from a prompt",
   },
 ];
+
+type OllamaHealth = "checking" | "online" | "offline";
+
+function OllamaStatusBadge({
+  health,
+  modelCount,
+}: {
+  health: OllamaHealth;
+  modelCount?: number;
+}) {
+  if (health === "checking") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-slate-500/20 text-slate-400 border border-slate-500/30">
+        <Loader2 size={10} className="animate-spin" />
+        Checking Ollama…
+      </span>
+    );
+  }
+
+  if (health === "online") {
+    return (
+      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+        <HardDrive size={10} />
+        <Wifi size={10} />
+        Local · Online
+        {modelCount !== undefined && modelCount > 0 && (
+          <span className="text-emerald-400/70">({modelCount} models)</span>
+        )}
+      </span>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-full text-[10px] font-medium bg-amber-500/20 text-amber-300 border border-amber-500/30">
+      <HardDrive size={10} />
+      <WifiOff size={10} />
+      Local · Offline
+    </span>
+  );
+}
 
 export default function AIAssistant({
   chapterContent,
@@ -58,9 +113,45 @@ export default function AIAssistant({
   const [error, setError] = useState("");
   const [showSettings, setShowSettings] = useState(false);
   const [localSettings, setLocalSettings] = useState(aiSettings);
+  const [ollamaPreset, setOllamaPreset] = useState(() => resolveOllamaPresetId(aiSettings.model));
+  const [ollamaHealth, setOllamaHealth] = useState<OllamaHealth>("checking");
+  const [ollamaModelCount, setOllamaModelCount] = useState<number | undefined>();
   const updateAISettings = useBookStore((s) => s.updateAISettings);
 
   const bookContext = buildBookAIContext(book, currentChapterId);
+
+  const checkOllama = useCallback(async (baseUrl?: string) => {
+    setOllamaHealth("checking");
+    try {
+      const params = new URLSearchParams();
+      const url = baseUrl?.trim() || DEFAULT_OLLAMA_BASE_URL;
+      params.set("baseUrl", url);
+      const res = await fetch(`/api/ai/ollama-health?${params.toString()}`);
+      const data = (await res.json()) as { reachable: boolean; models?: string[] };
+      if (data.reachable) {
+        setOllamaHealth("online");
+        setOllamaModelCount(data.models?.length ?? 0);
+      } else {
+        setOllamaHealth("offline");
+        setOllamaModelCount(undefined);
+      }
+    } catch {
+      setOllamaHealth("offline");
+      setOllamaModelCount(undefined);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (localSettings.provider === "ollama") {
+      void checkOllama(localSettings.baseUrl);
+    }
+  }, [localSettings.provider, localSettings.baseUrl, checkOllama]);
+
+  useEffect(() => {
+    if (aiSettings.provider === "ollama" && !showSettings) {
+      void checkOllama(aiSettings.baseUrl);
+    }
+  }, [aiSettings.provider, aiSettings.baseUrl, showSettings, checkOllama]);
 
   const runAI = async () => {
     setLoading(true);
@@ -96,7 +187,23 @@ export default function AIAssistant({
     setShowSettings(false);
   };
 
+  const handleProviderChange = (provider: typeof localSettings.provider) => {
+    setLocalSettings({ ...localSettings, provider });
+    if (provider === "ollama") {
+      setOllamaPreset(resolveOllamaPresetId(localSettings.model));
+    }
+  };
+
+  const handleOllamaPresetChange = (presetId: string) => {
+    setOllamaPreset(presetId);
+    if (presetId !== "custom") {
+      setLocalSettings({ ...localSettings, model: presetId });
+    }
+  };
+
   const isGenerateSection = action === "generate-section";
+  const isOllama = localSettings.provider === "ollama";
+  const showOllamaBadge = isOllama || (aiSettings.provider === "ollama" && !showSettings);
 
   return (
     <div className="flex flex-col h-full bg-[#121A2B]/90 backdrop-blur-xl border-l border-fuchsia-500/20">
@@ -104,10 +211,20 @@ export default function AIAssistant({
         <div className="flex items-center gap-2">
           <Sparkles className="text-fuchsia-400" size={18} />
           <h2 className="font-semibold text-sm text-white">AI Assistant</h2>
+          {showOllamaBadge && (
+            <OllamaStatusBadge
+              health={ollamaHealth}
+              modelCount={ollamaModelCount}
+            />
+          )}
         </div>
         <div className="flex items-center gap-1">
           <button
-            onClick={() => setShowSettings(!showSettings)}
+            onClick={() => {
+              setLocalSettings(aiSettings);
+              setOllamaPreset(resolveOllamaPresetId(aiSettings.model));
+              setShowSettings(!showSettings);
+            }}
             className="p-1.5 rounded-md text-slate-400 hover:text-cyan-400 hover:bg-white/5"
             title="AI Settings"
           >
@@ -130,10 +247,7 @@ export default function AIAssistant({
             <select
               value={localSettings.provider}
               onChange={(e) =>
-                setLocalSettings({
-                  ...localSettings,
-                  provider: e.target.value as typeof localSettings.provider,
-                })
+                handleProviderChange(e.target.value as typeof localSettings.provider)
               }
               className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
             >
@@ -142,6 +256,20 @@ export default function AIAssistant({
               <option value="ollama">Ollama (local)</option>
             </select>
           </label>
+
+          {isOllama && (
+            <div className="flex items-center justify-between gap-2">
+              <OllamaStatusBadge health={ollamaHealth} modelCount={ollamaModelCount} />
+              <button
+                type="button"
+                onClick={() => void checkOllama(localSettings.baseUrl)}
+                className="text-[10px] text-cyan-400 hover:text-cyan-300 underline"
+              >
+                Recheck
+              </button>
+            </div>
+          )}
+
           {localSettings.provider !== "ollama" && (
             <label className="block text-xs text-slate-400">
               API Key
@@ -154,22 +282,54 @@ export default function AIAssistant({
               />
             </label>
           )}
-          <label className="block text-xs text-slate-400">
-            Model
-            <input
-              type="text"
-              value={localSettings.model}
-              onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
-              placeholder={
-                localSettings.provider === "anthropic"
-                  ? "claude-3-5-haiku-20241022"
-                  : localSettings.provider === "ollama"
-                    ? "llama3.2"
+
+          {isOllama ? (
+            <>
+              <label className="block text-xs text-slate-400">
+                Model preset
+                <select
+                  value={ollamaPreset}
+                  onChange={(e) => handleOllamaPresetChange(e.target.value)}
+                  className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                >
+                  {OLLAMA_MODEL_PRESETS.map((preset) => (
+                    <option key={preset.id} value={preset.id}>
+                      {preset.label} — {preset.description}
+                    </option>
+                  ))}
+                  <option value="custom">Custom model name…</option>
+                </select>
+              </label>
+              {ollamaPreset === "custom" && (
+                <label className="block text-xs text-slate-400">
+                  Custom model
+                  <input
+                    type="text"
+                    value={localSettings.model}
+                    onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
+                    placeholder="e.g. my-fine-tuned-model"
+                    className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+                  />
+                </label>
+              )}
+            </>
+          ) : (
+            <label className="block text-xs text-slate-400">
+              Model
+              <input
+                type="text"
+                value={localSettings.model}
+                onChange={(e) => setLocalSettings({ ...localSettings, model: e.target.value })}
+                placeholder={
+                  localSettings.provider === "anthropic"
+                    ? "claude-3-5-haiku-20241022"
                     : "gpt-4o-mini"
-              }
-              className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
-            />
-          </label>
+                }
+                className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
+              />
+            </label>
+          )}
+
           {(localSettings.provider === "ollama" || localSettings.provider === "openai") && (
             <label className="block text-xs text-slate-400">
               Base URL (optional)
@@ -179,7 +339,7 @@ export default function AIAssistant({
                 onChange={(e) => setLocalSettings({ ...localSettings, baseUrl: e.target.value })}
                 placeholder={
                   localSettings.provider === "ollama"
-                    ? "http://localhost:11434"
+                    ? DEFAULT_OLLAMA_BASE_URL
                     : "https://api.openai.com/v1/chat/completions"
                 }
                 className="mt-1 w-full bg-[#0B1020] border border-white/10 rounded-lg px-3 py-2 text-sm text-white"
@@ -213,7 +373,8 @@ export default function AIAssistant({
             Save Settings
           </button>
           <p className="text-xs text-slate-500">
-            Keys and voice settings are stored locally in your browser. For Ollama, no API key is needed.
+            Keys and voice settings are stored locally in your browser. For Ollama, no API key is
+            needed — run <code className="text-slate-400">ollama serve</code> and pull a model preset.
           </p>
         </div>
       ) : (

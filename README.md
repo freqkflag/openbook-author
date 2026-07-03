@@ -51,11 +51,12 @@ The Guidebook template includes four sample chapters. **Chapter 1: Getting Start
 - **Continue writing** — AI picks up where you left off
 - **Improve & rewrite** — Polish prose and refresh voice
 - **Expand & summarize** — Add depth or condense content
-- **Generate outlines** — Structure new chapters
+- **Generate outlines** — Structured JSON outline converted to HTML
+- **Consistency check** — Tone, timeline, and fact continuity pass (structured JSON)
 - **Generate section** — Create a new section from a prompt (book-aware context)
 - **Custom prompts** — Ask anything about your content
 - **Voice profile & style guide** — Consistent tone across AI actions
-- **Multi-provider** — OpenAI, Anthropic Claude, or local Ollama
+- **Multi-provider** — OpenAI, Anthropic Claude, or local Ollama with model presets and online/offline badge
 
 ### iBooks Author Import
 - **Import IBA** — Open `.iba`, `.book`, `.ibatemplate`, and `.booktemplate` files
@@ -163,7 +164,14 @@ docker run --rm -p 3000:3000 openbook-author
 ollama pull llama3.2
 ollama serve
 ```
-Set provider to **Ollama**, model to `llama3.2`, base URL to `http://localhost:11434`.
+1. Set provider to **Ollama (local)**
+2. Pick a **model preset** (Llama 3.2, Mistral, Qwen 2.5, etc.) or enter a custom model name
+3. Base URL defaults to `http://localhost:11434`
+4. A **Local · Online / Offline** badge shows whether Ollama is reachable — no API key required
+
+Structured JSON actions (**Outline**, **Consistency**) work with Ollama's JSON mode and are converted to HTML in the editor. OpenAI uses `response_format: json_object` for the same actions.
+
+Pull any preset model before use, e.g. `ollama pull mistral` or `ollama pull qwen2.5`.
 
 ### OpenAI
 Set provider to **OpenAI**, enter your API key, model e.g. `gpt-4o-mini`.
