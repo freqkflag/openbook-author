@@ -1,6 +1,6 @@
 # Future Features
 
-Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md).
+Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on [GitHub Issues](https://github.com/freqkflag/openbook-author/issues). For competitor comparison, bleeding-edge fit, and prioritized waves, see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md). **Wave A product-lane completion status:** [WAVE-A-STATUS.md](WAVE-A-STATUS.md).
 
 **Status key:** ✅ Shipped · 🟡 Partial · ⬜ Planned
 
@@ -22,15 +22,15 @@ Roadmap ideas for OpenBook Author, grouped by impact area. Track active work on 
 | 14 | Fixed-layout (landscape) editor | ⬜ Next (iBooks Author parity) |
 | 15 | Better IBA import | ⬜ Next (iBooks Author parity) |
 | 16 | PDF export | ✅ Print dialog (web) + native save (Electron); print-ready presets pending |
-| 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate; heading hierarchy + alt text errors (#25) |
+| 17 | Apple Books / KDP validation | 🟡 Publish readiness panel + export gate (Wave A); EPUBCheck / Kindle Previewer hooks remain ([#53](https://github.com/freqkflag/openbook-author/issues/53)) |
 | 18 | Metadata for stores | ✅ ISBN, BISAC, keywords, age rating, series fields |
 | 19 | Book-aware AI context | ✅ TOC + prior chapter excerpts in `/api/ai` (#18) |
 | 20 | AI section generation | ✅ Generate section action in AI panel (#19) |
 | 21 | Style guide / voice profile | ✅ Voice profile + style guide in AI settings (#20) |
 | 22 | Auto-save indicator + recovery | ✅ Relative last-saved badge; sessionStorage crash buffer (#22) |
 | 23 | PWA / offline mode | ⬜ Planned |
-| 24 | Tests | 🟡 Vitest + EPUB snapshots + IBA import fixture (#23) |
-| 25 | Accessibility | 🟡 Heading hierarchy warnings; missing alt blocks export (#25) |
+| 24 | Tests | 🟡 Vitest (114 tests): EPUB/guidebook export snapshots, IBA import fixture, store hydrate test — full suite still open ([#28](https://github.com/freqkflag/openbook-author/issues/28)) |
+| 25 | Accessibility | 🟡 Wave A: heading hierarchy warnings + missing alt blocks export; WCAG preview / axe CI remain ([#29](https://github.com/freqkflag/openbook-author/issues/29)) |
 | 26 | Docker deployment | ✅ Multi-stage Dockerfile + docker-compose (#26) |
 
 ---
@@ -102,7 +102,7 @@ Current import gets text + images only. Next step: preserve nested chapter hiera
 Print-ready HTML export from the editor. **Web:** browser print dialog (Save as PDF). **Electron:** native save dialog with `printToPDF` — no pop-up required. Workbook, journal, checklist, reflection, and practice-quiz sections include print CSS aligned with preview. Unit tests cover document structure, cover/masthead, asset resolution, and section styles. Print-ready presets (bleed, trim, CMYK) remain planned.
 
 **17. Apple Books / KDP validation** 🟡  
-Publish readiness panel checks empty chapters, broken assets, TOC issues, and KBP-specific warnings before export. Platform-specific validators (Apple Transporter, KDP previewer integration) remain planned.
+Publish readiness panel checks empty chapters, broken assets, TOC issues, duplicate TOC titles, KBP H1 checks, and KBP store metadata warnings before export (Wave A). Heading hierarchy and missing alt text are export-blocking errors. Platform-specific validators (EPUBCheck, Kindle Previewer) remain planned — [#53](https://github.com/freqkflag/openbook-author/issues/53).
 
 **18. Metadata for stores** ✅  
 ISBN, BISAC categories, keywords, age rating, and series fields in Book Properties — exported in EPUB OPF and KBP manifest.
@@ -131,10 +131,10 @@ Save badge shows relative last-saved time; `sessionStorage` crash buffer when `l
 Service worker + cached app shell so the web version works on a plane.
 
 **24. Tests** 🟡  
-EPUB export snapshot tests, IBA import fixture test, KBP transform unit tests. Expand coverage over time.
+Wave A shipped: guidebook block/chapter/CSS export snapshots (`epub-export.snapshots.test.ts`), guidebook seed integration tests, IBA import fixture test, store hydrate test (`book-store.hydrate.test.ts`), plus KBP, PDF, publish-readiness, and orchestrator coverage (114 tests total). Broader export/import matrix tracked in [#28](https://github.com/freqkflag/openbook-author/issues/28).
 
 **25. Accessibility** 🟡  
-Heading hierarchy warnings (skip levels, multiple H1); missing image alt text blocks export.
+Wave A shipped: heading hierarchy warnings (skip levels, multiple H1) and missing image alt text as export-blocking errors. WCAG preview mode and axe-core CI remain — [#29](https://github.com/freqkflag/openbook-author/issues/29).
 
 **26. Docker deployment** ✅  
 Production multi-stage `Dockerfile` and `docker-compose.yml` for the standalone Next.js app.
@@ -143,10 +143,24 @@ Production multi-stage `Dockerfile` and `docker-compose.yml` for the standalone 
 
 ## Related GitHub issues
 
-| Topic | Issue |
-|-------|-------|
-| Hierarchical TOC structure mode | [#49](https://github.com/freqkflag/openbook-author/issues/49) |
-| EPUB import | [#6](https://github.com/freqkflag/openbook-author/issues/6) |
-| Front matter (copyright & dedication) | [#5](https://github.com/freqkflag/openbook-author/issues/5) |
-| PDF export | [#7](https://github.com/freqkflag/openbook-author/issues/7) |
-| Search/replace across book | [#9](https://github.com/freqkflag/openbook-author/issues/9) |
+See [WAVE-A-STATUS.md](WAVE-A-STATUS.md) for Wave A shipped vs remaining issue closure guidance.
+
+| Topic | Issue | Wave A status |
+|-------|-------|---------------|
+| Hierarchical TOC structure mode | [#49](https://github.com/freqkflag/openbook-author/issues/49) | Wave B — open |
+| EPUB import | [#6](https://github.com/freqkflag/openbook-author/issues/6) | ✅ Shipped — close |
+| Front matter (copyright & dedication) | [#5](https://github.com/freqkflag/openbook-author/issues/5) | ✅ Shipped — close |
+| PDF export | [#7](https://github.com/freqkflag/openbook-author/issues/7) | ✅ Shipped — closed |
+| Search/replace across book | [#9](https://github.com/freqkflag/openbook-author/issues/9) | ✅ Shipped — close |
+| Book-aware AI context | [#23](https://github.com/freqkflag/openbook-author/issues/23) | ✅ Shipped — close |
+| AI section generation | [#24](https://github.com/freqkflag/openbook-author/issues/24) | ✅ Shipped — close |
+| AI style guide / voice profile | [#25](https://github.com/freqkflag/openbook-author/issues/25) | ✅ Shipped — close |
+| Auto-save + crash recovery | [#26](https://github.com/freqkflag/openbook-author/issues/26) | ✅ Shipped — closed |
+| Export/import test suite | [#28](https://github.com/freqkflag/openbook-author/issues/28) | 🟡 Partial — keep open |
+| Accessibility (WCAG preview) | [#29](https://github.com/freqkflag/openbook-author/issues/29) | 🟡 Partial — keep open |
+| Agent orchestration / merge lanes | [#37](https://github.com/freqkflag/openbook-author/issues/37) | ✅ Shipped — close |
+| PWA / offline mode | [#27](https://github.com/freqkflag/openbook-author/issues/27) | Wave A gap — open |
+| Tables, footnotes, endnotes | [#8](https://github.com/freqkflag/openbook-author/issues/8) | Wave A gap — open (v0.4) |
+| Export theme system | [#55](https://github.com/freqkflag/openbook-author/issues/55) | Wave A gap — open |
+| DOCX import | [#54](https://github.com/freqkflag/openbook-author/issues/54) | Wave A gap — open |
+| EPUBCheck / Kindle Previewer | [#56](https://github.com/freqkflag/openbook-author/issues/56) | Wave A gap — open |

@@ -8,6 +8,7 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **Wave A completion:** axe-core accessibility tests on export HTML fixtures (`a11y-export.test.ts`); EPUB structural validation in publish readiness (`epub-validation.ts`); Wave A status doc
 - **AI + Platform Wave 1:** voice profile and style guide in AI settings (injected into `/api/ai` system prompt); book-aware AI context (TOC + prior chapter excerpts); **Generate section** AI action; relative last-saved badge with sessionStorage crash buffer on localStorage failure; heading hierarchy warnings and missing alt text as export-blocking errors; IBA import fixture test; production Docker + docker-compose (#18–#26)
 - PDF export hardening: unit tests for print HTML, section print CSS (workbook/journal/checklist/reflection/practice-quiz), Electron native print-to-PDF with web print fallback (#7)
 - Store metadata fields: ISBN, BISAC, keywords, age rating, series — in Book Properties, EPUB OPF, and KBP manifest (#18)
@@ -31,6 +32,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - **Trail Reference** sample chapter in the Guidebook template — demonstrates trail stop, workshop, and cheat sheet blocks side by side
 - `serializeGuidebookBlockToHtml()` helper for generating TipTap-compatible `<aside data-guidebook="…">` markup
 - Developer reference: [docs/guidebook-blocks.md](docs/guidebook-blocks.md)
+- Competitive & tech feature audit: [docs/COMPETITIVE_AUDIT.md](docs/COMPETITIVE_AUDIT.md) — gap matrix, roadmap waves, and issue tracking
+- Wave A status tracker: [docs/WAVE-A-STATUS.md](docs/WAVE-A-STATUS.md) — product-lane vs competitive-audit completion and issue closure guidance
 
 ### Planned
 
