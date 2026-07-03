@@ -30,6 +30,7 @@ import { downloadEpub } from "@/lib/epub";
 import { downloadPdf } from "@/lib/pdf-export";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
+import { adjacentChapterId, isEditableTarget } from "@/lib/keyboard-shortcuts";
 
 type ViewMode = "edit" | "preview" | "full";
 
@@ -92,24 +93,52 @@ export default function EditorPage() {
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+      const mod = e.metaKey || e.ctrlKey;
+
+      if (mod && e.key.toLowerCase() === "s" && !e.shiftKey) {
         e.preventDefault();
         handleSave(false);
         return;
       }
-      const target = e.target as HTMLElement;
-      const isTyping =
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.isContentEditable;
-      if (e.key === "?" && !isTyping && viewMode === "edit") {
+
+      if (mod && e.key.toLowerCase() === "p") {
+        e.preventDefault();
+        setViewMode((mode) => (mode === "edit" ? "preview" : "edit"));
+        setShowAI(false);
+        return;
+      }
+
+      if (mod && e.key === "/") {
         e.preventDefault();
         setShowShortcuts(true);
+        return;
+      }
+
+      if (isEditableTarget(e.target)) return;
+
+      if (e.key === "?") {
+        e.preventDefault();
+        setShowShortcuts(true);
+        return;
+      }
+
+      if (mod && e.altKey && (e.key === "ArrowUp" || e.key === "ArrowDown")) {
+        e.preventDefault();
+        if (!book) return;
+        const nextId = adjacentChapterId(
+          book.chapters,
+          activeChapterId,
+          e.key === "ArrowUp" ? "prev" : "next"
+        );
+        if (nextId) {
+          setActiveChapterId(nextId);
+          setViewMode("edit");
+        }
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [handleSave, viewMode]);
+  }, [handleSave, book, activeChapterId]);
 
   useEffect(() => {
     if (!window.openBook?.isElectron) return;
@@ -228,7 +257,7 @@ export default function EditorPage() {
                   ? "bg-amber-500/20 text-amber-300"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Chapter preview"
+              title="Chapter preview (⌘P)"
             >
               <Eye size={14} />
               Preview
@@ -296,7 +325,7 @@ export default function EditorPage() {
             <button
               onClick={() => setShowShortcuts(true)}
               className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-white/5"
-              title="Keyboard shortcuts (?)"
+              title="Keyboard shortcuts (⌘/)"
             >
               <Keyboard size={18} />
             </button>
@@ -386,6 +415,7 @@ export default function EditorPage() {
                     onChange={handleContentChange}
                     placeholder="Start writing your chapter..."
                     kbpMode={kbpMode}
+                    onShowShortcuts={() => setShowShortcuts(true)}
                   />
                 ) : (
                   <PrintPreview

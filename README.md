@@ -59,6 +59,34 @@ Create beautiful EPUB books with rich text editing, chapter management, template
 - Build a `.dmg` installer with `npm run electron:build`
 - Native menu bar with Open / Save / Save As, hidden inset title bar, dark mode support
 
+## Keyboard Shortcuts
+
+OpenBook Author supports standard editor shortcuts plus book-level actions. Press **⌘/** (or **?** when not typing in a field) to open the in-app cheat sheet.
+
+### Book & navigation
+| Shortcut | Action |
+|----------|--------|
+| ⌘/Ctrl + S | Save book |
+| ⌘/Ctrl + P | Toggle chapter preview |
+| ⌘/Ctrl + Alt + ↑ | Previous section |
+| ⌘/Ctrl + Alt + ↓ | Next section |
+| ⌘/Ctrl + / or ? | Show keyboard shortcuts |
+
+### Formatting (in editor)
+| Shortcut | Action |
+|----------|--------|
+| ⌘/Ctrl + B | Bold |
+| ⌘/Ctrl + I | Italic |
+| ⌘/Ctrl + U | Underline |
+| ⌘/Ctrl + Shift + S | Strikethrough |
+| ⌘/Ctrl + Shift + H | Highlight |
+| ⌘/Ctrl + Alt + 1–3 | Heading 1–3 |
+| ⌘/Ctrl + Shift + 8 | Bullet list |
+| ⌘/Ctrl + Shift + 7 | Numbered list |
+| ⌘/Ctrl + Shift + B | Blockquote |
+| ⌘/Ctrl + Z | Undo |
+| ⌘/Ctrl + Shift + Z | Redo |
+
 ## Quick Start
 
 ### Web app

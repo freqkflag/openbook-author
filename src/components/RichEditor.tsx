@@ -42,7 +42,6 @@ import {
   FileText,
   Keyboard,
 } from "lucide-react";
-import KeyboardShortcutsModal from "@/components/KeyboardShortcutsModal";
 import { PopupWidget } from "@/components/extensions/PopupWidget";
 import { GalleryWidget } from "@/components/extensions/GalleryWidget";
 import { GuidebookBlock } from "@/components/extensions/GuidebookBlock";
@@ -60,6 +59,7 @@ interface RichEditorProps {
   onChange: (html: string) => void;
   placeholder?: string;
   kbpMode?: boolean;
+  onShowShortcuts?: () => void;
 }
 
 function ToolbarButton({
@@ -89,11 +89,17 @@ function ToolbarButton({
   );
 }
 
-export default function RichEditor({ book, content, onChange, placeholder, kbpMode }: RichEditorProps) {
+export default function RichEditor({
+  book,
+  content,
+  onChange,
+  placeholder,
+  kbpMode,
+  onShowShortcuts,
+}: RichEditorProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [pickerTitle, setPickerTitle] = useState("Choose Image");
   const [pickerHandler, setPickerHandler] = useState<((src: string, alt?: string) => void) | null>(null);
-  const [showShortcuts, setShowShortcuts] = useState(false);
   const editorRef = useRef<Editor | null>(null);
 
   const openAssetPicker = (onSelect: (src: string, alt?: string) => void, title?: string) => {
@@ -132,13 +138,19 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
         const ed = editorRef.current;
         if (!ed) return false;
 
-        if (event.key === "?" && !event.metaKey && !event.ctrlKey && !event.altKey) {
+        const mod = event.metaKey || event.ctrlKey;
+
+        if (mod && event.key === "/" && onShowShortcuts) {
           event.preventDefault();
-          setShowShortcuts(true);
+          onShowShortcuts();
+          return true;
+        }
+        if (event.key === "?" && !mod && !event.altKey && onShowShortcuts) {
+          event.preventDefault();
+          onShowShortcuts();
           return true;
         }
 
-        const mod = event.metaKey || event.ctrlKey;
         if (!mod) return false;
 
         const key = event.key.toLowerCase();
@@ -286,8 +298,8 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
           <Redo size={16} />
         </ToolbarButton>
         <ToolbarButton
-          onClick={() => setShowShortcuts(true)}
-          title="Keyboard shortcuts (?)"
+          onClick={() => onShowShortcuts?.()}
+          title="Keyboard shortcuts (⌘/)"
         >
           <Keyboard size={16} />
         </ToolbarButton>
@@ -487,7 +499,6 @@ export default function RichEditor({ book, content, onChange, placeholder, kbpMo
           setPickerOpen(false);
         }}
       />
-      <KeyboardShortcutsModal open={showShortcuts} onClose={() => setShowShortcuts(false)} />
     </div>
     </EditorAssetContext.Provider>
   );
