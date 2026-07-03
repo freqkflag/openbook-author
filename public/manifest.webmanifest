@@ -1,0 +1,18 @@
+{
+  "name": "OpenBook Author",
+  "short_name": "OpenBook",
+  "description": "FOSS book authoring studio — create and export EPUB books with AI assistance.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#05070D",
+  "theme_color": "#05070D",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -112,6 +112,14 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
+### PWA / offline mode
+
+The web app registers a service worker (`public/sw.js`) that caches the app shell and static assets. After you load OpenBook Author once while online, you can reopen the editor offline — your books stay in `localStorage`, and `.openbook` packages still open via the file picker or Electron file dialogs.
+
+- **Installable** — add to home screen via the browser install prompt (manifest at `/manifest.webmanifest`)
+- **Offline indicator** — a banner appears when `navigator.onLine` is false; AI API calls require a connection
+- **Electron** — the native app skips service worker registration (local-first desktop workflow)
+
 ### Native macOS app
 ```bash
 npm run electron:dev

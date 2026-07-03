@@ -8,6 +8,8 @@ Format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 
+- **PWA offline shell** — service worker caches app shell and static assets; offline indicator when `navigator.onLine` is false; `.openbook` and localStorage books work offline ([#27](https://github.com/freqkflag/openbook-author/issues/27))
+- **Export theme system** — five built-in presets (Classic Serif, Modern Sans, Textbook, Guidebook, Minimal) in Book Properties; applies to EPUB, KBP, and print/PDF; optional custom CSS override persisted in `book.json`; publish readiness warns on broken `assets/` refs in custom CSS ([#55](https://github.com/freqkflag/openbook-author/issues/55))
 - **DOCX import** — Dashboard **Import DOCX** for Word/Scrivener migration; mammoth HTML conversion, heading-based chapter split, inline images to `assets/`, import report for tables and footnotes ([#54](https://github.com/freqkflag/openbook-author/issues/54))
 - **Tables, footnotes, and endnotes** — TipTap table kit (3×3 insert, row/column controls); footnote/endnote inline refs with EPUB 3 noteref export, endnotes section, EPUB import reverse transform, and publish readiness checks ([#8](https://github.com/freqkflag/openbook-author/issues/8))
 - **Wave A completion:** axe-core accessibility tests on export HTML fixtures (`a11y-export.test.ts`); EPUB structural validation in publish readiness (`epub-validation.ts`); Wave A status doc

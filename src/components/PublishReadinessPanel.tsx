@@ -101,7 +101,7 @@ function EpubValidationSection({
     [platform]
   );
 
-  if (epubState.status === "idle" || epubState.status === "loading") {
+  if (epubState.status !== "done") {
     return (
       <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2 space-y-1">
         <p className="text-xs text-slate-500">

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="OpenBook Author">
+  <defs>
+    <linearGradient id="g" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="50%" stop-color="#D946EF"/>
+      <stop offset="100%" stop-color="#FF00AA"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#05070D"/>
+  <path fill="url(#g)" d="M128 96h160c88 0 160 72 160 160s-72 160-160 160H128V96zm32 32v256h128c70 0 128-58 128-128s-58-128-128-128H160z"/>
+  <rect x="160" y="160" width="32" height="192" rx="8" fill="#00E5FF" opacity="0.6"/>
+</svg>
