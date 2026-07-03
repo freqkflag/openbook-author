@@ -11,6 +11,8 @@ import type {
 } from "./types";
 
 const YAML_FENCE_RE = /```(?:yaml|yml)\s*\n([\s\S]*?)```/gi;
+const REVIEW_VERDICTS = ["approved", "changes_requested", "blocked"];
+const ADR_COMPLIANCE_VALUES = ["pass", "adr_missing", "adr_conflict"];
 
 export function extractYamlBlocks(input: string): string[] {
   const blocks: string[] = [];
@@ -178,6 +180,8 @@ export function validateReviewHandoff(data: Record<string, unknown>): Validation
   }
   if (!isNonEmptyString(data.verdict)) {
     errors.push({ field: "verdict", message: "verdict is required" });
+  } else if (!REVIEW_VERDICTS.includes(data.verdict)) {
+    errors.push({ field: "verdict", message: "verdict is invalid" });
   }
   if (!isStringArray(data.findings)) {
     errors.push({ field: "findings", message: "findings must be a string array" });
@@ -190,9 +194,21 @@ export function validateReviewHandoff(data: Record<string, unknown>): Validation
   }
   if (!isNonEmptyString(data.adr_compliance)) {
     errors.push({ field: "adr_compliance", message: "adr_compliance is required" });
+  } else if (!ADR_COMPLIANCE_VALUES.includes(data.adr_compliance)) {
+    errors.push({ field: "adr_compliance", message: "adr_compliance is invalid" });
   }
   if (!isNonEmptyString(data.next_agent)) {
     errors.push({ field: "next_agent", message: "next_agent is required" });
+  } else if (data.next_agent === "pr-creator-agent" && data.verdict !== "approved") {
+    errors.push({
+      field: "next_agent",
+      message: "pr-creator-agent requires verdict approved",
+    });
+  } else if (data.verdict === "approved" && data.next_agent !== "pr-creator-agent") {
+    errors.push({
+      field: "next_agent",
+      message: "approved verdict must route to pr-creator-agent",
+    });
   }
 
   return errors;
