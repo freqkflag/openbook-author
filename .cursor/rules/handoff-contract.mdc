@@ -28,87 +28,17 @@ context:
   labels: []
   linked_files: []
   summary: <1–3 sentences>
-lane: product | quality | knowledge | infrastructure
-merge_lane: product | infrastructure  # which PR bucket — Dispatch and Merge Manager use this, not inference
-ownership: []  # files or directories this task will touch — primary orchestration key
-parallel_group: null | <area-id>  # semantic ownership area, e.g. editor, epub-import, docs
-parallel_safe: true | false
-conflicts_with:
-  - issue: <number> | task: <string>
-    reason: <string>  # e.g. Both modify RichEditor.tsx
-wave: null | <wave-id>  # batch wave from @project-manager-agent, e.g. wave-a
-queue_after: []  # issue numbers or task ids that must complete before starting
 workflow:
   - <current-agent>
-  - merge-manager-agent
   - review-agent
   - pr-creator-agent
 ```
-
-### Orchestration principle
-
-**Orchestrate by ownership, not by issue number.** Do not ask “Can these issues run together?” Ask “Will these agents touch the same parts of the codebase?”
-
-### Router orchestration fields
-
-| Field | Meaning |
-|-------|---------|
-| `lane` | Permanent lane — agents **within** a lane coordinate with each other (see below). |
-| `merge_lane` | PR bucket at merge time: `product` (app code, templates, product docs) or `infrastructure` (`.cursor/rules/`, GitHub workflows, agent automation). Dispatch and Merge Manager use this field — do not infer from `lane` alone. |
-| `ownership` | Files/directories this task will likely touch. Primary key for overlap detection. Execution agents may touch additional files; update in Execution Handoff via `files_touched`. |
-| `parallel_group` | Semantic ownership area (e.g. `editor`, `epub-import`, `export-tests`, `docs`). Tasks in the same `parallel_group` on the **product** lane serialize; other lanes use file overlap only. |
-| `parallel_safe` | `true` when this task may start now with no `queue_after` blockers. `false` when it must wait. |
-| `conflicts_with` | Other issues or PM subtasks that share `ownership`. Populated even when still `parallel_safe` vs non-conflicting work. |
-| `wave` | Batch wave id from `@project-manager-agent` (e.g. `wave-a`). `null` for solo or router-only triage. |
-| `queue_after` | Issue numbers or task ids that must complete before this task starts. |
-
-### Permanent lanes
-
-| Lane | Purpose | Typical agents |
-|------|---------|----------------|
-| **product** | Features, bugs, editor, export | `feature-agent`, `debug-agent`, `review-agent`, `merge-manager-agent` |
-| **quality** | Tests, accessibility, performance | `test-agent`, `ui-agent`, `review-agent` |
-| **knowledge** | Docs, ADRs, research | `docs-agent` |
-| **infrastructure** | Cursor rules, GitHub workflows, automation | `docs-agent`, `project-manager-agent`, `merge-manager-agent` |
-
-### Cross-lane rules
-
-- Agents **within** a lane coordinate with each other (ownership overlap, `queue_after`).
-- Agents **across** lanes only meet at `@merge-manager-agent`.
-- **Product never waits for infrastructure** unless there is an actual dependency (e.g. a new handoff field the product agent must read).
-
-### Parallel rules by lane
-
-| Lane | Parallel rule |
-|------|---------------|
-| **product** | One active task per overlapping `ownership` file |
-| **quality** | Usually parallel; serialize only on in-flight product-file overlap |
-| **knowledge** | Rarely conflicts; serialize on identical doc paths |
-| **infrastructure** | Serialize on `.cursor/rules/` or workflow file overlap |
-
-### Waves
-
-Batch work by wave, not by issue count. Each wave may include product + quality + knowledge lanes, then merges before the next wave:
-
-```
-Wave A → product + quality + knowledge → merge (by merge_lane) → Wave B
-```
-
-### Safety signals
-
-| Signal | Meaning |
-|--------|---------|
-| 🟢 Safe | Different `ownership` areas and lanes — run together |
-| 🟡 Coordinate | Related scope but non-overlapping files — UI may propose while feature codes |
-| 🔴 Queue | Same `ownership` file on product lane — serialize |
 
 ## Execution Handoff (output from execution agents → review-agent)
 
 ```yaml
 issue: <number>
 source_agent: <agent-id>
-lane: product | quality | knowledge | infrastructure
-merge_lane: product | infrastructure
 status: complete | blocked | needs_human
 changes_summary: <what was done>
 files_touched: []

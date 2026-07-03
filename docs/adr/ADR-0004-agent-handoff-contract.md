@@ -21,9 +21,6 @@ All studio agents communicate via **YAML handoff blocks** defined in `.cursor/ru
 | Router Handoff | `@issue-router` | Execution agents |
 | Execution Handoff | Execution agents | `@review-agent` |
 | Review Handoff | `@review-agent` | `@pr-creator-agent` |
-| Merge coordination | `@merge-manager-agent` | `@review-agent` (per task in wave) |
-
-Router handoffs include **ownership-based orchestration** fields (`lane`, `ownership`, `parallel_group`, `parallel_safe`, `conflicts_with`, `wave`, `queue_after`). Orchestrate by ownership, not issue number — serialize when product-lane tasks share files. Logic lives in `.cursor/rules/issue-router.mdc` § Orchestration; wave planning in `.cursor/rules/project-manager-agent.mdc`. Human-readable reference: [docs/agent-router.md](../agent-router.md).
 
 GitHub intake is structured via:
 
@@ -31,7 +28,7 @@ GitHub intake is structured via:
 - `issue-labeler.yml` — keyword labels + `router-ready` signal
 - `issue-router.yml` — one deduped `@issue-router` comment per issue
 
-Workflow: **Issue Router → Execution Agent → Review Agent → Merge Manager → PR Creator** (Knowledge Agent slot reserved for Phase 2).
+Workflow: **Issue Router → Execution Agent → Review Agent → PR Creator** (Knowledge Agent slot reserved for Phase 2).
 
 ## Consequences
 
@@ -57,10 +54,6 @@ Workflow: **Issue Router → Execution Agent → Review Agent → Merge Manager 
 
 - `.cursor/rules/handoff-contract.mdc`
 - `.cursor/rules/issue-router.mdc`
-- `.cursor/rules/merge-manager-agent.mdc`
-- `.cursor/rules/project-manager-agent.mdc`
-- `.cursor/rules/architecture-memory.mdc`
-- `docs/agent-router.md` — developer reference
 - `.github/workflows/issue-labeler.yml`
 - `.github/workflows/issue-router.yml`
 - `.github/ISSUE_TEMPLATE/`
