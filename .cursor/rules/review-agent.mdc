@@ -40,4 +40,6 @@ Emit **only** a Review Handoff YAML block (include `next_agent`), then:
 NEXT: Attach @<next_agent> and paste the handoff above.
 ```
 
+If running in a GitHub automation that cannot write issue comments or labels directly, also save the same YAML to `.openbook/review/issue-<n>.yaml` and open a handoff PR. The `Apply Review Handoff` workflow posts the Review Handoff back to the issue, updates `approved-for-merge` / `needs-rework`, routes rework to the source agent, and closes the handoff PR.
+
 Planning-gate approvals route back to the execution agent for implementation — not `@pr-creator-agent`.

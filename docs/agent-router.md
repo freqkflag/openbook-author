@@ -75,6 +75,14 @@ Exits `0` when valid, `1` with field errors when invalid.
 6. Execution agent completes work and emits an Execution Handoff → `@review-agent`.
 7. Review agent emits Review Handoff → `@pr-creator-agent` when approved.
 
+When Cursor automations cannot write issue comments or labels directly, handoff-only PRs bridge the gap:
+
+- Dispatch handoffs: `.openbook/dispatch/issue-<n>.yaml`
+- Execution handoffs: `.openbook/execution/issue-<n>.yaml`
+- Review handoffs: `.openbook/review/issue-<n>.yaml`
+
+The corresponding GitHub workflows post the YAML back to the linked issue and apply the routing labels. Review handoffs add `approved-for-merge` for `verdict: approved`; `changes_requested` and `blocked` add `needs-rework` and route back to the handoff `next_agent`.
+
 ## Agent rules
 
 Cursor agent definitions live in [`.cursor/rules/`](../.cursor/rules/):

@@ -39,7 +39,7 @@ jobs:
               "docs-agent": "agent:docs",
               "test-agent": "agent:test",
               "ui-agent": "agent:design",
-              "refactor-agent": "agent:feature",
+              "refactor-agent": "agent:refactor",
             };
 
             const dispatchDir = ".openbook/dispatch";

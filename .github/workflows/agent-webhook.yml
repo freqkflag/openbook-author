@@ -8,6 +8,7 @@
 #   OPENBOOK_WEBHOOK_FEATURE        + OPENBOOK_WEBHOOK_FEATURE_AUTH        — ready-for-execution + agent:feature
 #   OPENBOOK_WEBHOOK_BUG            + OPENBOOK_WEBHOOK_BUG_AUTH            — ready-for-execution + agent:bug
 #   OPENBOOK_WEBHOOK_DOCS           + OPENBOOK_WEBHOOK_DOCS_AUTH           — ready-for-execution + agent:docs
+#   OPENBOOK_WEBHOOK_REFACTOR       + OPENBOOK_WEBHOOK_REFACTOR_AUTH       — ready-for-execution + agent:refactor
 #   OPENBOOK_WEBHOOK_TEST           + OPENBOOK_WEBHOOK_TEST_AUTH           — ready-for-execution + agent:test
 #   OPENBOOK_WEBHOOK_UI             + OPENBOOK_WEBHOOK_UI_AUTH             — ready-for-execution + agent:design
 #   OPENBOOK_WEBHOOK_REVIEW         + OPENBOOK_WEBHOOK_REVIEW_AUTH         — ready-for-review
@@ -47,6 +48,8 @@ jobs:
           WEBHOOK_BUG_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_BUG_AUTH }}
           WEBHOOK_DOCS: ${{ secrets.OPENBOOK_WEBHOOK_DOCS }}
           WEBHOOK_DOCS_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_DOCS_AUTH }}
+          WEBHOOK_REFACTOR: ${{ secrets.OPENBOOK_WEBHOOK_REFACTOR }}
+          WEBHOOK_REFACTOR_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_REFACTOR_AUTH }}
           WEBHOOK_TEST: ${{ secrets.OPENBOOK_WEBHOOK_TEST }}
           WEBHOOK_TEST_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_TEST_AUTH }}
           WEBHOOK_UI: ${{ secrets.OPENBOOK_WEBHOOK_UI }}
@@ -108,6 +111,10 @@ jobs:
               "agent:docs": {
                 url: process.env.WEBHOOK_DOCS,
                 auth: process.env.WEBHOOK_DOCS_AUTH,
+              },
+              "agent:refactor": {
+                url: process.env.WEBHOOK_REFACTOR,
+                auth: process.env.WEBHOOK_REFACTOR_AUTH,
               },
               "agent:test": {
                 url: process.env.WEBHOOK_TEST,

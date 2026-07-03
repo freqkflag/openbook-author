@@ -11,6 +11,7 @@ labels=(
   "agent:feature|a2eeef|Route to Feature agent"
   "agent:bug|d73a4a|Route to Bug agent"
   "agent:docs|0075ca|Route to Docs agent"
+  "agent:refactor|5319e7|Route to Refactor agent"
   "agent:test|0e8a16|Route to Test agent"
   "agent:design|d946ef|Route to UI/UX agent"
   "ready-for-execution|fbca04|Execution agent may start"

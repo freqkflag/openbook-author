@@ -1,59 +1,44 @@
-# Applies Review Handoff from PR comments to issue labels.
+# Applies Review Handoff YAML from comments or `.openbook/review/issue-<n>.yaml`
+# handoff PRs to issue labels.
 
 name: Apply Review Handoff
 
 on:
   issue_comment:
     types: [created]
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - ".openbook/review/**"
 
 permissions:
+  contents: read
   issues: write
-  pull-requests: read
+  pull-requests: write
 
 jobs:
-  apply:
-    if: contains(github.event.comment.body, '<!-- openbook-author:review -->')
+  apply-comment:
+    if: github.event_name == 'issue_comment' && contains(github.event.comment.body, '<!-- openbook-author:review -->')
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Parse review handoff and update labels
         uses: actions/github-script@v7
         with:
           script: |
+            const { getReviewLabelPlan, parseReviewFields } = require("./.github/scripts/review-handoff-labels.cjs");
+
             const body = context.payload.comment.body ?? "";
-            const yamlMatch = body.match(/```ya?ml\s*([\s\S]*?)```/);
-            const raw = yamlMatch?.[1] ?? body;
             const issueNumber = context.payload.issue?.number;
             if (!issueNumber) return;
 
-            const verdict = raw.match(/^verdict:\s*(\S+)/m)?.[1] ?? "";
-            const nextAgent = raw.match(/^next_agent:\s*(\S+)/m)?.[1] ?? "";
+            const { verdict, nextAgent } = parseReviewFields(body);
+            const { labelsToAdd, labelsToRemove } = getReviewLabelPlan({ verdict, nextAgent });
 
-            const AGENT_LABEL = {
-              "debug-agent": "agent:bug",
-              "feature-agent": "agent:feature",
-              "docs-agent": "agent:docs",
-              "test-agent": "agent:test",
-              "ui-agent": "agent:design",
-            };
-
-            const labelsToAdd = [];
-            const labelsToRemove = ["ready-for-review"];
-
-            if (verdict === "approved") {
-              labelsToAdd.push("approved-for-merge");
-            } else if (verdict === "changes_requested" || verdict === "blocked") {
-              labelsToAdd.push("needs-rework");
-              if (AGENT_LABEL[nextAgent]) {
-                labelsToAdd.push(AGENT_LABEL[nextAgent], "ready-for-execution");
-              }
-            }
-
-            if (labelsToAdd.length > 0) {
-              await github.rest.issues.addLabels({
-                ...context.repo,
-                issue_number: issueNumber,
-                labels: labelsToAdd,
-              });
+            if (labelsToAdd.length === 0) {
+              core.warning(`No label changes resolved for review verdict "${verdict}".`);
+              return;
             }
 
             for (const name of labelsToRemove) {
@@ -67,3 +52,114 @@ jobs:
                 // optional
               }
             }
+
+            await github.rest.issues.addLabels({
+              ...context.repo,
+              issue_number: issueNumber,
+              labels: labelsToAdd,
+            });
+
+  apply-pr:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Apply review handoff to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+            const { getReviewLabelPlan, parseReviewFields } = require("./.github/scripts/review-handoff-labels.cjs");
+
+            const reviewDir = ".openbook/review";
+            if (!fs.existsSync(reviewDir)) {
+              core.info("No review directory - skipping.");
+              return;
+            }
+
+            const pr = context.payload.pull_request;
+            const files = fs
+              .readdirSync(reviewDir)
+              .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"));
+
+            for (const file of files) {
+              const raw = fs.readFileSync(path.join(reviewDir, file), "utf8");
+              const issueNumber =
+                file.match(/issue-(\d+)/)?.[1] ?? raw.match(/^issue:\s*(\d+)/m)?.[1];
+
+              if (!issueNumber) {
+                core.warning(`Could not resolve issue number from ${file}`);
+                continue;
+              }
+
+              const marker = "<!-- openbook-author:review -->";
+              const body = [
+                marker,
+                `Review handoff PR: #${pr.number}`,
+                "```yaml",
+                raw.trim(),
+                "```",
+              ].join("\n");
+
+              const { data: comments } = await github.rest.issues.listComments({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                per_page: 100,
+              });
+
+              const alreadyApplied = comments.some(
+                (comment) =>
+                  comment.body?.includes(marker) &&
+                  comment.body?.includes(`Review handoff PR: #${pr.number}`)
+              );
+
+              if (!alreadyApplied) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  body,
+                });
+              }
+
+              const { verdict, nextAgent } = parseReviewFields(raw);
+              const { labelsToAdd, labelsToRemove } = getReviewLabelPlan({ verdict, nextAgent });
+
+              if (labelsToAdd.length === 0) {
+                core.warning(`No label changes resolved for review verdict "${verdict}" in ${file}.`);
+                continue;
+              }
+
+              for (const name of labelsToRemove) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    ...context.repo,
+                    issue_number: Number(issueNumber),
+                    name,
+                  });
+                } catch {
+                  // optional
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                labels: labelsToAdd,
+              });
+
+              core.info(`Applied review handoff for issue #${issueNumber}`);
+            }
+
+      - name: Close review handoff PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_request_number: context.payload.pull_request.number,
+              state: "closed",
+            });

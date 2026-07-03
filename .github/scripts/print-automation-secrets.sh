@@ -24,6 +24,8 @@ After saving each automation in Cursor, copy its Webhook URL + Bearer token (crs
 | OPENBOOK_WEBHOOK_BUG_AUTH           | Bug                     | (Bearer token)                      |
 | OPENBOOK_WEBHOOK_DOCS               | Docs                    | ready-for-execution + agent:docs    |
 | OPENBOOK_WEBHOOK_DOCS_AUTH          | Docs                    | (Bearer token)                      |
+| OPENBOOK_WEBHOOK_REFACTOR           | Refactor                | ready-for-execution + agent:refactor|
+| OPENBOOK_WEBHOOK_REFACTOR_AUTH      | Refactor                | (Bearer token)                      |
 | OPENBOOK_WEBHOOK_TEST               | Test                    | ready-for-execution + agent:test    |
 | OPENBOOK_WEBHOOK_TEST_AUTH          | Test                    | (Bearer token)                      |
 | OPENBOOK_WEBHOOK_UI                 | UI/UX                   | ready-for-execution + agent:design  |
