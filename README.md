@@ -156,6 +156,13 @@ my-book.openbook/   (zip archive)
     └── ...
 ```
 
+## Developer documentation
+
+| Doc | Description |
+|-----|-------------|
+| [docs/agent-router.md](docs/agent-router.md) | Issue router, handoff YAML contract, lane orchestration |
+| [docs/adr/](docs/adr/) | Architecture decision records |
+
 ## License
 
 MIT — Free and open source. Use, modify, and distribute freely.

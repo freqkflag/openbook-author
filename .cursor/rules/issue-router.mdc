@@ -10,7 +10,7 @@ You are the Issue Router Agent for **OpenBook Author**. You triage issues and or
 ## Workflow
 
 ```
-GitHub Issue → Issue Router → [Knowledge Agent] → Execution Agent → Review Agent → PR Creator
+GitHub Issue → Issue Router → [Knowledge Agent] → Execution Agent → Merge Manager → Review Agent → PR Creator
                               ↑ Phase 2 (not built yet)
 ```
 
@@ -31,7 +31,9 @@ Today: route directly to execution agents. Populate `relevant_adrs` as interim k
 5. Set `priority` and `estimated_scope` from labels and body.
 6. Populate `relevant_adrs` using `@architecture-memory` keyword map. Use **full ADR slugs** (filename without `.md`), e.g. `ADR-0001-guidebook-block-model` — not short IDs like `ADR-0001`.
 7. Define `deliverables` and `success_criteria` specific to this issue.
-8. Apply confidence gates:
+8. Set `lane` from routed agent (see `@handoff-contract` § Lanes).
+9. **Estimate `ownership`** and run orchestration (see below).
+10. Apply confidence gates:
    - `≥ 0.75` — route normally, `escalate: false`
    - `0.50–0.74` — route with caution in `recommendation`
    - `< 0.50` — `escalate: true`, `agent: null`, stop workflow
@@ -48,18 +50,295 @@ recommendation: "I cannot confidently classify this issue. Escalate to Human Rev
 
 Do not invoke downstream agents. Output only the Router Handoff.
 
+## Orchestration
+
+Orchestrate by **ownership**, not issue number. Run this **before** emitting handoffs whenever triaging one or more issues in the same batch (multiple issues in one request, or open/routed issues still in flight).
+
+### 1. Assign `lane` and `merge_lane`
+
+| Agent | Lane | Default `merge_lane` |
+|-------|------|----------------------|
+| `feature-agent`, `debug-agent`, `ui-agent`, `refactor-agent` | `product` | `product` |
+| `test-agent` | `quality` | `product` (tests ship with product PR) |
+| `docs-agent` | `knowledge` or `infrastructure` | Set from `ownership`: product docs → `product`; `.cursor/rules/`, `docs/agent-router.md` → `infrastructure` |
+| `project-manager-agent` | `infrastructure` | `infrastructure` |
+
+**Rule:** Product never waits for infrastructure unless `queue_after` names an actual dependency.
+
+### 2. Estimate `ownership`
+
+For each issue, build a deduplicated path list from:
+
+1. **Issue body** — explicit paths, backticked filenames, component names (map to `src/` conventions)
+2. **`context.linked_files`** — directories expand to likely children (e.g. `src/components/editor/` → `RichEditor.tsx`, editor page)
+3. **Classification defaults** — e.g. `bug` + EPUB/export labels → `src/lib/epub.ts`; editor `feature` → `src/app/editor/[id]/page.tsx`, `src/components/RichEditor.tsx`
+4. **Keyword → ADR map** (`@architecture-memory`) — include ADR-affected files for matched keywords
+
+Prefer **specific file paths**. When uncertain, include the likely file — overlap detection should err toward serialization.
+
+Set `parallel_group` to the semantic area: `editor`, `epub-import`, `epub-export`, `guidebook`, `docs`, `router-rules`, etc.
+
+### 3. Compare across the batch
+
+Compare each issue's `ownership` against **every other issue** in the current batch plus any **in-flight** issues (routed but not yet merged) in the same milestone.
+
+**Overlap rule:** identical file path, or one path is a parent directory of another, counts as a conflict.
+
+**Lane rules:**
+
+| Lanes involved | Rule |
+|----------------|------|
+| Both `product` + file overlap | Serialize — only earliest (lowest issue number) runs now |
+| `quality` vs `product` | Safe if quality `ownership` is test-only paths (`*.test.ts`, `__snapshots__/`) with no overlap on product source files |
+| `knowledge` vs others | Safe unless same doc path (e.g. both edit `docs/agent-router.md`) |
+| `ui-agent` + `feature-agent` | 🟡 Coordinate — UI may propose/review while feature codes if `ownership` does not overlap |
+
+### 4. Set orchestration fields
+
+| Condition | Set |
+|-----------|-----|
+| No file overlap | `parallel_safe: true`, `conflicts_with: []`, `queue_after: []` |
+| Overlap with another issue | `conflicts_with` entry per overlap with `reason` citing shared file(s) |
+| Product-lane overlap in same wave | Lower issue number runs first; higher gets `parallel_safe: false`, `queue_after: [<lower>]` |
+| In current parallel wave | Same `wave` id (e.g. `wave-a`) |
+| Queued | `wave: null` |
+
+When three or more issues chain on the same files, only the earliest enters the wave; others queue in order.
+
+### 5. Batch NEXT guidance
+
+When routing multiple issues, emit one coordination block **before** per-issue handoffs:
+
+```
+ORCHESTRATION (by ownership)
+🟢 PARALLEL (wave-a): #<n> <title>, #<n> <title>, #<n> <title>
+🔴 QUEUE: #<n> until #<m> — both touch <shared-file>
+```
+
+Then for each issue ready to start now:
+
+```
+NEXT (#<n>): Attach @<agent> and paste the handoff below.
+WORKFLOW: <agent> → @merge-manager-agent → @review-agent → @pr-creator-agent
+```
+
+Queued issues still get a full Router Handoff YAML block:
+
+```
+NEXT (#<n>): QUEUED — start after #<m> completes. Attach @<agent> when unblocked.
+```
+
+When `escalate: true`, omit NEXT lines and request human triage instead.
+
+For a **single issue** with no batch context, default `parallel_safe: true`, empty `conflicts_with`, `wave: null`, `queue_after: []`.
+
 ## Output
 
-Emit **only** a Router Handoff YAML block (see `@handoff-contract`). Then append:
+Emit a Router Handoff YAML block per issue (see `@handoff-contract`). For single-issue routing, append:
 
 ```
 NEXT: Attach @<agent> and paste the handoff above.
-WORKFLOW: <agent> → @review-agent → @pr-creator-agent
+WORKFLOW: <agent> → @merge-manager-agent → @review-agent → @pr-creator-agent
 ```
+
+When batch-routing, use the batch NEXT guidance from **Orchestration §5** instead.
 
 When `escalate: true`, omit the NEXT line and request human triage instead.
 
-## Example
+## Phase 1 batch example
+
+Four issues routed together. `#32`, `#26`, and `#11` have non-overlapping `ownership` and run in parallel; `#13` overlaps `#11` on editor files and queues.
+
+**Coordination output:**
+
+```
+ORCHESTRATION (by ownership)
+🟢 PARALLEL (wave-a): #32 EPUB export regression, #26 save indicator, #11 keyboard shortcuts
+🔴 QUEUE: #13 until #11 — both touch RichEditor.tsx and src/app/editor/[id]/page.tsx
+```
+
+**#32 — EPUB bug**
+
+```yaml
+issue: 32
+title: EPUB export regression
+classification: bug
+confidence: 0.91
+agent: debug-agent
+priority: high
+estimated_scope: small
+escalate: false
+recommendation: null
+relevant_adrs:
+  - ADR-0003-epub-export-pipeline
+deliverables:
+  - fix
+  - tests
+success_criteria:
+  - EPUB export succeeds for guidebook chapters
+  - existing tests pass
+context:
+  labels: [bug, export]
+  linked_files: [src/lib/epub.ts]
+  summary: EPUB generation fails on multi-chapter books.
+lane: product
+merge_lane: product
+ownership:
+  - src/lib/epub.ts
+  - src/app/globals.css
+parallel_group: epub-export
+parallel_safe: true
+conflicts_with: []
+wave: wave-a
+queue_after: []
+workflow:
+  - debug-agent
+  - merge-manager-agent
+  - review-agent
+  - pr-creator-agent
+```
+
+**#26 — save indicator**
+
+```yaml
+issue: 26
+title: Add save status indicator to editor
+classification: feature
+confidence: 0.88
+agent: feature-agent
+priority: medium
+estimated_scope: small
+escalate: false
+recommendation: null
+relevant_adrs: []
+deliverables:
+  - implementation
+success_criteria:
+  - SaveStatusBadge reflects saving/saved/error on editor page
+context:
+  labels: [enhancement, editor]
+  linked_files: [src/components/SaveStatusBadge.tsx, src/app/editor/]
+  summary: Users cannot see whether edits are persisted.
+lane: product
+merge_lane: product
+ownership:
+  - src/components/SaveStatusBadge.tsx
+  - src/app/editor/[id]/page.tsx
+parallel_group: editor
+parallel_safe: true
+conflicts_with: []
+wave: wave-a
+queue_after: []
+workflow:
+  - feature-agent
+  - merge-manager-agent
+  - review-agent
+  - pr-creator-agent
+```
+
+**#11 — keyboard shortcuts**
+
+```yaml
+issue: 11
+title: Editor keyboard shortcuts
+classification: feature
+confidence: 0.85
+agent: feature-agent
+priority: medium
+estimated_scope: medium
+escalate: false
+recommendation: null
+relevant_adrs:
+  - ADR-0001-guidebook-block-model
+deliverables:
+  - implementation
+  - tests
+success_criteria:
+  - Documented shortcuts work in RichEditor
+context:
+  labels: [enhancement, editor]
+  linked_files: [src/components/RichEditor.tsx]
+  summary: Add keyboard shortcuts for common editor actions.
+lane: product
+merge_lane: product
+ownership:
+  - src/components/RichEditor.tsx
+  - src/app/editor/[id]/page.tsx
+parallel_group: editor
+parallel_safe: true
+conflicts_with:
+  - issue: 13
+    reason: Both modify RichEditor.tsx and src/app/editor/[id]/page.tsx
+wave: wave-a
+queue_after: []
+workflow:
+  - feature-agent
+  - merge-manager-agent
+  - review-agent
+  - pr-creator-agent
+```
+
+**#13 — chapter reorder**
+
+```yaml
+issue: 13
+title: Drag-and-drop chapter reorder
+classification: feature
+confidence: 0.93
+agent: feature-agent
+priority: high
+estimated_scope: medium
+escalate: false
+recommendation: null
+relevant_adrs:
+  - ADR-0001-guidebook-block-model
+deliverables:
+  - implementation
+  - tests
+success_criteria:
+  - Chapters reorder via drag-and-drop in ChapterSidebar
+  - book-store reflects new order
+context:
+  labels: [enhancement, editor]
+  linked_files: [src/components/ChapterSidebar.tsx, src/store/book-store.ts]
+  summary: Users need drag-and-drop chapter reordering in the editor sidebar.
+lane: product
+merge_lane: product
+ownership:
+  - src/components/ChapterSidebar.tsx
+  - src/components/RichEditor.tsx
+  - src/store/book-store.ts
+  - src/app/editor/[id]/page.tsx
+parallel_group: editor
+parallel_safe: false
+conflicts_with:
+  - issue: 11
+    reason: Both modify RichEditor.tsx and src/app/editor/[id]/page.tsx
+wave: null
+queue_after: [11]
+workflow:
+  - feature-agent
+  - merge-manager-agent
+  - review-agent
+  - pr-creator-agent
+```
+
+## Current-project batch example
+
+Typical safe parallel wave for this repo:
+
+```
+ORCHESTRATION (by ownership)
+🟢 PARALLEL (wave-a):
+  #— Guidebook seed (feature-agent, ownership: src/lib/guidebook-seed.ts)
+  #— Export snapshots (test-agent, ownership: src/lib/epub-export.snapshots.test.ts)
+  #— Router rules docs (docs-agent, ownership: .cursor/rules/, docs/agent-router.md)
+  #— EPUB import research (docs-agent or feature-agent, ownership: src/lib/epub.ts — read-only investigate)
+```
+
+After wave completes: `@merge-manager-agent` → `@review-agent` → `@pr-creator-agent`.
+
+## Single-issue example
 
 ```yaml
 issue: 143
@@ -85,8 +364,19 @@ context:
   labels: [enhancement, editor]
   linked_files: [src/components/editor/]
   summary: Users need drag-and-drop chapter reordering in the EPUB editor.
+lane: product
+merge_lane: product
+ownership:
+  - src/components/ChapterSidebar.tsx
+  - src/store/book-store.ts
+parallel_group: editor
+parallel_safe: true
+conflicts_with: []
+wave: null
+queue_after: []
 workflow:
   - feature-agent
+  - merge-manager-agent
   - review-agent
   - pr-creator-agent
 ```
