@@ -69,6 +69,16 @@ function buildStoreMetadataOpf(metadata: BookMetadata): string {
   return lines.length ? `${lines.join("\n    ")}\n    ` : "";
 }
 
+function guidebookHeadingId(blockType: GuidebookBlockType, title: string): string {
+  const slug =
+    title
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .slice(0, 40) || blockType.replace("_", "-");
+  return `guidebook-title-${blockType.replace("_", "-")}-${slug}`;
+}
+
 function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: string): string {
   const data = decodePayload(payloadRaw);
   const typeClass = `guidebook-${blockType.replace("_", "-")}`;
@@ -86,10 +96,12 @@ function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: stri
     const meta = [d.mileMarker ? `Mile ${escapeHtml(d.mileMarker)}` : "", d.elevation ? escapeHtml(d.elevation) : ""]
       .filter(Boolean)
       .join(" · ");
-    return `<aside class="guidebook-block ${typeClass}">
+    const heading = escapeHtml(d.name || "Trail Stop");
+    const headingId = guidebookHeadingId(blockType, d.name || "Trail Stop");
+    return `<aside class="guidebook-block ${typeClass}" aria-labelledby="${headingId}">
   <header class="guidebook-block-header">Trail Stop</header>
   <div class="guidebook-block-body">
-    <h3>${escapeHtml(d.name || "Trail Stop")}</h3>
+    <h3 id="${headingId}">${heading}</h3>
     ${meta ? `<p class="trail-meta">${meta}</p>` : ""}
     ${d.notes ? `<p>${escapeHtml(d.notes)}</p>` : ""}
     ${amenitiesHtml}
@@ -105,10 +117,12 @@ function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: stri
           `<div class="workshop-exercise"><strong>${i + 1}.</strong> ${escapeHtml(ex.prompt || "")}<span class="response-hint"> (${ex.responseType === "long" ? "long answer" : "short answer"})</span></div>`
       )
       .join("");
-    return `<aside class="guidebook-block ${typeClass}">
+    const heading = escapeHtml(d.title || "Workshop");
+    const headingId = guidebookHeadingId(blockType, d.title || "Workshop");
+    return `<aside class="guidebook-block ${typeClass}" aria-labelledby="${headingId}">
   <header class="guidebook-block-header">Workshop</header>
   <div class="guidebook-block-body">
-    <h3>${escapeHtml(d.title || "Workshop")}</h3>
+    <h3 id="${headingId}">${heading}</h3>
     ${exercises}
   </div>
 </aside>`;
@@ -122,10 +136,12 @@ function serializeGuidebookBlock(blockType: GuidebookBlockType, payloadRaw: stri
         `<span class="cheat-label">${escapeHtml(item.label || "")}</span><span>${escapeHtml(item.value || "")}</span>`
     )
     .join("");
-  return `<aside class="guidebook-block ${typeClass}">
+  const heading = escapeHtml(d.title || "Quick Reference");
+  const headingId = guidebookHeadingId(blockType, d.title || "Quick Reference");
+  return `<aside class="guidebook-block ${typeClass}" aria-labelledby="${headingId}">
   <header class="guidebook-block-header">Cheat Sheet</header>
   <div class="guidebook-block-body">
-    <h3>${escapeHtml(d.title || "Quick Reference")}</h3>
+    <h3 id="${headingId}">${heading}</h3>
     <div class="cheat-grid cols-${cols}">${items}</div>
   </div>
 </aside>`;
