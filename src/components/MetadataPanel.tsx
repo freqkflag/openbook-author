@@ -1,6 +1,7 @@
 "use client";
 
 import type { Book, KBPSettings } from "@/types/book";
+import CoverEditor from "@/components/CoverEditor";
 
 interface MetadataPanelProps {
   book: Book;
@@ -53,6 +54,8 @@ export default function MetadataPanel({
           )}
         </label>
       ))}
+
+      <CoverEditor book={book} />
 
       <div className="pt-3 border-t border-white/10 space-y-3">
         <h3 className="text-xs font-medium text-fuchsia-400 uppercase tracking-wider">

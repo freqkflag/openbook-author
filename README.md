@@ -14,8 +14,21 @@ Create beautiful EPUB books with rich text editing, chapter management, template
 - **Rich text editor** — Headings, lists, quotes, images, links, alignment, highlights
 - **Chapter management** — Add, rename, reorder, and delete chapters
 - **Book metadata** — Title, author, publisher, language, description
-- **EPUB export** — Standard EPUB 3 with table of contents
-- **Project export/import** — Save and load `.openbook.json` files
+- **EPUB export** — Standard EPUB 3 with table of contents, cover page, and embedded assets
+- **`.openbook` packages** — Zip-based project format with `book.json` and `assets/` folder
+- **Save / Open** — Electron-native file dialogs with web download/upload fallback
+- **Asset manager** — Upload, preview, and insert images; set cover from assets panel
+- **Cover page** — Live cover preview in Book Properties; included in preview and export
+- **Full-book preview** — Scroll through cover + all sections in read-only mode
+- **Project export/import** — Legacy `.openbook.json` import still supported
+
+### File-Based Projects (v0.2)
+- **`.openbook` format** — Zip archive containing `manifest.json`, `book.json`, and `assets/`
+- **Save** (`Cmd+S`) — Write package to disk (Electron) or download (web)
+- **Save As** — Choose a new path or filename
+- **Open Book** — Load an existing `.openbook` from the dashboard or File menu
+- **Auto-save** — Debounced save to disk when a `packagePath` is set (Electron)
+- Chapter HTML references images as `assets/{filename}` instead of inline base64
 
 ### KBP — Kindle Book Publishing
 - **KBP profile** — First-line indents, drop caps, scene breaks, chapter numbering
@@ -44,7 +57,7 @@ Create beautiful EPUB books with rich text editing, chapter management, template
 ### Native macOS App (Electron)
 - Run as a native desktop app with `npm run electron:dev`
 - Build a `.dmg` installer with `npm run electron:build`
-- Native menu bar, hidden inset title bar, dark mode support
+- Native menu bar with Open / Save / Save As, hidden inset title bar, dark mode support
 
 ## Quick Start
 
@@ -100,8 +113,20 @@ Set provider to **Anthropic**, enter your API key, model e.g. `claude-3-5-haiku-
 
 ## Export
 
-- **EPUB** — Click the EPUB button in the editor toolbar
-- **JSON** — Click Export to save your project file
+- **EPUB** — Click the EPUB button in the editor toolbar (includes cover and embedded images)
+- **KBP** — Kindle Book Publishing package when KBP profile is enabled
+- **`.openbook`** — Save from the editor toolbar (Save / Save As) for full project backup
+
+## `.openbook` Package Layout
+
+```
+my-book.openbook/   (zip archive)
+├── manifest.json     # format version, app version, exportedAt
+├── book.json         # metadata, chapters, kbpSettings (no inline blobs)
+└── assets/
+    ├── cover.jpg
+    └── ...
+```
 
 ## License
 

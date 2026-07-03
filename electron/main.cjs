@@ -1,5 +1,6 @@
-const { app, BrowserWindow, shell, Menu } = require("electron");
+const { app, BrowserWindow, shell, Menu, ipcMain, dialog } = require("electron");
 const path = require("path");
+const fs = require("fs").promises;
 const { spawn } = require("child_process");
 const http = require("http");
 
@@ -47,6 +48,46 @@ function startNextServer() {
   });
 }
 
+async function writePackageToPath(filePath, payload) {
+  const { buffer, assets } = payload;
+  await fs.writeFile(filePath, Buffer.from(buffer));
+  return { path: filePath, assets };
+}
+
+function setupIpc() {
+  ipcMain.handle("openbook:save-dialog", async (_event, defaultName) => {
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: "Save OpenBook Package",
+      defaultPath: defaultName || "book.openbook",
+      filters: [{ name: "OpenBook Package", extensions: ["openbook"] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+    let filePath = result.filePath;
+    if (!filePath.endsWith(".openbook")) filePath += ".openbook";
+    return filePath;
+  });
+
+  ipcMain.handle("openbook:open-dialog", async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: "Open OpenBook Package",
+      filters: [{ name: "OpenBook Package", extensions: ["openbook"] }],
+      properties: ["openFile"],
+    });
+    if (result.canceled || !result.filePaths.length) return null;
+    return result.filePaths[0];
+  });
+
+  ipcMain.handle("openbook:write-package", async (_event, filePath, buffer) => {
+    await fs.writeFile(filePath, Buffer.from(buffer));
+    return filePath;
+  });
+
+  ipcMain.handle("openbook:read-package", async (_event, filePath) => {
+    const data = await fs.readFile(filePath);
+    return { buffer: data.buffer, filePath };
+  });
+}
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1440,
@@ -88,6 +129,26 @@ function createWindow() {
       ],
     },
     {
+      label: "File",
+      submenu: [
+        {
+          label: "Open Book...",
+          accelerator: "CmdOrCtrl+O",
+          click: () => mainWindow?.webContents.send("openbook:menu-open"),
+        },
+        {
+          label: "Save Book",
+          accelerator: "CmdOrCtrl+S",
+          click: () => mainWindow?.webContents.send("openbook:menu-save"),
+        },
+        {
+          label: "Save Book As...",
+          accelerator: "CmdOrCtrl+Shift+S",
+          click: () => mainWindow?.webContents.send("openbook:menu-save-as"),
+        },
+      ],
+    },
+    {
       label: "Edit",
       submenu: [
         { role: "undo" },
@@ -122,6 +183,7 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  setupIpc();
   try {
     if (!isDev) {
       await startNextServer();

@@ -1,6 +1,7 @@
 import JSZip from "jszip";
 import type { Book, Chapter } from "@/types/book";
 import { applyKbpToHtml, isKbpEnabled, KBP_CSS } from "@/lib/kbp";
+import { getAssetByFilename } from "@/lib/asset-store";
 
 function escapeXml(text: string): string {
   return text
@@ -34,8 +35,12 @@ function transformWidgetsForEpub(html: string): string {
         ) as { src: string; caption: string }[];
         const figures = images
           .map(
-            (img) =>
-              `<figure class="gallery-item"><img src="${img.src}" alt="${escapeXml(img.caption)}"/><figcaption>${escapeXml(img.caption)}</figcaption></figure>`
+            (img) => {
+              const src = img.src.startsWith("assets/")
+                ? `../images/${img.src.replace("assets/", "")}`
+                : img.src;
+              return `<figure class="gallery-item"><img src="${src}" alt="${escapeXml(img.caption)}"/><figcaption>${escapeXml(img.caption)}</figcaption></figure>`;
+            }
           )
           .join("");
         return `<div class="gallery-widget">${figures}</div>`;
@@ -70,23 +75,79 @@ function prepareChapterContent(book: Book, content: string): string {
   return result;
 }
 
-export { prepareChapterContent, transformWidgetsForEpub };
+function rewriteAssetPaths(html: string): string {
+  return html.replace(/src="assets\/([^"]+)"/g, 'src="../images/$1"');
+}
+
+function collectAssetFilenames(book: Book, html: string): Set<string> {
+  const filenames = new Set<string>();
+  const matches = html.matchAll(/assets\/([^"'\s)]+)/g);
+  for (const m of matches) filenames.add(m[1]);
+
+  if (book.metadata.coverImage?.startsWith("assets/")) {
+    filenames.add(book.metadata.coverImage.replace("assets/", ""));
+  }
+  return filenames;
+}
+
+async function embedAssets(
+  zip: JSZip,
+  book: Book,
+  assetBlobs: Map<string, Blob> | undefined,
+  htmlParts: string[]
+): Promise<void> {
+  const needed = new Set<string>();
+  for (const html of htmlParts) {
+    collectAssetFilenames(book, html).forEach((f) => needed.add(f));
+  }
+
+  const imagesFolder = zip.folder("images");
+  for (const filename of needed) {
+    const asset = getAssetByFilename(book, filename);
+    if (!asset) continue;
+    const blob = assetBlobs?.get(asset.id);
+    if (blob) {
+      imagesFolder?.file(filename, blob);
+    }
+  }
+}
+
+function coverXhtml(book: Book, coverImageId: string): string {
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
+<head>
+  <title>${escapeXml(book.metadata.title)}</title>
+  <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
+  <style>
+    body { margin: 0; padding: 0; text-align: center; }
+    img { max-width: 100%; max-height: 100vh; }
+  </style>
+</head>
+<body epub:type="cover">
+  <img src="../images/${coverImageId}" alt="${escapeXml(book.metadata.title)}"/>
+</body>
+</html>`;
+}
 
 function chapterXhtml(book: Book, chapter: Chapter, index: number): string {
+  const content = rewriteAssetPaths(prepareChapterContent(book, chapter.content));
   return `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="en">
 <head>
   <title>${escapeXml(chapter.title)}</title>
-  <link rel="stylesheet" type="text/css" href="styles/main.css"/>
+  <link rel="stylesheet" type="text/css" href="../styles/main.css"/>
 </head>
 <body>
   <section epub:type="chapter" id="chapter-${index}">
-    ${prepareChapterContent(book, chapter.content)}
+    ${content}
   </section>
 </body>
 </html>`;
 }
+
+export { prepareChapterContent, transformWidgetsForEpub };
 
 const MAIN_CSS = `body {
   font-family: Georgia, "Times New Roman", serif;
@@ -150,32 +211,66 @@ details.popup-widget > div { padding: 1em; }
 }
 `;
 
-export async function exportToEpub(book: Book): Promise<Blob> {
+export async function exportToEpub(
+  book: Book,
+  assetBlobs?: Map<string, Blob>
+): Promise<Blob> {
   const zip = new JSZip();
   const { metadata, chapters } = book;
   const isFixed = book.layoutMode === "landscape";
   const useKbp = isKbpEnabled(book);
   const css = useKbp ? KBP_CSS + "\n" + MAIN_CSS.split("/* Interactive")[0] : MAIN_CSS;
 
+  const coverFilename = book.metadata.coverImage?.startsWith("assets/")
+    ? book.metadata.coverImage.replace("assets/", "")
+    : null;
+  const hasCover = Boolean(coverFilename);
+
+  const chapterHtmlParts = chapters.map((ch) => prepareChapterContent(book, ch.content));
+  await embedAssets(zip, book, assetBlobs, chapterHtmlParts);
+
   zip.file("mimetype", "application/epub+zip", { compression: "STORE" });
 
-  const manifestItems = chapters
+  const imageManifest = [...new Set(
+    chapterHtmlParts.flatMap((html) => [...collectAssetFilenames(book, html)])
+  )]
+    .map((filename) => {
+      const id = `img-${filename.replace(/[^a-z0-9]/gi, "-")}`;
+      const coverProps =
+        coverFilename === filename ? ' properties="cover-image"' : "";
+      return `<item id="${id}" href="images/${filename}" media-type="image/jpeg"${coverProps}/>`;
+    })
+    .join("\n    ");
+
+  const chapterManifest = chapters
     .map(
       (_, i) =>
         `<item id="chapter${i}" href="text/chapter${i}.xhtml" media-type="application/xhtml+xml"/>`
     )
     .join("\n    ");
 
-  const spineItems = chapters
-    .map((_, i) => `<itemref idref="chapter${i}"/>`)
+  const coverManifest = hasCover
+    ? `<item id="cover" href="text/cover.xhtml" media-type="application/xhtml+xml"/>`
+    : "";
+
+  const spineItems = [
+    hasCover ? `<itemref idref="cover" linear="no"/>` : "",
+    ...chapters.map((_, i) => `<itemref idref="chapter${i}"/>`),
+  ]
+    .filter(Boolean)
     .join("\n    ");
 
-  const navItems = chapters
-    .map(
+  const navItems = [
+    hasCover ? `<li><a href="text/cover.xhtml">Cover</a></li>` : "",
+    ...chapters.map(
       (ch, i) =>
         `<li><a href="text/chapter${i}.xhtml">${escapeXml(ch.title)}</a></li>`
-    )
-    .join("\n        ");
+    ),
+  ].join("\n        ");
+
+  const coverMeta = hasCover
+    ? `<meta name="cover" content="img-${coverFilename!.replace(/[^a-z0-9]/gi, "-")}"/>`
+    : "";
 
   const opf = `<?xml version="1.0" encoding="UTF-8"?>
 <package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="uid">
@@ -187,12 +282,15 @@ export async function exportToEpub(book: Book): Promise<Blob> {
     <dc:description>${escapeXml(metadata.description)}</dc:description>
     <dc:publisher>${escapeXml(metadata.publisher || "OpenBook Author")}</dc:publisher>
     <meta property="dcterms:modified">${new Date().toISOString().split(".")[0]}Z</meta>
+    ${coverMeta}
     ${isFixed ? '<meta property="rendition:layout">pre-paginated</meta>' : '<meta property="rendition:layout">reflowable</meta>'}
   </metadata>
   <manifest>
     <item id="ncx" href="nav.xhtml" media-type="application/xhtml+xml" properties="nav"/>
     <item id="style" href="styles/main.css" media-type="text/css"/>
-    ${manifestItems}
+    ${coverManifest}
+    ${imageManifest}
+    ${chapterManifest}
   </manifest>
   <spine>
     ${spineItems}
@@ -210,6 +308,7 @@ export async function exportToEpub(book: Book): Promise<Blob> {
         ${navItems}
     </ol>
   </nav>
+  ${hasCover ? `<nav epub:type="landmarks" hidden=""><ol><li><a epub:type="cover" href="text/cover.xhtml">Cover</a></li></ol></nav>` : ""}
 </body>
 </html>`;
 
@@ -228,6 +327,9 @@ export async function exportToEpub(book: Book): Promise<Blob> {
   zip.folder("styles")?.file("main.css", css);
 
   const textFolder = zip.folder("text");
+  if (hasCover && coverFilename) {
+    textFolder?.file("cover.xhtml", coverXhtml(book, coverFilename));
+  }
   chapters.forEach((chapter, i) => {
     textFolder?.file(`chapter${i}.xhtml`, chapterXhtml(book, chapter, i));
   });
@@ -235,8 +337,8 @@ export async function exportToEpub(book: Book): Promise<Blob> {
   return zip.generateAsync({ type: "blob", mimeType: "application/epub+zip" });
 }
 
-export function downloadEpub(book: Book): Promise<void> {
-  return exportToEpub(book).then((blob) => {
+export function downloadEpub(book: Book, assetBlobs?: Map<string, Blob>): Promise<void> {
+  return exportToEpub(book, assetBlobs).then((blob) => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

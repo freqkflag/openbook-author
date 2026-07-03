@@ -12,16 +12,22 @@ import {
   Save,
   Pencil,
   Eye,
+  BookOpen,
+  Image,
 } from "lucide-react";
 import { useBookStore } from "@/store/book-store";
 import ChapterSidebar from "@/components/ChapterSidebar";
 import RichEditor from "@/components/RichEditor";
 import PrintPreview from "@/components/PrintPreview";
+import FullBookPreview from "@/components/FullBookPreview";
 import AIAssistant from "@/components/AIAssistant";
 import MetadataPanel from "@/components/MetadataPanel";
-import { downloadEpub, exportBookJson } from "@/lib/epub";
+import AssetPanel from "@/components/AssetPanel";
+import { downloadEpub } from "@/lib/epub";
 import { downloadKBP } from "@/lib/kbp-export";
 import { isKbpEnabled } from "@/lib/kbp";
+
+type ViewMode = "edit" | "preview" | "full";
 
 export default function EditorPage() {
   const params = useParams();
@@ -40,13 +46,18 @@ export default function EditorPage() {
     updateChapter,
     deleteChapter,
     reorderChapter,
+    saveBookToDisk,
+    openBookFromDisk,
+    saveStatus,
+    saveError,
+    getAssetBlobs,
   } = useBookStore();
 
   const [activeChapterId, setActiveChapterId] = useState<string>("");
-  const [viewMode, setViewMode] = useState<"edit" | "preview">("edit");
+  const [viewMode, setViewMode] = useState<ViewMode>("edit");
   const [showAI, setShowAI] = useState(false);
   const [showProperties, setShowProperties] = useState(false);
-  const [savedFlash, setSavedFlash] = useState(false);
+  const [showAssets, setShowAssets] = useState(false);
 
   useEffect(() => {
     hydrate();
@@ -65,6 +76,41 @@ export default function EditorPage() {
     }
   }, [book, activeChapterId]);
 
+  const handleSave = useCallback(
+    (saveAs = false) => {
+      if (!book) return;
+      saveBookToDisk(book.id, saveAs);
+    },
+    [book, saveBookToDisk]
+  );
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        handleSave(false);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [handleSave]);
+
+  useEffect(() => {
+    if (!window.openBook?.isElectron) return;
+    const unsubOpen = window.openBook.onMenuOpen(() => {
+      openBookFromDisk().then((id) => {
+        if (id) router.push(`/editor/${id}`);
+      });
+    });
+    const unsubSave = window.openBook.onMenuSave(() => handleSave(false));
+    const unsubSaveAs = window.openBook.onMenuSaveAs(() => handleSave(true));
+    return () => {
+      unsubOpen();
+      unsubSave();
+      unsubSaveAs();
+    };
+  }, [handleSave, openBookFromDisk, router]);
+
   const handleContentChange = useCallback(
     (html: string) => {
       if (!book || !activeChapterId) return;
@@ -75,17 +121,22 @@ export default function EditorPage() {
 
   const handleAIApply = (html: string, mode: "replace" | "append") => {
     if (!book || !activeChapter) return;
-    const newContent =
-      mode === "append" ? activeChapter.content + html : html;
+    const newContent = mode === "append" ? activeChapter.content + html : html;
     updateChapter(book.id, activeChapter.id, { content: newContent });
   };
 
-  const flashSaved = () => {
-    setSavedFlash(true);
-    setTimeout(() => setSavedFlash(false), 1500);
-  };
-
   const kbpMode = book ? isKbpEnabled(book) || book.template === "guidebook" : false;
+
+  const saveLabel = () => {
+    if (saveStatus === "saving") return "Saving…";
+    if (saveStatus === "error") return saveError || "Save failed";
+    if (saveStatus === "saved") return "Saved";
+    if (book?.packagePath) {
+      const name = book.packagePath.split(/[/\\]/).pop();
+      return name || "Saved to disk";
+    }
+    return "Unsaved";
+  };
 
   if (!hydrated) {
     return (
@@ -122,18 +173,28 @@ export default function EditorPage() {
           <div>
             <h1 className="text-sm font-semibold text-white">{book.metadata.title}</h1>
             <p className="text-xs text-slate-500">
-              {savedFlash ? (
-                <span className="text-green-400">Saved</span>
-              ) : (
-                <>
-                  Auto-saved · {book.chapters.length} chapters
-                  {viewMode === "preview" && (
-                    <span className="ml-2 text-amber-400/80">· Preview</span>
-                  )}
-                  {viewMode === "edit" && kbpMode && (
-                    <span className="ml-2 text-fuchsia-400/80">· KBP</span>
-                  )}
-                </>
+              <span
+                className={
+                  saveStatus === "error"
+                    ? "text-red-400"
+                    : saveStatus === "saved"
+                      ? "text-green-400"
+                      : book.packagePath
+                        ? "text-cyan-400/80"
+                        : "text-amber-400/80"
+                }
+              >
+                {saveLabel()}
+              </span>
+              {" · "}
+              {book.chapters.length} chapters
+              {viewMode !== "edit" && (
+                <span className="ml-2 text-amber-400/80">
+                  · {viewMode === "full" ? "Full preview" : "Preview"}
+                </span>
+              )}
+              {viewMode === "edit" && kbpMode && (
+                <span className="ml-2 text-fuchsia-400/80">· KBP</span>
               )}
             </p>
           </div>
@@ -143,7 +204,7 @@ export default function EditorPage() {
           <div className="flex items-center rounded-lg border border-white/10 p-0.5 mr-1">
             <button
               onClick={() => setViewMode("edit")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === "edit"
                   ? "bg-cyan-500/20 text-cyan-300"
                   : "text-slate-400 hover:text-white"
@@ -158,30 +219,52 @@ export default function EditorPage() {
                 setViewMode("preview");
                 setShowAI(false);
               }}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
                 viewMode === "preview"
                   ? "bg-amber-500/20 text-amber-300"
                   : "text-slate-400 hover:text-white"
               }`}
-              title="Print preview"
+              title="Chapter preview"
             >
               <Eye size={14} />
               Preview
             </button>
+            <button
+              onClick={() => {
+                setViewMode("full");
+                setShowAI(false);
+              }}
+              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                viewMode === "full"
+                  ? "bg-purple-500/20 text-purple-300"
+                  : "text-slate-400 hover:text-white"
+              }`}
+              title="Full book preview"
+            >
+              <BookOpen size={14} />
+              Full
+            </button>
           </div>
+
           <button
-            onClick={() => {
-              exportBookJson(book);
-              flashSaved();
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/5"
-            title="Export project JSON"
+            onClick={() => handleSave(false)}
+            disabled={saveStatus === "saving"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-50"
+            title="Save (Cmd+S)"
           >
             <Save size={14} />
-            Export
+            Save
           </button>
           <button
-            onClick={() => downloadEpub(book)}
+            onClick={() => handleSave(true)}
+            disabled={saveStatus === "saving"}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs text-slate-400 hover:text-white hover:bg-white/5 disabled:opacity-50"
+            title="Save As"
+          >
+            Save As
+          </button>
+          <button
+            onClick={() => downloadEpub(book, getAssetBlobs(book.id))}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/30"
           >
             <Download size={14} />
@@ -189,7 +272,7 @@ export default function EditorPage() {
           </button>
           {kbpMode && (
             <button
-              onClick={() => downloadKBP(book)}
+              onClick={() => downloadKBP(book, getAssetBlobs(book.id))}
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs bg-fuchsia-500/20 border border-fuchsia-500/30 text-fuchsia-300 hover:bg-fuchsia-500/30"
               title="Export KBP package for Kindle Direct Publishing"
             >
@@ -197,6 +280,18 @@ export default function EditorPage() {
               KBP
             </button>
           )}
+          <button
+            onClick={() => {
+              setShowAssets(!showAssets);
+              if (!showAssets) setShowAI(false);
+            }}
+            className={`p-2 rounded-lg transition-colors ${
+              showAssets ? "text-cyan-400 bg-cyan-500/10" : "text-slate-400 hover:text-white hover:bg-white/5"
+            }`}
+            title="Asset manager"
+          >
+            <Image size={18} />
+          </button>
           <button
             onClick={() => setShowProperties(!showProperties)}
             className={`p-2 rounded-lg transition-colors ${
@@ -208,7 +303,7 @@ export default function EditorPage() {
           </button>
           <button
             onClick={() => setShowAI(!showAI)}
-            disabled={viewMode === "preview"}
+            disabled={viewMode !== "edit"}
             className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed ${
               showAI
                 ? "bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-300"
@@ -231,7 +326,6 @@ export default function EditorPage() {
               const newId = addSection(book.id, type);
               setActiveChapterId(newId);
               setViewMode("edit");
-              flashSaved();
             }}
             onDelete={(id) => {
               deleteChapter(book.id, id);
@@ -239,42 +333,33 @@ export default function EditorPage() {
                 const remaining = book.chapters.filter((ch) => ch.id !== id);
                 setActiveChapterId(remaining[0]?.id || "");
               }
-              flashSaved();
             }}
-            onRename={(id, title) => {
-              updateChapter(book.id, id, { title });
-              flashSaved();
-            }}
-            onReorder={(id, dir) => {
-              reorderChapter(book.id, id, dir);
-              flashSaved();
-            }}
+            onRename={(id, title) => updateChapter(book.id, id, { title })}
+            onReorder={(id, dir) => reorderChapter(book.id, id, dir)}
           />
         </div>
 
         <div className="flex-1 flex flex-col min-w-0 p-4">
-          {activeChapter && (
+          {viewMode === "full" ? (
+            <FullBookPreview book={book} />
+          ) : activeChapter ? (
             <>
               {viewMode === "edit" ? (
                 <input
                   type="text"
                   value={activeChapter.title}
-                  onChange={(e) => {
-                    updateChapter(book.id, activeChapter.id, { title: e.target.value });
-                    flashSaved();
-                  }}
+                  onChange={(e) => updateChapter(book.id, activeChapter.id, { title: e.target.value })}
                   className="mb-3 bg-transparent text-xl font-semibold text-white outline-none border-b border-transparent focus:border-cyan-500/30 pb-1"
                   placeholder="Chapter title"
                 />
               ) : (
-                <p className="mb-3 text-sm text-amber-400/80 font-medium">
-                  {activeChapter.title}
-                </p>
+                <p className="mb-3 text-sm text-amber-400/80 font-medium">{activeChapter.title}</p>
               )}
               <div className="flex-1 min-h-0">
                 {viewMode === "edit" ? (
                   <RichEditor
                     key={`edit-${activeChapter.id}`}
+                    book={book}
                     content={activeChapter.content}
                     onChange={handleContentChange}
                     placeholder="Start writing your chapter..."
@@ -290,24 +375,32 @@ export default function EditorPage() {
                 )}
               </div>
             </>
-          )}
+          ) : null}
         </div>
 
         {showProperties && (
           <div className="w-64 shrink-0 border-l border-white/10 bg-[#121A2B]/60 overflow-y-auto">
             <MetadataPanel
               book={book}
-              onUpdate={(metadata) => {
-                updateMetadata(book.id, metadata);
-                flashSaved();
-              }}
-              onUpdateKBP={(settings) => {
-                updateKBPSettings(book.id, settings);
-                flashSaved();
-              }}
-              onSetFormatProfile={(profile) => {
-                setFormatProfile(book.id, profile);
-                flashSaved();
+              onUpdate={(metadata) => updateMetadata(book.id, metadata)}
+              onUpdateKBP={(settings) => updateKBPSettings(book.id, settings)}
+              onSetFormatProfile={(profile) => setFormatProfile(book.id, profile)}
+            />
+          </div>
+        )}
+
+        {showAssets && (
+          <div className="w-72 shrink-0">
+            <AssetPanel
+              book={book}
+              onClose={() => setShowAssets(false)}
+              onInsert={(src, alt) => {
+                if (viewMode === "edit" && activeChapter) {
+                  const img = `<img src="${src}" alt="${alt || ""}" />`;
+                  updateChapter(book.id, activeChapter.id, {
+                    content: activeChapter.content + img,
+                  });
+                }
               }}
             />
           </div>
