@@ -3,6 +3,8 @@
 import { useMemo } from "react";
 import type { Book } from "@/types/book";
 import { getPreviewHtml, getPreviewMode } from "@/lib/preview";
+import { resolveAssetUrl, resolveHtmlAssets } from "@/lib/asset-store";
+import { useBookStore } from "@/store/book-store";
 
 interface PrintPreviewProps {
   book: Book;
@@ -11,9 +13,16 @@ interface PrintPreviewProps {
 }
 
 export default function PrintPreview({ book, chapterTitle, chapterContent }: PrintPreviewProps) {
+  const { getAssetBlobs } = useBookStore();
+  const blobs = getAssetBlobs(book.id);
+
+  const coverSrc = book.metadata.coverImage
+    ? resolveAssetUrl(book, book.metadata.coverImage, blobs)
+    : null;
+
   const html = useMemo(
-    () => getPreviewHtml(book, chapterContent, chapterTitle),
-    [book, chapterContent, chapterTitle]
+    () => resolveHtmlAssets(book, getPreviewHtml(book, chapterContent, chapterTitle), blobs),
+    [book, chapterContent, chapterTitle, blobs]
   );
 
   const mode = getPreviewMode(book);
@@ -29,7 +38,28 @@ export default function PrintPreview({ book, chapterTitle, chapterContent }: Pri
         <span className="text-xs text-slate-500">Read-only</span>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-6 md:p-10 flex justify-center items-start">
+      <div className="flex-1 overflow-y-auto p-6 md:p-10 flex flex-col items-center gap-8">
+        {coverSrc && (
+          <article
+            className={`print-preview-page bg-white shadow-2xl ${
+              isLandscape ? "w-full max-w-4xl" : "w-full max-w-[32rem]"
+            }`}
+          >
+            <div className="relative aspect-[2/3] min-h-[360px]">
+              <img src={coverSrc} alt="Cover" className="absolute inset-0 w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent flex flex-col justify-end p-6 text-center">
+                <h1 className="text-xl font-bold text-white">{book.metadata.title}</h1>
+                {book.metadata.subtitle && (
+                  <p className="text-sm text-white/80 mt-1">{book.metadata.subtitle}</p>
+                )}
+                {book.metadata.author && (
+                  <p className="text-sm text-white/70 mt-2 italic">by {book.metadata.author}</p>
+                )}
+              </div>
+            </div>
+          </article>
+        )}
+
         <article
           className={`print-preview-page bg-white shadow-2xl ${
             isLandscape ? "w-full max-w-4xl min-h-[480px]" : "w-full max-w-[32rem] min-h-[600px]"

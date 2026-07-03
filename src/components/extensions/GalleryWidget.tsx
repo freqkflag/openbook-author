@@ -4,6 +4,7 @@ import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
 import { useState } from "react";
 import { Images, ChevronLeft, ChevronRight } from "lucide-react";
+import { useEditorAssetContext } from "@/context/EditorAssetContext";
 
 export interface GalleryImage {
   src: string;
@@ -25,14 +26,14 @@ declare module "@tiptap/core" {
 function GalleryWidgetView({ node, updateAttributes, selected }: ReactNodeViewProps) {
   const images: GalleryImage[] = (node.attrs.images as GalleryImage[]) || [];
   const [index, setIndex] = useState(0);
+  const assetCtx = useEditorAssetContext();
 
   const current = images[index];
 
   const addImage = () => {
-    const url = window.prompt("Image URL:");
-    if (!url) return;
-    const caption = window.prompt("Caption (optional):") || "";
-    updateAttributes({ images: [...images, { src: url, caption }] });
+    assetCtx?.openAssetPicker((src, alt) => {
+      updateAttributes({ images: [...images, { src, caption: alt || "" }] });
+    }, "Add Gallery Image");
   };
 
   return (

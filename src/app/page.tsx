@@ -11,6 +11,7 @@ import {
   LayoutTemplate,
   Clock,
   FileArchive,
+  FolderOpen,
 } from "lucide-react";
 import { useBookStore } from "@/store/book-store";
 import { TEMPLATES } from "@/lib/templates";
@@ -19,7 +20,7 @@ import type { Book, BookTemplate } from "@/types/book";
 
 export default function Dashboard() {
   const router = useRouter();
-  const { books, hydrated, hydrate, createBook, deleteBook, importBook } = useBookStore();
+  const { books, hydrated, hydrate, createBook, deleteBook, importBook, openBookFromDisk } = useBookStore();
   const [showTemplates, setShowTemplates] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [importing, setImporting] = useState(false);
@@ -34,6 +35,29 @@ export default function Dashboard() {
     setShowTemplates(false);
     setNewTitle("");
     router.push(`/editor/${id}`);
+  };
+
+  const handleOpenBook = () => {
+    if (window.openBook?.isElectron) {
+      openBookFromDisk().then((id) => {
+        if (id) router.push(`/editor/${id}`);
+      });
+      return;
+    }
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".openbook";
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+      try {
+        const id = await openBookFromDisk(file);
+        if (id) router.push(`/editor/${id}`);
+      } catch (err) {
+        alert(err instanceof Error ? err.message : "Failed to open package");
+      }
+    };
+    input.click();
   };
 
   const handleImportIBA = () => {
@@ -98,7 +122,14 @@ export default function Dashboard() {
                 with AI-powered writing assistance — your FOSS alternative to iBooks Author.
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
+              <button
+                onClick={handleOpenBook}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg border border-cyan-500/30 text-cyan-300 text-sm hover:bg-cyan-500/10 transition-colors"
+              >
+                <FolderOpen size={16} />
+                Open Book
+              </button>
               <button
                 onClick={handleImportIBA}
                 disabled={importing}
@@ -134,16 +165,24 @@ export default function Dashboard() {
             </div>
             <h2 className="text-xl font-semibold text-white mb-2">No books yet</h2>
             <p className="text-slate-400 text-sm mb-6 max-w-md">
-              Create your first book from a template. Choose portrait for reflowable text,
-              landscape for fixed layouts, or textbook for structured content.
+              Create your first book from a template, or open an existing `.openbook` package.
             </p>
-            <button
-              onClick={() => setShowTemplates(true)}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white font-medium hover:from-cyan-400 hover:to-fuchsia-400 transition-all"
-            >
-              <LayoutTemplate size={18} />
-              Choose a Template
-            </button>
+            <div className="flex gap-3">
+              <button
+                onClick={handleOpenBook}
+                className="flex items-center gap-2 px-5 py-3 rounded-xl border border-cyan-500/30 text-cyan-300 hover:bg-cyan-500/10"
+              >
+                <FolderOpen size={18} />
+                Open Book
+              </button>
+              <button
+                onClick={() => setShowTemplates(true)}
+                className="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-fuchsia-500 text-white font-medium hover:from-cyan-400 hover:to-fuchsia-400 transition-all"
+              >
+                <LayoutTemplate size={18} />
+                Choose a Template
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -173,6 +212,13 @@ export default function Dashboard() {
                     <span className="capitalize px-2 py-0.5 rounded bg-white/5">
                       {book.template}
                     </span>
+                    {book.packagePath ? (
+                      <span className="text-cyan-500/70 truncate max-w-[120px]" title={book.packagePath}>
+                        On disk
+                      </span>
+                    ) : (
+                      <span className="text-amber-500/70">Unsaved</span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Clock size={12} />
                       {new Date(book.updatedAt).toLocaleDateString()}

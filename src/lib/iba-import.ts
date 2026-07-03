@@ -304,6 +304,7 @@ export async function importIBAFile(file: File): Promise<IBAImportResult> {
       layoutMode: template === "landscape" ? "landscape" : "portrait",
       formatProfile: "standard",
       kbpSettings: { ...DEFAULT_KBP_SETTINGS },
+      assets: [],
       chapters,
     },
     warnings,

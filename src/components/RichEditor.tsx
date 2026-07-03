@@ -8,7 +8,10 @@ import Placeholder from "@tiptap/extension-placeholder";
 import Underline from "@tiptap/extension-underline";
 import TextAlign from "@tiptap/extension-text-align";
 import Highlight from "@tiptap/extension-highlight";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import type { Book } from "@/types/book";
+import AssetPicker from "@/components/AssetPicker";
+import { EditorAssetContext } from "@/context/EditorAssetContext";
 import {
   Bold,
   Italic,
@@ -44,6 +47,7 @@ import {
 } from "@/components/extensions/KBPCallouts";
 
 interface RichEditorProps {
+  book: Book;
   content: string;
   onChange: (html: string) => void;
   placeholder?: string;
@@ -77,7 +81,16 @@ function ToolbarButton({
   );
 }
 
-export default function RichEditor({ content, onChange, placeholder, kbpMode }: RichEditorProps) {
+export default function RichEditor({ book, content, onChange, placeholder, kbpMode }: RichEditorProps) {
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [pickerTitle, setPickerTitle] = useState("Choose Image");
+  const [pickerHandler, setPickerHandler] = useState<((src: string, alt?: string) => void) | null>(null);
+
+  const openAssetPicker = (onSelect: (src: string, alt?: string) => void, title?: string) => {
+    setPickerTitle(title || "Choose Image");
+    setPickerHandler(() => onSelect);
+    setPickerOpen(true);
+  };
   const editor = useEditor({
     immediatelyRender: false,
     extensions: [
@@ -114,8 +127,9 @@ export default function RichEditor({ content, onChange, placeholder, kbpMode }: 
   if (!editor) return null;
 
   const addImage = () => {
-    const url = window.prompt("Image URL:");
-    if (url) editor.chain().focus().setImage({ src: url }).run();
+    openAssetPicker((src, alt) => {
+      editor.chain().focus().setImage({ src, alt: alt || "" }).run();
+    });
   };
 
   const addLink = () => {
@@ -134,14 +148,13 @@ export default function RichEditor({ content, onChange, placeholder, kbpMode }: 
   };
 
   const addGallery = () => {
-    const url = window.prompt("First image URL:");
-    if (!url) return;
-    const caption = window.prompt("Caption (optional):") || "";
-    editor
-      .chain()
-      .focus()
-      .setGalleryWidget({ images: [{ src: url, caption }] })
-      .run();
+    openAssetPicker((src, alt) => {
+      editor
+        .chain()
+        .focus()
+        .setGalleryWidget({ images: [{ src, caption: alt || "" }] })
+        .run();
+    }, "Choose Gallery Image");
   };
 
   const nextStepNumber = () => {
@@ -152,6 +165,7 @@ export default function RichEditor({ content, onChange, placeholder, kbpMode }: 
   };
 
   return (
+    <EditorAssetContext.Provider value={{ openAssetPicker }}>
     <div className={`flex flex-col h-full rounded-xl border overflow-hidden backdrop-blur-sm ${
       kbpMode
         ? "border-fuchsia-500/20 bg-[#0B1020]/90"
@@ -327,6 +341,17 @@ export default function RichEditor({ content, onChange, placeholder, kbpMode }: 
       <div className="flex-1 overflow-y-auto">
         <EditorContent editor={editor} />
       </div>
+      <AssetPicker
+        book={book}
+        open={pickerOpen}
+        title={pickerTitle}
+        onClose={() => setPickerOpen(false)}
+        onSelect={(src, alt) => {
+          pickerHandler?.(src, alt);
+          setPickerOpen(false);
+        }}
+      />
     </div>
+    </EditorAssetContext.Provider>
   );
 }

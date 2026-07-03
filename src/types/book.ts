@@ -42,6 +42,15 @@ export interface Chapter {
   sectionType?: ChapterSectionType;
 }
 
+export interface BookAsset {
+  id: string;
+  filename: string;
+  mimeType: string;
+  size: number;
+  alt?: string;
+  createdAt: string;
+}
+
 export interface BookMetadata {
   title: string;
   subtitle: string;
@@ -60,6 +69,8 @@ export interface Book {
   formatProfile: FormatProfile;
   kbpSettings: KBPSettings;
   chapters: Chapter[];
+  assets: BookAsset[];
+  packagePath?: string;
   createdAt: string;
   updatedAt: string;
 }
