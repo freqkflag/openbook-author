@@ -1,0 +1,102 @@
+# Applies Execution Handoff YAML from agent PRs to the linked GitHub issue.
+# Execution agents commit `.openbook/execution/issue-<n>.yaml` and open a PR via open_git_pr.
+# This workflow posts the handoff comment and labels `ready-for-review`.
+
+name: Apply Execution Handoff
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - ".openbook/execution/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Apply execution handoff to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+
+            const execDir = ".openbook/execution";
+            if (!fs.existsSync(execDir)) {
+              core.info("No execution directory — skipping.");
+              return;
+            }
+
+            const pr = context.payload.pull_request;
+            const files = fs
+              .readdirSync(execDir)
+              .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"));
+
+            for (const file of files) {
+              const raw = fs.readFileSync(path.join(execDir, file), "utf8");
+              const issueMatch = file.match(/issue-(\d+)/);
+              const issueNumber =
+                issueMatch?.[1] ?? raw.match(/^issue:\s*(\d+)/m)?.[1];
+
+              if (!issueNumber) {
+                core.warning(`Could not resolve issue number from ${file}`);
+                continue;
+              }
+
+              const marker = "<!-- openbook-author:execution -->";
+              const body = [
+                marker,
+                `Implementation PR: #${pr.number}`,
+                "```yaml",
+                raw.trim(),
+                "```",
+              ].join("\n");
+
+              const { data: comments } = await github.rest.issues.listComments({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                per_page: 100,
+              });
+
+              const alreadyApplied = comments.some(
+                (comment) =>
+                  comment.body?.includes(marker) &&
+                  comment.body?.includes(`Implementation PR: #${pr.number}`)
+              );
+
+              if (!alreadyApplied) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  body,
+                });
+              }
+
+              const status = raw.match(/^status:\s*(\S+)/m)?.[1] ?? "complete";
+              const labelsToAdd = [];
+
+              if (status === "needs_human" || status === "blocked") {
+                labelsToAdd.push("needs-human");
+              } else {
+                labelsToAdd.push("ready-for-review");
+              }
+
+              if (labelsToAdd.length > 0) {
+                await github.rest.issues.addLabels({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  labels: labelsToAdd,
+                });
+              }
+
+              core.info(`Applied execution handoff for issue #${issueNumber}`);
+            }

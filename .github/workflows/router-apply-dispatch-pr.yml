@@ -1,0 +1,134 @@
+# Applies Router Handoff YAML from DISPATCH PRs to the linked GitHub issue.
+# DISPATCH automations cannot post issue comments or edit labels directly (gh write
+# disabled; only open_git_pr MCP available). DISPATCH should:
+#   1. Write .openbook/dispatch/issue-<n>.yaml on branch dispatch/issue-<n>
+#   2. Open a PR via open_git_pr
+# This workflow reads that file and updates the issue.
+
+name: Apply Dispatch Handoff
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+    paths:
+      - ".openbook/dispatch/**"
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Apply router handoff to issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs");
+            const path = require("path");
+
+            const AGENT_LABEL = {
+              "debug-agent": "agent:bug",
+              "feature-agent": "agent:feature",
+              "docs-agent": "agent:docs",
+              "test-agent": "agent:test",
+              "ui-agent": "agent:design",
+              "refactor-agent": "agent:feature",
+            };
+
+            const dispatchDir = ".openbook/dispatch";
+            if (!fs.existsSync(dispatchDir)) {
+              core.info("No dispatch directory — skipping.");
+              return;
+            }
+
+            const files = fs
+              .readdirSync(dispatchDir)
+              .filter((name) => name.endsWith(".yaml") || name.endsWith(".yml"));
+
+            for (const file of files) {
+              const raw = fs.readFileSync(path.join(dispatchDir, file), "utf8");
+              const issueMatch = file.match(/issue-(\d+)/);
+              const issueNumber =
+                issueMatch?.[1] ??
+                raw.match(/^issue:\s*(\d+)/m)?.[1];
+
+              if (!issueNumber) {
+                core.warning(`Could not resolve issue number from ${file}`);
+                continue;
+              }
+
+              const marker = "<!-- openbook-author:dispatch -->";
+              const body = [marker, "```yaml", raw.trim(), "```"].join("\n");
+
+              const { data: comments } = await github.rest.issues.listComments({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                per_page: 100,
+              });
+
+              const alreadyApplied = comments.some(
+                (comment) =>
+                  comment.body?.includes(marker) &&
+                  comment.body?.includes(`issue: ${issueNumber}`)
+              );
+
+              if (!alreadyApplied) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  body,
+                });
+              }
+
+              const agentMatch = raw.match(/^agent:\s*(\S+)/m);
+              const agentId = agentMatch?.[1] ?? null;
+              const escalate = /^escalate:\s*true/m.test(raw);
+              const epic = /^estimated_scope:\s*epic/m.test(raw);
+              const needsResearch = /needs-research/i.test(raw);
+
+              const labelsToAdd = ["routed-dispatch"];
+              if (escalate) {
+                labelsToAdd.push("needs-human");
+              } else if (epic) {
+                labelsToAdd.push("epic");
+              } else if (needsResearch) {
+                labelsToAdd.push("needs-research");
+              } else if (agentId && AGENT_LABEL[agentId]) {
+                labelsToAdd.push(AGENT_LABEL[agentId], "ready-for-execution");
+              }
+
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: Number(issueNumber),
+                labels: labelsToAdd,
+              });
+
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  name: "router-ready",
+                });
+              } catch {
+                // label may not be present
+              }
+
+              core.info(`Applied dispatch handoff for issue #${issueNumber}`);
+            }
+
+      - name: Close dispatch PR
+        uses: actions/github-script@v7
+        with:
+          script: |
+            await github.rest.pulls.update({
+              ...context.repo,
+              pull_request_number: context.payload.pull_request.number,
+              state: "closed",
+            });
