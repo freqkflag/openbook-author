@@ -2,7 +2,7 @@
 
 import { Node, mergeAttributes } from "@tiptap/core";
 import { ReactNodeViewRenderer, NodeViewWrapper, type ReactNodeViewProps } from "@tiptap/react";
-import { MapPin, ClipboardList, FileText, Plus, Trash2 } from "lucide-react";
+import { MapPin, ClipboardList, FileText, Plus, Trash2, GripVertical } from "lucide-react";
 import type {
   GuidebookBlockType,
   GuidebookBlockPayload,
@@ -467,6 +467,16 @@ function GuidebookBlockView({ node, updateAttributes, selected }: ReactNodeViewP
         <header
           className={`flex items-center gap-2 px-4 py-2 border-b border-white/10 ${meta.headerBg}`}
         >
+          <button
+            type="button"
+            className="shrink-0 p-0.5 rounded text-slate-500 hover:text-cyan-400 cursor-grab active:cursor-grabbing touch-none"
+            data-drag-handle
+            title="Drag to reorder"
+            aria-label="Drag to reorder block"
+            tabIndex={-1}
+          >
+            <GripVertical size={14} aria-hidden />
+          </button>
           <Icon size={16} className={meta.accent} aria-hidden />
           <span className={`text-sm font-medium ${meta.accent}`}>{meta.label}</span>
         </header>

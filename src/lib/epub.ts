@@ -26,9 +26,18 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function decodeHtmlAttributeEntities(raw: string): string {
+  return raw
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&amp;/g, "&");
+}
+
 function decodePayload(raw: string): unknown {
   try {
-    return JSON.parse(raw.replace(/&quot;/g, '"'));
+    return JSON.parse(decodeHtmlAttributeEntities(raw));
   } catch {
     return null;
   }
@@ -115,7 +124,7 @@ function transformWidgetsForEpub(html: string): string {
     (_, imagesJson) => {
       try {
         const images = JSON.parse(
-          imagesJson.replace(/&quot;/g, '"')
+          decodeHtmlAttributeEntities(imagesJson)
         ) as { src: string; caption: string }[];
         const figures = images
           .map(
@@ -159,6 +168,23 @@ function transformWidgetsForEpub(html: string): string {
   );
 
   return result;
+}
+
+const GUIDEBOOK_EXPORT_ORDER_RE =
+  /<aside class="guidebook-block guidebook-(trail-stop|workshop|cheat-sheet)"/g;
+
+const GUIDEBOOK_SLUG_TO_TYPE: Record<string, GuidebookBlockType> = {
+  "trail-stop": "trail_stop",
+  workshop: "workshop",
+  "cheat-sheet": "cheat_sheet",
+};
+
+/** Document order of guidebook blocks after EPUB transform (for regression tests). */
+export function getGuidebookBlockExportOrder(html: string): GuidebookBlockType[] {
+  const transformed = transformWidgetsForEpub(html);
+  return [...transformed.matchAll(GUIDEBOOK_EXPORT_ORDER_RE)].map(
+    (match) => GUIDEBOOK_SLUG_TO_TYPE[match[1]]
+  );
 }
 
 function prepareChapterContent(book: Book, content: string): string {

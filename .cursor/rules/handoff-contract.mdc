@@ -51,7 +51,7 @@ open_questions: []
 next_agent: review-agent
 ```
 
-## Review Handoff (output from review-agent → pr-creator-agent)
+## Review Handoff (output from review-agent)
 
 ```yaml
 issue: <number>
@@ -61,8 +61,14 @@ findings: []
 security_flags: []
 a11y_flags: []
 adr_compliance: pass | adr_missing | adr_conflict
-next_agent: pr-creator-agent
+next_agent: <execution-agent-id> | pr-creator-agent
 ```
+
+### Review routing (`next_agent`)
+
+- `needs_human` or empty `files_touched` (planning gate) → `next_agent` is the execution handoff `source_agent`
+- `changes_requested` or `blocked` → `next_agent` is the execution handoff `source_agent`
+- `status: complete`, tests pass, `verdict: approved` → `next_agent: pr-creator-agent`
 
 ### ADR compliance gate
 

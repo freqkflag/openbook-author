@@ -85,7 +85,7 @@ export default function GuidebookPrototypePage() {
           <div className="mb-2 px-1">
             <h2 className="text-xs font-medium text-slate-400 uppercase tracking-wider">Editor</h2>
             <p className="text-xs text-slate-600">
-              Toolbar: trail stop (green), workshop (fuchsia), cheat sheet (cyan)
+              Toolbar: trail stop (green), workshop (fuchsia), cheat sheet (cyan). Drag the grip to reorder blocks.
             </p>
           </div>
           <div className="flex-1 min-h-0">
