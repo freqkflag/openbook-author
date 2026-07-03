@@ -145,10 +145,7 @@ export function applyKbpToHtml(html: string, settings: KBPSettings): string {
   let result = html;
 
   if (settings.firstLineIndent) {
-    result = result.replace(
-      /<p\b([^>]*)>/g,
-      (_, attrs: string) => `<p${withClassAttribute(attrs, "kbp-body")}>`
-    );
+    result = result.replace(/<p>/g, '<p class="kbp-body">');
   }
 
   if (settings.dropCaps) {

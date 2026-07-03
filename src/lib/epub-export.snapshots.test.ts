@@ -122,7 +122,8 @@ describe("EPUB package export snapshots", () => {
       ],
     };
 
-    const zip = await JSZip.loadAsync(await exportToEpub(book));
+    const blob = await exportToEpub(book);
+    const zip = await JSZip.loadAsync(await blob.arrayBuffer());
     const files = Object.keys(zip.files)
       .filter((path) => !zip.files[path].dir)
       .sort();

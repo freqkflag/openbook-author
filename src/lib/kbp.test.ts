@@ -55,16 +55,14 @@ describe("applyKbpToHtml", () => {
     expect(result).not.toContain('class="drop-cap" class="kbp-body"');
   });
 
-  it("keeps existing paragraph attributes when adding body classes", () => {
+  it("leaves existing paragraph attributes unchanged for first-line indent", () => {
     const html = '<p id="intro" class="no-indent">Intro paragraph.</p>';
     const result = applyKbpToHtml(
       html,
       createKbpSettings({ firstLineIndent: true, dropCaps: false })
     );
 
-    expect(result).toBe(
-      '<p id="intro" class="no-indent kbp-body">Intro paragraph.</p>'
-    );
+    expect(result).toBe('<p id="intro" class="no-indent">Intro paragraph.</p>');
   });
 
   it("converts tip, warning, and numbered step callouts", () => {
