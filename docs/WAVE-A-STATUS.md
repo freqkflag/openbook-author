@@ -50,7 +50,7 @@ Wave A.2 adds EPUBCheck / Kindle Previewer hooks ([#56](https://github.com/freqk
 
 Also on `main` from prior releases: EPUB import, front matter, find/replace, custom section templates, store metadata (ISBN/BISAC/keywords), keyboard shortcuts, chapter reorder, section templates.
 
-**Test count:** 128+ tests across 21+ files (`npm test`).
+**Test count:** 211 tests across 32 files (`npm test`, July 2026).
 
 ### Competitive-audit Wave A.1 — shipped gaps
 
@@ -125,12 +125,12 @@ Optional close (core scope shipped; polish may continue):
 | [#28](https://github.com/freqkflag/openbook-author/issues/28) | Export and import test suite | Snapshots/hydrate shipped; full matrix + axe fixtures remain |
 | [#29](https://github.com/freqkflag/openbook-author/issues/29) | Accessibility: WCAG preview, heading hierarchy, required alt text | Export gate shipped; WCAG preview remains |
 
-iBooks parity and Wave B/C items ([#15](https://github.com/freqkflag/openbook-author/issues/15)–[#20](https://github.com/freqkflag/openbook-author/issues/20), [#49](https://github.com/freqkflag/openbook-author/issues/49), etc.) stay open — out of Wave A scope.
+iBooks parity and Wave C items ([#15](https://github.com/freqkflag/openbook-author/issues/15)–[#18](https://github.com/freqkflag/openbook-author/issues/18), [#20](https://github.com/freqkflag/openbook-author/issues/20), etc.) stay open — out of Wave A scope. Wave B items [#19](https://github.com/freqkflag/openbook-author/issues/19) and [#49](https://github.com/freqkflag/openbook-author/issues/49) are ✅ shipped on `main`.
 
 ---
 
 ## Next steps
 
-1. **Wave B** — hierarchical TOC ([#49](https://github.com/freqkflag/openbook-author/issues/49)), IBA import depth ([#19](https://github.com/freqkflag/openbook-author/issues/19)), git-for-books, AI RAG — see [COMPETITIVE_AUDIT.md](COMPETITIVE_AUDIT.md) §5 Wave B.
+1. **Wave B (remaining)** — git-for-books ([#59](https://github.com/freqkflag/openbook-author/issues/59)), EPUB 3.3 metadata ([#62](https://github.com/freqkflag/openbook-author/issues/62)), self-hosted sync ([#63](https://github.com/freqkflag/openbook-author/issues/63)) — see [WAVE-B-STATUS.md](WAVE-B-STATUS.md). ~~#19 IBA import~~, ~~#49 hierarchical TOC~~, ~~#60 RAG~~ shipped on `main`.
 2. Optional polish: WCAG preview ([#29](https://github.com/freqkflag/openbook-author/issues/29)), full export/import test matrix ([#28](https://github.com/freqkflag/openbook-author/issues/28)).
 3. Tag release when `[Unreleased]` CHANGELOG is ready.

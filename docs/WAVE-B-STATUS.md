@@ -117,7 +117,7 @@ Wave B is **done** when all seven checklist rows are ✅ and:
 | Issue | Title | Note |
 |-------|-------|------|
 | [#19](https://github.com/freqkflag/openbook-author/issues/19) | Improved IBA import | Wave B.1 — diagnostics + hierarchy |
-| [#49](https://github.com/freqkflag/openbook-author/issues/49) | Hierarchical TOC structure mode | Wave B.2 — nested parts + EPUB nav |
+| [#49](https://github.com/freqkflag/openbook-author/issues/49) | Hierarchical TOC structure mode | Wave B.2 — nested parts + EPUB nav — **close** (`d7a633c`) |
 | [#60](https://github.com/freqkflag/openbook-author/issues/60) | AI RAG consistency pass | Wave B item 4 — `8bdadf4` |
 | [#61](https://github.com/freqkflag/openbook-author/issues/61) | Expand Ollama | Wave B item 5 — `94f6b29` |
 
