@@ -152,6 +152,29 @@ docker build -t openbook-author .
 docker run --rm -p 3000:3000 openbook-author
 ```
 
+**Automated deploy smoke test** (build image, run container, curl key routes):
+
+```bash
+npm run test:deploy
+```
+
+Set `SKIP_DEPLOY_TEST=1` to skip (e.g. when Docker is unavailable).
+
+### Homelab CI (Forgejo)
+
+Docker deploy smoke tests also run on a self-hosted Forgejo instance at **`http://192.168.12.115:3000`** via `.forgejo/workflows/docker-smoke.yml`. The job requires an `act_runner` with the **`docker`** label and Docker daemon access.
+
+Full setup (Actions enable, runner install, troubleshooting): **[docs/FORGEJO.md](docs/FORGEJO.md)**.
+
+Push to Forgejo (after creating the repo on the server):
+
+```bash
+git remote add forgejo http://192.168.12.115:3000/freqkflag/openbook-author.git
+git push -u forgejo main
+```
+
+Use your Forgejo username and a personal access token when Git prompts for HTTP credentials. Optional API helpers: `scripts/forgejo-create-repo.sh`, `scripts/forgejo-setup-runner.sh`.
+
 ## AI Setup
 
 1. Open any book in the editor

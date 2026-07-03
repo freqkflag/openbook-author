@@ -154,7 +154,7 @@ Wave A is **complete** on `main`. Wave B and Wave C are also **complete** ([c8ca
 | **Store hydrate test** — AI settings merge | `src/store/book-store.ts` | `src/store/book-store.hydrate.test.ts` | ✅ Pass | 1 test |
 | **IBA import fixture test** | `src/lib/iba-import.ts` | `src/lib/iba-import.test.ts` | ✅ Pass | 5 tests |
 | **PDF export hardening** — presets, Electron printToPDF | `src/lib/pdf-export.ts`, `src/lib/print-presets.ts`, `src/components/PrintPdfModal.tsx` | `src/lib/pdf-export.test.ts`, `src/lib/print-presets.test.ts` | ✅ Pass | [#7](https://github.com/freqkflag/openbook-author/issues/7) closed |
-| **Docker deployment** | `Dockerfile`, `docker-compose.yml` | — | ✅ Pass | No automated deploy test |
+| **Docker deployment** | `Dockerfile`, `docker-compose.yml` | `scripts/deploy-test.sh` (`npm run test:deploy`) | ✅ Pass | Forgejo homelab CI: `.forgejo/workflows/docker-smoke.yml` |
 | **Agent orchestration** — merge lanes, router doc, ADR-0004 | `src/studio/orchestrator/`, `docs/agent-router.md` | `src/studio/orchestrator/orchestrator.test.ts` | ✅ Pass | [#37](https://github.com/freqkflag/openbook-author/issues/37) merged |
 | **Competitive #1** — footnotes/endnotes + tables | `src/lib/note-export.ts`, TipTap extensions | `src/lib/tables-notes-readiness.test.ts` | ✅ Pass | [#8](https://github.com/freqkflag/openbook-author/issues/8) closed |
 | **Competitive #4 (A.1 partial)** — print PDF trim/margins/TOC leaders | `src/lib/print-presets.ts` | `src/lib/print-presets.test.ts` | ✅ Pass | Full presets shipped in A.2 |

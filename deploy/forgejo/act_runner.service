@@ -1,0 +1,25 @@
+# Forgejo act_runner systemd unit — copy to /etc/systemd/system/forgejo-act-runner.service
+# Placeholders @INSTALL_DIR@ and @RUNNER_USER@ are substituted by scripts/forgejo-setup-runner.sh
+# when INSTALL_SYSTEMD=1, or edit manually before enabling.
+
+[Unit]
+Description=Forgejo Actions runner (docker label)
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=simple
+User=@RUNNER_USER@
+Group=docker
+WorkingDirectory=@INSTALL_DIR@
+ExecStart=@INSTALL_DIR@/act_runner daemon
+Restart=on-failure
+RestartSec=5
+Environment=HOME=@INSTALL_DIR@
+
+# Optional: load FORGEJO_* from a root-only env file (do not commit secrets)
+# EnvironmentFile=-/etc/forgejo-act-runner.env
+
+[Install]
+WantedBy=multi-user.target
