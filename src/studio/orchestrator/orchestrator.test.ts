@@ -4,9 +4,13 @@ import {
   parseHandoff,
   validateHandoff,
 } from "./parse-handoff";
-import { classifyIssue, routeIssue, scoreConfidence } from "./route-issue";
+import { createRequire } from "module";
+import { routeIssue, scoreConfidence } from "./route-issue";
 import { getNextStep } from "./workflow";
 import type { RouterHandoff } from "./types";
+
+const require = createRequire(import.meta.url);
+const { getReviewLabelPlan } = require("../../../.github/scripts/review-handoff-labels.cjs");
 
 const SAMPLE_ROUTER_YAML = `
 issue: 42
@@ -166,5 +170,21 @@ describe("validateHandoff", () => {
     const result = validateHandoff(handoff as unknown as Record<string, unknown>);
     expect(result.valid).toBe(true);
     expect(result.handoffType).toBe("router");
+  });
+});
+
+describe("review handoff label routing", () => {
+  it("routes changes requested reviews back to the refactor agent", () => {
+    const plan = getReviewLabelPlan({
+      verdict: "changes_requested",
+      nextAgent: "refactor-agent",
+    });
+
+    expect(plan.labelsToAdd).toEqual(["needs-rework", "agent:refactor", "ready-for-execution"]);
+    expect(plan.labelsToRemove).toEqual([
+      "ready-for-review",
+      "approved-for-merge",
+      "needs-human",
+    ]);
   });
 });
