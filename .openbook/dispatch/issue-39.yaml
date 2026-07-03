@@ -1,0 +1,29 @@
+issue: 39
+title: Automation smoke test issue
+classification: test
+confidence: 0.83
+agent: test-agent
+priority: low
+estimated_scope: medium
+escalate: false
+recommendation: null
+relevant_adrs: []
+deliverables:
+  - new or updated tests
+  - coverage for target area
+success_criteria:
+  - tests cover described scenarios
+  - CI passes
+context:
+  labels:
+    - "priority: low"
+    - "area: platform"
+    - test
+    - router-ready
+    - needs-human
+  linked_files: []
+  summary: Temporary issue for validating OpenBook automation routing labels.
+workflow:
+  - test-agent
+  - review-agent
+  - pr-creator-agent
