@@ -24,8 +24,13 @@ on:
   pull_request:
     types: [labeled]
 
+# Serialize webhook dispatches so labels don't fan out multiple cloud agents at once.
+concurrency:
+  group: openbook-cloud-agent-pipeline
+  cancel-in-progress: false
+
 permissions:
-  issues: read
+  issues: write
   pull-requests: read
 
 jobs:
@@ -35,6 +40,7 @@ jobs:
       - name: Forward label to Cursor automation webhook
         uses: actions/github-script@v7
         env:
+          OPENBOOK_MAX_CONCURRENT_AGENTS: ${{ vars.OPENBOOK_MAX_CONCURRENT_AGENTS || '1' }}
           WEBHOOK_DISPATCH: ${{ secrets.OPENBOOK_WEBHOOK_DISPATCH }}
           WEBHOOK_DISPATCH_AUTH: ${{ secrets.OPENBOOK_WEBHOOK_DISPATCH_AUTH }}
           WEBHOOK_RESEARCH: ${{ secrets.OPENBOOK_WEBHOOK_RESEARCH }}
@@ -144,6 +150,44 @@ jobs:
               );
             }
 
+            const maxConcurrent = Math.max(
+              1,
+              Number.parseInt(process.env.OPENBOOK_MAX_CONCURRENT_AGENTS || "1", 10) || 1
+            );
+
+            const { data: busyIssues } = await github.rest.issues.listForRepo({
+              ...context.repo,
+              state: "open",
+              labels: "agent-running",
+              per_page: 100,
+            });
+
+            const targetIssueNumber = issue?.number ?? pr?.number ?? null;
+
+            if (busyIssues.length >= maxConcurrent) {
+              const busyNums = busyIssues.map((i) => `#${i.number}`).join(", ");
+              core.warning(
+                `Pipeline busy (${busyIssues.length}/${maxConcurrent} slots): ${busyNums}. Skipping webhook for label "${label}".`
+              );
+              if (targetIssueNumber) {
+                await github.rest.issues.createComment({
+                  ...context.repo,
+                  issue_number: targetIssueNumber,
+                  body: [
+                    "<!-- openbook-author:agent-busy -->",
+                    `Cloud agent pipeline is busy (${busyIssues.length}/${maxConcurrent} running).`,
+                    `Queued label \`${label}\` was not dispatched. Re-add the label when the current agent finishes.`,
+                    busyIssues.length
+                      ? `Active: ${busyIssues.map((i) => `#${i.number}`).join(", ")}`
+                      : "",
+                  ]
+                    .filter(Boolean)
+                    .join("\n"),
+                });
+              }
+              return;
+            }
+
             const payload = {
               delivery: "openbook-author-agent-webhook",
               event: context.eventName,
@@ -173,3 +217,11 @@ jobs:
             }
 
             core.info(`Dispatched label "${label}" to OpenBook automation webhook.`);
+
+            if (targetIssueNumber) {
+              await github.rest.issues.addLabels({
+                ...context.repo,
+                issue_number: targetIssueNumber,
+                labels: ["agent-running"],
+              });
+            }

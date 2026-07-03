@@ -20,6 +20,7 @@ labels=(
   "needs-research|7057ff|ADR research required"
   "needs-rework|d93f0b|Review requested changes"
   "epic|8a5cff|Epic breakdown required"
+  "agent-running|5319e7|Cloud agent slot in use (pipeline mutex)"
 )
 
 for entry in "${labels[@]}"; do

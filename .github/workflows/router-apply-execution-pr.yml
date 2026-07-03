@@ -99,4 +99,14 @@ jobs:
               }
 
               core.info(`Applied execution handoff for issue #${issueNumber}`);
+
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  name: "agent-running",
+                });
+              } catch {
+                // optional
+              }
             }

@@ -32,6 +32,18 @@ On each run, Cursor executes `.cursor/scripts/agent-bootstrap.sh`, which runs `n
 | Execution agents | `.openbook/execution/issue-<n>.yaml` + PR → `router-apply-execution-pr.yml` |
 | REVIEW | PR comment with `<!-- openbook-author:review -->` → `router-apply-review.yml` |
 
+## Pipeline concurrency
+
+Only **one cloud agent** runs at a time by default (configurable via repo variable `OPENBOOK_MAX_CONCURRENT_AGENTS`).
+
+- `agent-webhook.yml` queues dispatches and skips when `agent-running` is present
+- Apply workflows clear `agent-running` when a handoff completes
+- Stale locks (>6h) are cleared hourly by `agent-running-cleanup.yml`
+
+If a label is skipped while busy, re-add it after the current agent finishes.
+
+Cursor plan limits still apply separately (e.g. Pro allows multiple concurrent cloud agents account-wide).
+
 ## Issue context
 
 Prefer parsing the webhook payload first. Fallback read-only:

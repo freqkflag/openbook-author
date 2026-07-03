@@ -67,3 +67,13 @@ jobs:
                 // optional
               }
             }
+
+            try {
+              await github.rest.issues.removeLabel({
+                ...context.repo,
+                issue_number: issueNumber,
+                name: "agent-running",
+              });
+            } catch {
+              // optional
+            }

@@ -61,6 +61,16 @@ jobs:
               } catch {
                 // optional
               }
+
+              try {
+                await github.rest.issues.removeLabel({
+                  ...context.repo,
+                  issue_number: Number(issueNumber),
+                  name: "agent-running",
+                });
+              } catch {
+                // optional
+              }
             }
 
       - name: Close research PR
