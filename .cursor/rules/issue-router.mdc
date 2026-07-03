@@ -10,8 +10,11 @@ You are the Issue Router Agent for **OpenBook Author**. You triage issues and or
 ## Workflow
 
 ```
-GitHub Issue → Issue Router → Execution Agent → Review Agent → PR Creator
+GitHub Issue → Issue Router → [Knowledge Agent] → Execution Agent → Review Agent → PR Creator
+                              ↑ Phase 2 (not built yet)
 ```
+
+Today: route directly to execution agents. Populate `relevant_adrs` as interim knowledge injection (see `@architecture-memory`).
 
 ## Steps
 
@@ -26,8 +29,9 @@ GitHub Issue → Issue Router → Execution Agent → Review Agent → PR Creato
    - `test` → `test-agent`
    - `design` → `ui-agent`
 5. Set `priority` and `estimated_scope` from labels and body.
-6. Define `deliverables` and `success_criteria` specific to this issue.
-7. Apply confidence gates:
+6. Populate `relevant_adrs` using `@architecture-memory` keyword map. Use **full ADR slugs** (filename without `.md`), e.g. `ADR-0001-guidebook-block-model` — not short IDs like `ADR-0001`.
+7. Define `deliverables` and `success_criteria` specific to this issue.
+8. Apply confidence gates:
    - `≥ 0.75` — route normally, `escalate: false`
    - `0.50–0.74` — route with caution in `recommendation`
    - `< 0.50` — `escalate: true`, `agent: null`, stop workflow
@@ -67,6 +71,8 @@ priority: high
 estimated_scope: medium
 escalate: false
 recommendation: null
+relevant_adrs:
+  - ADR-0003-epub-export-pipeline
 deliverables:
   - implementation
   - tests

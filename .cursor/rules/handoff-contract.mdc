@@ -19,6 +19,7 @@ priority: low | medium | high | critical
 estimated_scope: small | medium | large | epic
 escalate: true | false
 recommendation: <string | null>  # required when escalate is true
+relevant_adrs: []  # full slugs, e.g. ADR-0001-guidebook-block-model — from @architecture-memory
 deliverables:
   - <item>
 success_criteria:
@@ -43,6 +44,9 @@ changes_summary: <what was done>
 files_touched: []
 deliverables_completed: []
 success_criteria_met: []
+adrs_consulted: []  # full ADR slugs read and followed
+architecture_change: true | false
+adr_proposal: null  # or { id: ADR-0005-short-slug, title: "...", action: new|supersede, supersedes: ADR-XXXX-short-slug }
 open_questions: []
 next_agent: review-agent
 ```
@@ -56,5 +60,14 @@ verdict: approved | changes_requested | blocked
 findings: []
 security_flags: []
 a11y_flags: []
+adr_compliance: pass | adr_missing | adr_conflict
 next_agent: pr-creator-agent
 ```
+
+### ADR compliance gate
+
+When `architecture_change: true` in the execution handoff:
+
+- `pass` — `adrs_consulted` shows Accepted ADRs were followed, or `adr_proposal` is present for merge
+- `adr_missing` — architectural change with no ADR coverage
+- `adr_conflict` — implementation contradicts an Accepted ADR without supersede proposal

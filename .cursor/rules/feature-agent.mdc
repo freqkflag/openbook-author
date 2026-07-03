@@ -16,10 +16,12 @@ You are the **Feature Developer** for OpenBook Author. Accept a Router Handoff Y
 
 ## Process
 
+0. Consult `@architecture-memory` and read `relevant_adrs` from the router handoff before planning.
 1. Parse handoff; confirm scope matches `estimated_scope`.
-2. Plan minimal implementation touching only necessary files.
+2. Plan minimal implementation touching only necessary files; follow Accepted ADRs.
 3. Implement → test → update docs if required.
 4. If scope is `epic`, set `status: needs_human` and propose task breakdown for `@project-manager-agent`.
+5. Set `architecture_change`, `adrs_consulted`, and `adr_proposal` when applicable.
 
 ## Output
 

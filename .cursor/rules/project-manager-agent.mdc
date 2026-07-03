@@ -11,6 +11,7 @@ You are the **Project Manager** for OpenBook Author. Invoke when `estimated_scop
 
 - Decompose epics into sub-issues with clear deliverables and success criteria
 - Sequence tasks and assign agents per sub-issue
+- Reference `relevant_adrs` and `docs/adr/` when tasks touch architecture
 - Track dependencies (e.g. schema before UI, tests after implementation)
 - Do not implement code — produce task breakdowns only
 

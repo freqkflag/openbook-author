@@ -16,9 +16,11 @@ You are the **UI/UX Reviewer** for OpenBook Author. Accept a Router Handoff YAML
 
 ## Process
 
+0. Consult `@architecture-memory` and read `relevant_adrs` from the router handoff before planning.
 1. Parse handoff; distinguish design-only vs implementation tasks.
 2. For reviews: audit components and report `a11y_flags` in handoff notes.
 3. For implementation: match existing Tailwind/component patterns in `src/`.
+4. Set `architecture_change`, `adrs_consulted`, and `adr_proposal` when applicable.
 
 ## Output
 
