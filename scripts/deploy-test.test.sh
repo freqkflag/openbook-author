@@ -10,8 +10,8 @@ grep -q '/.dockerenv' "${SCRIPT}" || {
   exit 1
 }
 
-grep -q 'CONTAINER_IP' "${SCRIPT}" || {
-  echo "deploy-test.sh must use container IP in nested Docker mode" >&2
+grep -q 'JOB_NETWORK' "${SCRIPT}" || {
+  echo "deploy-test.sh must attach smoke container to job network in nested Docker mode" >&2
   exit 1
 }
 

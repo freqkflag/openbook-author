@@ -35,10 +35,16 @@ docker build -t "${IMAGE}" .
 
 echo "Starting container..."
 if [[ -f /.dockerenv ]]; then
-  # Forgejo/act job containers mount docker.sock but run in their own network
-  # namespace. Published ports bind on the host, so 127.0.0.1:<port> never reaches
-  # the smoke container — use its bridge IP instead.
-  CONTAINER_ID=$(docker run -d "${IMAGE}")
+  # Forgejo/act job containers mount docker.sock but run on an isolated workflow
+  # network. Published ports bind on the host; default-bridge IPs are not routable
+  # from the job container — attach the smoke container to the job network instead.
+  JOB_CID=$(hostname)
+  JOB_NETWORK=$(docker inspect -f '{{range $k,$v := .NetworkSettings.Networks}}{{$k}}{{end}}' "${JOB_CID}")
+  if [[ -z "${JOB_NETWORK}" ]]; then
+    echo "error: could not resolve job container network" >&2
+    exit 1
+  fi
+  CONTAINER_ID=$(docker run -d --network "${JOB_NETWORK}" "${IMAGE}")
   CONTAINER_IP=$(docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' "${CONTAINER_ID}")
   if [[ -z "${CONTAINER_IP}" ]]; then
     echo "error: could not resolve container IP" >&2
