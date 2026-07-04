@@ -1,6 +1,6 @@
-# Forgejo Actions — homelab CI at http://192.168.12.115:3000
-# Register act_runner with the `docker` label and Docker socket access.
-# See docs/FORGEJO.md for full homelab setup.
+# Forgejo Actions — homelab CI (http://192.168.12.115:3000)
+# Requires a forgejo-runner with label `docker` and host Docker socket access.
+# See docs/FORGEJO.md.
 
 name: Docker smoke
 
@@ -34,7 +34,6 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Job runs in node:22-bookworm; runner automounts /var/run/docker.sock but not the CLI.
       - name: Install Docker CLI
         run: |
           apt-get update -qq

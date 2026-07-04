@@ -2,33 +2,49 @@
 # Register and optionally install Forgejo runner for Docker CI.
 # No secrets in repo — pass tokens via environment variables only.
 #
-# Required:
-#   FORGEJO_URL          e.g. http://192.168.12.115:3000
-#   FORGEJO_RUNNER_TOKEN registration token from Forgejo UI
+# Required (one of):
+#   FORGEJO_RUNNER_TOKEN   registration token from Forgejo UI
+#   FORGEJO_TOKEN          admin PAT — script GETs registration token from Forgejo API
+#   FORGEJO_ACCESS_TOKEN   alias for FORGEJO_TOKEN
+#
+# Also required when using API token fetch:
+#   FORGEJO_URL            e.g. http://192.168.12.115:3000
 #
 # Optional:
-#   RUNNER_NAME          default: $(hostname)-docker
-#   RUNNER_LABELS        default: docker
+#   RUNNER_NAME            default: $(hostname)-docker
+#   RUNNER_LABELS          default: docker
 #   FORGEJO_RUNNER_VERSION default: 12.12.0
-#   INSTALL_DIR          default: /opt/forgejo-act-runner
-#   RUNNER_USER          default: current user (systemd install only)
-#   INSTALL_SYSTEMD      set to 1 to copy unit template (requires sudo)
+#   INSTALL_DIR            default: /opt/forgejo-act-runner
+#   RUNNER_USER            default: current user (systemd install only)
+#   INSTALL_SYSTEMD        set to 1 to copy unit template (requires sudo)
 
 set -euo pipefail
 
 FORGEJO_URL="${FORGEJO_URL:-http://192.168.12.115:3000}"
 FORGEJO_RUNNER_TOKEN="${FORGEJO_RUNNER_TOKEN:-}"
+FORGEJO_TOKEN="${FORGEJO_TOKEN:-${FORGEJO_ACCESS_TOKEN:-}}"
 RUNNER_NAME="${RUNNER_NAME:-$(hostname -s 2>/dev/null || hostname)-docker}"
 RUNNER_LABELS="${RUNNER_LABELS:-docker}"
 FORGEJO_RUNNER_VERSION="${FORGEJO_RUNNER_VERSION:-${ACT_RUNNER_VERSION:-12.12.0}}"
 INSTALL_DIR="${INSTALL_DIR:-/opt/forgejo-act-runner}"
 
-if [[ -z "${FORGEJO_RUNNER_TOKEN}" ]]; then
-  echo "error: set FORGEJO_RUNNER_TOKEN (registration token from Forgejo Actions settings)" >&2
-  exit 1
-fi
-
 FORGEJO_URL="${FORGEJO_URL%/}"
+
+fetch_registration_token() {
+  if [[ -z "${FORGEJO_TOKEN}" ]]; then
+    echo "error: set FORGEJO_TOKEN (or FORGEJO_ACCESS_TOKEN) to fetch registration token" >&2
+    exit 1
+  fi
+  curl -fsS \
+    -H "Authorization: token ${FORGEJO_TOKEN}" \
+    "${FORGEJO_URL}/api/v1/admin/actions/runners/registration-token" \
+    | python3 -c "import sys, json; print(json.load(sys.stdin)['token'])"
+}
+
+if [[ -z "${FORGEJO_RUNNER_TOKEN}" ]]; then
+  echo "Fetching runner registration token via admin API..."
+  FORGEJO_RUNNER_TOKEN="$(fetch_registration_token)"
+fi
 
 case "$(uname -m)" in
   x86_64|amd64) RUNNER_ARCH="amd64" ;;
@@ -77,10 +93,8 @@ echo "Runner installed at ${INSTALL_DIR}"
 echo "Start manually:"
 echo "  cd ${INSTALL_DIR} && ./forgejo-runner daemon"
 echo ""
-echo "Or enable systemd (after editing deploy/forgejo/act_runner.service):"
-echo "  sudo cp deploy/forgejo/act_runner.service /etc/systemd/system/forgejo-act-runner.service"
-echo "  # Set User= and WorkingDirectory=${INSTALL_DIR} in the unit file"
-echo "  sudo systemctl daemon-reload && sudo systemctl enable --now forgejo-act-runner"
+echo "Or enable systemd (template: deploy/forgejo/act_runner.service):"
+echo "  INSTALL_SYSTEMD=1 bash scripts/forgejo-setup-runner.sh"
 
 if [[ "${INSTALL_SYSTEMD:-}" == "1" ]]; then
   unit_dest="/etc/systemd/system/forgejo-act-runner.service"
