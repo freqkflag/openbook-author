@@ -1,0 +1,59 @@
+issue: 39
+title: Automation smoke test issue
+classification: test
+confidence: 0.83
+agent: test-agent
+priority: low
+estimated_scope: small
+escalate: false
+recommendation: "Proceed as an automation smoke test; no application code changes are indicated."
+relevant_adrs:
+  - ADR-0004-agent-handoff-contract
+adr_research:
+  source_index: docs/adr/README.md
+  keywords_searched:
+    - automation
+    - smoke
+    - test
+    - routing
+    - router
+    - labels
+    - workflow
+    - handoff
+    - agent
+    - github
+    - platform
+  matches:
+    - slug: ADR-0004-agent-handoff-contract
+      status: Accepted
+      rationale: "The issue validates OpenBook automation routing labels; ADR-0004 defines the router, handoff, GitHub intake, and workflow contract."
+  non_matches:
+    - slug: ADR-0001-guidebook-block-model
+      rationale: "Only generic test wording matched; the issue is not about guidebook blocks."
+    - slug: ADR-0002-widget-plugin-api
+      rationale: "No popup, gallery, widget, or rich-content plugin scope."
+    - slug: ADR-0003-epub-export-pipeline
+      rationale: "No EPUB, KBP, export, or packaging scope."
+deliverables:
+  - validate automation routing label flow
+  - keep repository application code unchanged
+success_criteria:
+  - relevant_adrs comment includes ADR-0004-agent-handoff-contract
+  - needs-research label is removed
+  - ready-for-execution label is added
+context:
+  labels:
+    - "priority: low"
+    - "area: platform"
+    - test
+    - router-ready
+    - needs-human
+    - needs-research
+  linked_files:
+    - docs/adr/README.md
+    - docs/adr/ADR-0004-agent-handoff-contract.md
+  summary: "Temporary issue for validating OpenBook automation routing labels. Safe to close after test."
+workflow:
+  - test-agent
+  - review-agent
+  - pr-creator-agent
